@@ -5,10 +5,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Sostituisci con il tuo Calendar ID
 $calendarId = 'gestione.ascontabilmente@gmail.com';
-
-// Service account credentials (JSON file path)
 putenv('GOOGLE_APPLICATION_CREDENTIALS=' . __DIR__ . '/google-calendar.json');
 
 $client = new Google_Client();
@@ -72,6 +69,38 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 'title' => $createdEvent->getSummary(),
                 'start' => $createdEvent->start->dateTime,
                 'end' => $createdEvent->end->dateTime
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        break;
+
+    case 'PUT':
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || !isset($input['id'], $input['title'], $input['start'], $input['end'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Parametri mancanti']);
+            exit;
+        }
+        $timeZone = 'Europe/Rome';
+        try {
+            $event = $service->events->get($calendarId, $input['id']);
+            $event->setSummary($input['title']);
+            $event->setStart(new Google_Service_Calendar_EventDateTime([
+                'dateTime' => $input['start'],
+                'timeZone' => $timeZone
+            ]));
+            $event->setEnd(new Google_Service_Calendar_EventDateTime([
+                'dateTime' => $input['end'],
+                'timeZone' => $timeZone
+            ]));
+            $updatedEvent = $service->events->update($calendarId, $event->getId(), $event);
+            echo json_encode([
+                'id' => $updatedEvent->getId(),
+                'title' => $updatedEvent->getSummary(),
+                'start' => $updatedEvent->start->dateTime,
+                'end' => $updatedEvent->end->dateTime
             ]);
         } catch (Exception $e) {
             http_response_code(500);
