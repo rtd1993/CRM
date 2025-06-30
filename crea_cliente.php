@@ -1,95 +1,84 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_login();
-require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/header.php';
 
-$errors = [];
-$success = false;
+// Rimuovi "Link cartella" dal form
+$gruppi = [
+    'Anagrafica' => ['Cognome/Ragione sociale', 'Nome', 'Data di nascita/costituzione', 'Luogo di nascita', 'Cittadinanza', 'Stato civile', 'Codice fiscale', 'Partita IVA', 'Qualifica', 'Soci Amministratori', 'Titolare'],
+    'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza PEC', 'Rinnovo Pec', 'User Aruba', 'Password'],
+    'Sedi' => ['Sede Legale', 'Sede Operativa', 'Residenza'],
+    'Documenti' => ['Numero carta d’identità', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l’espatrio'],
+    'Fiscali' => ['Codice ditta', 'Codice ATECO', 'Descrizione attivita', 'Camera di commercio', 'Dipendenti', 'Codice inps', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail', 'Cassa Edile', 'Numero Cassa Professionisti', 'Contabilita', 'Liquidazione IVA', 'SDI'],
+    'Altro' => ['Colore', 'Inserito gestionale', 'Inizio rapporto', 'Fine rapporto']
+];
 
+// Gestione POST e creazione cartella
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Recupera i dati dal form
-    $cognome = trim($_POST['cognome'] ?? '');
-    $codice_fiscale = strtoupper(trim($_POST['codice_fiscale'] ?? ''));
-    $codice_ditta = trim($_POST['codice_ditta'] ?? '');
-    $mail = trim($_POST['mail'] ?? '');
-    $pec = trim($_POST['pec'] ?? '');
-    $telefono = trim($_POST['telefono'] ?? '');
-    // ... altri campi se vuoi aggiungerli
-
-    // Validazione base
-    if ($cognome === '') $errors[] = 'Il campo Cognome/Ragione sociale è obbligatorio.';
-    if ($codice_fiscale === '') $errors[] = 'Il campo Codice Fiscale è obbligatorio.';
-
-    if (empty($errors)) {
-        // Salva nel database
-        $stmt = $pdo->prepare("INSERT INTO clienti (`Cognome/Ragione sociale`, `Codice fiscale`, `Codice ditta`, Mail, PEC, Telefono)
-                               VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$cognome, $codice_fiscale, $codice_ditta, $mail, $pec, $telefono]);
-
-        // Crea la cartella in /var/www/CRM/local_drive/NOME_CARTELLA
-        $cartella_base = '/var/www/CRM/local_drive/';
-        $path_cartella = $cartella_base . $codice_fiscale;
-
-        if (!is_dir($path_cartella)) {
-            mkdir($path_cartella, 0775, true);
-            // Puoi aggiungere qui eventuali permessi/gruppi se necessario
+    $campi = [];
+    $valori = [];
+    foreach ($gruppi as $fields) {
+        foreach ($fields as $campo) {
+            $campi[] = $campo;
+            $valori[] = $_POST[$campo] ?? null;
         }
-
-        $success = true;
     }
+    $segnaposti = implode(', ', array_fill(0, count($campi), '?'));
+    $campi_sql = '`' . implode('`, `', $campi) . '`';
+
+    // Prepara il codice fiscale (usato per la cartella)
+    $idx_cf = array_search('Codice fiscale', $campi);
+    $codice_fiscale = ($idx_cf !== false) ? trim(strtoupper($valori[$idx_cf])) : '';
+    $errore_cf = empty($codice_fiscale);
+
+    // Salva nel database solo se c'è codice fiscale
+    if (!$errore_cf) {
+        $stmt = $pdo->prepare("INSERT INTO clienti ($campi_sql) VALUES ($segnaposti)");
+        if ($stmt->execute($valori)) {
+            // Crea cartella con nome = codice fiscale
+            $cartella = '/var/www/CRM/local_drive/' . $codice_fiscale;
+            if (!is_dir($cartella)) {
+                mkdir($cartella, 0775, true);
+            }
+            header("Location: clienti.php");
+            exit;
+        } else {
+            $errore = "Errore durante l'inserimento.";
+        }
+    } else {
+        $errore = "Il campo Codice fiscale è obbligatorio e serve per creare la cartella.";
+    }
+}
+
+function campo_input($nome, $type = 'text') {
+    return "<div style=\"flex: 1 1 22%; margin-bottom: 15px;\"><label style=\"font-weight:bold;\">$nome:<br><input type=\"$type\" name=\"$nome\" style=\"width:100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;\"></label></div>";
 }
 ?>
 
-<?php include __DIR__ . '/includes/header.php'; ?>
+<h2>➕ Crea Nuovo Cliente</h2>
 
-<h2>Nuovo Cliente</h2>
-
-<?php if ($success): ?>
-    <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
-        Cliente creato con successo! <a href="clienti.php" style="color: #155724; text-decoration: underline;">Torna all’elenco clienti</a>
-    </div>
-<?php endif; ?>
-
-<?php if ($errors): ?>
+<?php if (!empty($errore)): ?>
     <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
-        <ul style="margin:0; padding-left: 22px;">
-            <?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
-        </ul>
+        <?= htmlspecialchars($errore) ?>
     </div>
 <?php endif; ?>
 
-<?php if (!$success): ?>
 <form method="post" autocomplete="off">
-    <div style="margin-bottom: 12px;">
-        <label>Cognome / Ragione sociale*</label><br>
-        <input type="text" name="cognome" value="<?= isset($_POST['cognome']) ? htmlspecialchars($_POST['cognome']) : '' ?>" required style="width: 320px;">
-    </div>
-    <div style="margin-bottom: 12px;">
-        <label>Codice Fiscale*</label><br>
-        <input type="text" name="codice_fiscale" value="<?= isset($_POST['codice_fiscale']) ? htmlspecialchars($_POST['codice_fiscale']) : '' ?>" required style="width: 220px;">
-    </div>
-    <div style="margin-bottom: 12px;">
-        <label>Codice Ditta</label><br>
-        <input type="text" name="codice_ditta" value="<?= isset($_POST['codice_ditta']) ? htmlspecialchars($_POST['codice_ditta']) : '' ?>" style="width: 220px;">
-    </div>
-    <div style="margin-bottom: 12px;">
-        <label>Email</label><br>
-        <input type="email" name="mail" value="<?= isset($_POST['mail']) ? htmlspecialchars($_POST['mail']) : '' ?>" style="width: 320px;">
-    </div>
-    <div style="margin-bottom: 12px;">
-        <label>PEC</label><br>
-        <input type="text" name="pec" value="<?= isset($_POST['pec']) ? htmlspecialchars($_POST['pec']) : '' ?>" style="width: 320px;">
-    </div>
-    <div style="margin-bottom: 12px;">
-        <label>Telefono</label><br>
-        <input type="text" name="telefono" value="<?= isset($_POST['telefono']) ? htmlspecialchars($_POST['telefono']) : '' ?>" style="width: 220px;">
-    </div>
-    <!-- altri campi se necessario -->
-
-    <button type="submit" style="padding: 9px 26px; background: #007bff; color: #fff; border: none; border-radius: 4px;">Salva Cliente</button>
+<?php foreach ($gruppi as $titolo => $campi): ?>
+    <fieldset style="margin-bottom: 30px; border: 2px solid #007BFF; padding: 15px; border-radius: 8px;">
+        <legend style="font-size: 1.1em; font-weight: bold; color: #007BFF; padding: 0 10px;"><?= htmlspecialchars($titolo) ?></legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <?php foreach ($campi as $campo): ?>
+                <?= campo_input($campo) ?>
+            <?php endforeach; ?>
+        </div>
+    </fieldset>
+<?php endforeach; ?>
+    <button type="submit" style="padding: 10px 20px; font-size: 1em; background-color: #28a745; color: white; border: none; border-radius: 5px;">💾 Salva Cliente</button>
 </form>
-<?php endif; ?>
+
+<p><a href="clienti.php">⬅️ Torna alla lista clienti</a></p>
 
 </main>
 </body>
