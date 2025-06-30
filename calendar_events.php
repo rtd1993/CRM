@@ -45,6 +45,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'POST':
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+    echo json_encode(['error' => 'JSON non valido', 'raw' => file_get_contents('php://input')]);
+    exit;
+}
         if (!$input || !isset($input['title'], $input['start'], $input['end'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Parametri mancanti']);
@@ -63,6 +67,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             ]
         ]);
         try {
+            file_put_contents('/tmp/calendar_debug.txt', print_r($event, true), FILE_APPEND);
             $createdEvent = $service->events->insert($calendarId, $event);
             echo json_encode([
                 'id' => $createdEvent->getId(),
