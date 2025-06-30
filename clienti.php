@@ -75,7 +75,7 @@ function has_doc_alert($row, $oggi, $entro30) {
     ?>
         <tr style="<?= $alert ? 'border-left: 5px solid #dc3545; background: #fff6f6;' : '' ?>">
             <td style="padding:10px;">
-                <a href="clienti_scheda.php?id=<?= urlencode($c['id']) ?>" style="color:#007bff; font-weight:500; text-decoration:underline;">
+                <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" style="color:#007bff; font-weight:500; text-decoration:underline;">
                     <?= htmlspecialchars($c['cognome']) ?>
                 </a>
                 <?php if ($alert): ?><span title="Documenti in scadenza" style="color:#dc3545; margin-left:4px;">&#9888;</span><?php endif; ?>
@@ -85,7 +85,7 @@ function has_doc_alert($row, $oggi, $entro30) {
             <td style="padding:10px;"><?= htmlspecialchars($c['PEC']) ?></td>
             <td style="padding:10px;"><?= htmlspecialchars($c['Telefono']) ?></td>
             <td style="padding:10px;">
-                <a href="clienti_scheda.php?id=<?= urlencode($c['id']) ?>" style="background:#f5f5f5; border-radius:4px; padding:6px 10px; text-decoration:none; color:#333; font-weight:bold;">Dettagli</a>
+                <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" style="background:#f5f5f5; border-radius:4px; padding:6px 10px; text-decoration:none; color:#333; font-weight:bold;">Dettagli</a>
             </td>
         </tr>
     <?php endforeach; ?>
