@@ -51,7 +51,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-function campo_input($nome, $type = 'text') {
+function campo_input($nome) {
+    // Lista di parole chiave per i campi data (case-insensitive)
+    $campi_data = ['data', 'scadenza', 'rinnovo', 'inizio rapporto', 'fine rapporto', 'inserito gestionale'];
+    $type = 'text';
+    foreach ($campi_data as $parola) {
+        if (stripos($nome, $parola) !== false) {
+            $type = 'date';
+            break;
+        }
+    }
     return "<div style=\"flex: 1 1 22%; margin-bottom: 15px;\"><label style=\"font-weight:bold;\">$nome:<br><input type=\"$type\" name=\"$nome\" style=\"width:100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;\"></label></div>";
 }
 ?>
@@ -69,11 +78,9 @@ function campo_input($nome, $type = 'text') {
     <fieldset style="margin-bottom: 30px; border: 2px solid #007BFF; padding: 15px; border-radius: 8px;">
         <legend style="font-size: 1.1em; font-weight: bold; color: #007BFF; padding: 0 10px;"><?= htmlspecialchars($titolo) ?></legend>
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <?php foreach ($campi as $campo):
-                // Se il nome campo contiene "Data" (case-insensitive), usa input type="date"
-                $type = (stripos($campo, 'data') !== false) ? 'date' : 'text';
-                echo campo_input($campo, $type);
-            endforeach; ?>
+            <?php foreach ($campi as $campo): ?>
+                <?= campo_input($campo) ?>
+            <?php endforeach; ?>
         </div>
     </fieldset>
 <?php endforeach; ?>
