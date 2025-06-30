@@ -128,5 +128,5 @@ if (isset($_SESSION['user_id'])) {
     </nav>
 </header>
 <?php include __DIR__ . '/chat_widget.php'; ?>
-<?php include __DIR__ . '/chat_priatiche_widget.php'; ?>
+<?php include __DIR__ . '/chat_pratiche_widget.php'; ?>
 <main style="padding: 20px;">
