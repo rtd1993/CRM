@@ -1,26 +1,59 @@
+<?php
+// Opzionale: verifica autenticazione PHP qui, se necessario
+?>
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <title>Calendario Google</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
     <style>
-        #calendar { max-width: 900px; margin: 40px auto; }
-        #authorize_button, #signout_button { margin: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+        #calendar { 
+            max-width: 900px; 
+            margin: 40px auto; 
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            padding: 20px;
+        }
+        #authorize_button, #signout_button { 
+            margin: 10px; 
+            padding: 8px 18px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        #authorize_button { background: #4285f4; color: #fff; }
+        #signout_button { background: #e53935; color: #fff; }
     </style>
 </head>
 <body>
-    <h1>Calendario Google</h1>
-    <button id="authorize_button">Accedi con Google</button>
-    <button id="signout_button" style="display:none;">Esci</button>
+    <header style="background: #4285f4; color: #fff; padding: 18px 0; text-align: center; border-radius:0 0 12px 12px;">
+        <h1>Calendario Google</h1>
+    </header>
+    <div style="text-align:center;">
+        <button id="authorize_button">Accedi con Google</button>
+        <button id="signout_button" style="display:none;">Esci</button>
+    </div>
     <div id="calendar"></div>
 
+    <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <!-- Google API JS -->
     <script src="https://apis.google.com/js/api.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
     // ---- CONFIGURAZIONE ----
-    const CLIENT_ID = '279692811539-4478tr130h1i9tqr3jqia4ldgpfd1upc.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyA1eT8KZFAPv9-6ictIJCdmU1f89CB0qgQ';
+    const CLIENT_ID = '279692811539-4478tr130h1i9tqr3jqia4ldgpfd1upc.apps.googleusercontent.com'; // <-- Sostituisci con il tuo!
+    const API_KEY = 'AIzaSyA1eT8KZFAPv9-6ictIJCdmU1f89CB0qgQ'; // <-- Sostituisci con il tuo!
     const SCOPES = "https://www.googleapis.com/auth/calendar";
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 
@@ -37,9 +70,9 @@
     }
 
     // Carica la libreria Google API
-    gapiLoaded = () => {
+    function gapiLoaded() {
         gapi.load('client', initializeGapiClient);
-    };
+    }
 
     async function initializeGapiClient() {
         await gapi.client.init({
@@ -50,28 +83,26 @@
         maybeEnableCalendar();
     }
 
-    // Carica la libreria gapi
+    // Inizializza il client OAuth
     window.onload = () => {
         gapiLoaded();
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: async (response) => {
+                if (response.error) {
+                    alert("Errore autenticazione: " + response.error);
+                    return;
+                }
+                showHideButtons(true);
+                if (calendar) {
+                    calendar.refetchEvents();
+                } else {
+                    renderCalendar();
+                }
+            },
+        });
     };
-
-    // Inizializza il client OAuth
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: async (response) => {
-            if (response.error) {
-                alert("Errore autenticazione: " + response.error);
-                return;
-            }
-            showHideButtons(true);
-            if (calendar) {
-                calendar.refetchEvents();
-            } else {
-                renderCalendar();
-            }
-        },
-    });
 
     function handleAuthClick() {
         tokenClient.requestAccessToken({prompt: 'consent'});
@@ -158,7 +189,5 @@
         }
     }
     </script>
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
