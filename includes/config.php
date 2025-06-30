@@ -3,7 +3,7 @@
 
 // Configurazione globale
 const DB_HOST = 'localhost';
-const DB_NAME = 'crmuser';
+const DB_NAME = 'crmdb';
 const DB_USER = 'crmuser';
 const DB_PASS = 'Admin123';
 
