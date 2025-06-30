@@ -3,90 +3,100 @@ require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
+
 include __DIR__ . '/includes/header.php';
 
-// Mappa campi visualizzabili
-$campi_mappa = [
-    'Cognome/Ragione sociale' => 'Cognome/Ragione sociale',
-    'Nome' => 'Nome',
-    'Codice fiscale' => 'Codice fiscale',
-    'Partita IVA' => 'Partita IVA',
-    'Mail' => 'Mail'
-];
+// Ricerca rapida
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Ricerca
-$criteri = [];
+// Query base
+$sql = "SELECT id, `Cognome/Ragione sociale` AS cognome, `Codice ditta`, Mail, PEC, Telefono, `Data di scadenza`, `Scadenza PEC` FROM clienti";
 $params = [];
 
-if (!empty($_GET['cognome'])) {
-    $criteri[] = "`Cognome/Ragione sociale` LIKE ?";
-    $params[] = '%' . $_GET['cognome'] . '%';
-}
-if (!empty($_GET['nome'])) {
-    $criteri[] = "`Nome` LIKE ?";
-    $params[] = '%' . $_GET['nome'] . '%';
-}
-if (!empty($_GET['codice_fiscale'])) {
-    $criteri[] = "`Codice fiscale` LIKE ?";
-    $params[] = '%' . $_GET['codice_fiscale'] . '%';
-}
-if (!empty($_GET['partita_iva'])) {
-    $criteri[] = "`Partita IVA` LIKE ?";
-    $params[] = '%' . $_GET['partita_iva'] . '%';
-}
-if (!empty($_GET['mail'])) {
-    $criteri[] = "`Mail` LIKE ?";
-    $params[] = '%' . $_GET['mail'] . '%';
-	
+// Ricerca
+if ($search !== '') {
+    $sql .= " WHERE 
+        `Cognome/Ragione sociale` LIKE ? OR 
+        `Codice ditta` LIKE ? OR
+        Mail LIKE ? OR
+        PEC LIKE ? OR
+        Telefono LIKE ?";
+    $wild = "%$search%";
+    $params = [$wild, $wild, $wild, $wild, $wild];
 }
 
-$where = $criteri ? ('WHERE ' . implode(' AND ', $criteri)) : '';
-$campi_sql = '`id`, ' . implode(', ', array_map(fn($c) => '`' . $campi_mappa[$c] . '`', array_keys($campi_mappa)));
-$stmt = $pdo->prepare("SELECT $campi_sql FROM clienti $where ORDER BY `Cognome/Ragione sociale`");
+$sql .= " ORDER BY `Cognome/Ragione sociale` ASC";
+
+$stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Per evidenziare documenti in scadenza entro 30 giorni
+$oggi = date('Y-m-d');
+$entro30 = date('Y-m-d', strtotime('+30 days'));
+
+function has_doc_alert($row, $oggi, $entro30) {
+    // Carta d'identità
+    if (!empty($row['Data di scadenza']) && $row['Data di scadenza'] <= $entro30) return true;
+    // PEC
+    if (!empty($row['Scadenza PEC']) && $row['Scadenza PEC'] <= $entro30) return true;
+    return false;
+}
 ?>
 
-<h2>📁 Ricerca Clienti</h2>
-<form method="get">
-    <input type="text" name="cognome" placeholder="Cognome/Ragione Sociale" value="<?= htmlspecialchars($_GET['cognome'] ?? '') ?>">
-    <input type="text" name="nome" placeholder="Nome" value="<?= htmlspecialchars($_GET['nome'] ?? '') ?>">
-    <input type="text" name="codice_fiscale" placeholder="Codice Fiscale" value="<?= htmlspecialchars($_GET['codice_fiscale'] ?? '') ?>">
-    <input type="text" name="partita_iva" placeholder="Partita IVA" value="<?= htmlspecialchars($_GET['partita_iva'] ?? '') ?>">
-    <input type="text" name="mail" placeholder="Email" value="<?= htmlspecialchars($_GET['mail'] ?? '') ?>">
-    <button type="submit">🔍 Cerca</button>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>Elenco Clienti</h2>
+    <a href="clienti_aggiungi.php" style="padding: 8px 18px; background: #007bff; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">+ Nuovo Cliente</a>
+</div>
+
+<form method="get" style="margin-bottom: 20px;">
+    <input type="text" name="search" placeholder="Cerca cliente, mail, telefono..." value="<?= htmlspecialchars($search) ?>" style="padding: 8px; border: 1px solid #bbb; border-radius: 4px; width: 260px;">
+    <button type="submit" style="padding: 8px 14px; background: #28a745; color: #fff; border: none; border-radius: 4px;">Cerca</button>
+    <?php if ($search): ?>
+        <a href="clienti.php" style="margin-left: 10px; color: #007bff;">Mostra tutti</a>
+    <?php endif; ?>
 </form>
 
-<p><a href="crea_cliente.php"><button>➕ Crea nuovo cliente</button></a></p>
-
-<?php if (count($clienti) === 0): ?>
-    <p>Nessun cliente trovato.</p>
-<?php else: ?>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <?php foreach ($campi_mappa as $label => $campo): ?>
-                    <th><?= htmlspecialchars($label) ?></th>
-                <?php endforeach; ?>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($clienti as $c): ?>
-            <tr>
-                <?php foreach ($campi_mappa as $campo): ?>
-                    <td><?= htmlspecialchars($c[$campo]) ?></td>
-                <?php endforeach; ?>
-                <td>
-                    <a href="info_cliente.php?id=<?= $c['id'] ?>">👁️ Visualizza</a> |
-                    <a href="modifica_cliente.php?id=<?= $c['id'] ?>">✏️ Modifica</a> |
-                    <a href="elimina_cliente.php?id=<?= $c['id'] ?>" onclick="return confirm('Confermi l\'eliminazione di questo cliente?')">🗑️ Elimina</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
+<div style="overflow-x:auto;">
+<table style="width: 100%; border-collapse: collapse; background:#fff; box-shadow:0 2px 8px #eee;">
+    <thead>
+        <tr style="background: #f8f9fa;">
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Cognome/Ragione sociale</th>
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Codice ditta</th>
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Mail</th>
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">PEC</th>
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Telefono</th>
+            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Dettagli</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($clienti as $c):
+        $alert = has_doc_alert($c, $oggi, $entro30);
+    ?>
+        <tr style="<?= $alert ? 'border-left: 5px solid #dc3545; background: #fff6f6;' : '' ?>">
+            <td style="padding:10px;">
+                <a href="clienti_scheda.php?id=<?= urlencode($c['id']) ?>" style="color:#007bff; font-weight:500; text-decoration:underline;">
+                    <?= htmlspecialchars($c['cognome']) ?>
+                </a>
+                <?php if ($alert): ?><span title="Documenti in scadenza" style="color:#dc3545; margin-left:4px;">&#9888;</span><?php endif; ?>
+            </td>
+            <td style="padding:10px;"><?= htmlspecialchars($c['Codice ditta']) ?></td>
+            <td style="padding:10px;"><?= htmlspecialchars($c['Mail']) ?></td>
+            <td style="padding:10px;"><?= htmlspecialchars($c['PEC']) ?></td>
+            <td style="padding:10px;"><?= htmlspecialchars($c['Telefono']) ?></td>
+            <td style="padding:10px;">
+                <a href="clienti_scheda.php?id=<?= urlencode($c['id']) ?>" style="background:#f5f5f5; border-radius:4px; padding:6px 10px; text-decoration:none; color:#333; font-weight:bold;">Dettagli</a>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    <?php if (empty($clienti)): ?>
+        <tr>
+            <td colspan="6" style="text-align:center; padding: 20px;">Nessun cliente trovato.</td>
+        </tr>
+    <?php endif; ?>
+    </tbody>
+</table>
+</div>
 
 </main>
 </body>
