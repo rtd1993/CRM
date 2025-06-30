@@ -46,7 +46,7 @@ function has_doc_alert($row, $oggi, $entro30) {
 
 <div style="display: flex; justify-content: space-between; align-items: center;">
     <h2>Elenco Clienti</h2>
-    <a href="clienti_aggiungi.php" style="padding: 8px 18px; background: #007bff; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">+ Nuovo Cliente</a>
+    <a href="crea_cliente.php" style="padding: 8px 18px; background: #007bff; color: #fff; border-radius: 5px; text-decoration: none; font-weight: bold;">+ Nuovo Cliente</a>
 </div>
 
 <form method="get" style="margin-bottom: 20px;">
