@@ -20,28 +20,39 @@ $client->addScope(Google_Service_Calendar::CALENDAR);
 $service = new Google_Service_Calendar($client);
 
 // --- VISUALIZZA EVENTI (GET) ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $timeMin = $_GET['start'] ?? null;
-    $timeMax = $_GET['end'] ?? null;
-    $params = [
-        'singleEvents' => true,
-        'orderBy' => 'startTime'
-    ];
-    if ($timeMin) $params['timeMin'] = $timeMin;
-    if ($timeMax) $params['timeMax'] = $timeMax;
-
-    $events = $service->events->listEvents($calendarId, $params);
-    $output = [];
-    foreach ($events->getItems() as $event) {
-        $output[] = [
-            'id' => $event->getId(),
-            'title' => $event->getSummary(),
-            'start' => $event->start->dateTime ?: $event->start->date,
-            'end' => $event->end->dateTime ?: $event->end->date,
-        ];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input || !isset($input['title'], $input['start'], $input['end'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Parametri mancanti']);
+        exit;
     }
-    header('Content-Type: application/json');
-    echo json_encode($output);
+    // Imposta la timezone che vuoi (es: Europe/Rome)
+    $timeZone = 'Europe/Rome';
+    $event = new Google_Service_Calendar_Event([
+        'summary' => $input['title'],
+        'start' => [
+            'dateTime' => $input['start'],
+            'timeZone' => $timeZone
+        ],
+        'end' => [
+            'dateTime' => $input['end'],
+            'timeZone' => $timeZone
+        ]
+    ]);
+    try {
+        $createdEvent = $service->events->insert($calendarId, $event);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'id' => $createdEvent->getId(),
+            'title' => $createdEvent->getSummary(),
+            'start' => $createdEvent->start->dateTime,
+            'end' => $createdEvent->end->dateTime
+        ]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
     exit;
 }
 
