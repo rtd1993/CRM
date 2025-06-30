@@ -31,10 +31,9 @@ include __DIR__ . '/includes/header.php';
 
         $stmt = $pdo->prepare("
             SELECT descrizione, scadenza
-FROM task
-WHERE scadenza BETWEEN ? AND ?
-ORDER BY scadenza ASC
-
+            FROM task
+            WHERE scadenza BETWEEN ? AND ?
+            ORDER BY scadenza ASC
         ");
         $stmt->execute([$oggi, $entro30]);
         $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -54,53 +53,11 @@ ORDER BY scadenza ASC
             ?>
                 <li style="<?= $style ?>">
                     <strong><?= $descrizione ?></strong> (Scadenza: <?= $scadenza ?>)
-                   
                 </li>
             <?php endforeach; ?>
         </ul>
     </div>
 </div>
-
-
-
-
-<script src="http://192.168.1.29:3001/socket.io/socket.io.js">
-    const socket = io('http://192.168.1.29:3001');
-
-
-    function inviaMessaggio(e) {
-        e.preventDefault();
-        const testo = document.getElementById("messaggio").value.trim();
-        if (testo) {
-            socket.emit('chat message', {
-                utente_id: <?= $_SESSION['user_id'] ?>,
-                utente_nome: <?= json_encode($_SESSION['user_name']) ?>,
-                testo: testo
-            });
-            document.getElementById("messaggio").value = '';
-        }
-    }
-
-    socket.on('chat message', function (data) {
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${data.utente_nome}:</strong> ${data.testo} <small>(${data.orario})</small>`;
-        document.getElementById("chat-messages").appendChild(div);
-        document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
-    });
-
-    window.onload = () => {
-        fetch('api/chat_cronologia.php')
-            .then(res => res.json())
-            .then(data => {
-                data.forEach(msg => {
-                    const div = document.createElement("div");
-                    div.innerHTML = `<strong>${msg.nome}:</strong> ${msg.messaggio} <small>(${msg.timestamp})</small>`;
-                    document.getElementById("chat-messages").appendChild(div);
-                });
-                document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
-            });
-    };
-</script>
 
 </main>
 </body>
