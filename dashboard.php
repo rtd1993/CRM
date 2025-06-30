@@ -56,6 +56,49 @@ include __DIR__ . '/includes/header.php';
                 </li>
             <?php endforeach; ?>
         </ul>
+
+        <!-- Documenti da aggiornare -->
+        <h3 style="margin-top: 30px;">Documenti da aggiornare</h3>
+        <?php
+        // ATTENZIONE: Modifica i nomi di tabella/colonne se diversi!
+        // Si presuppone: tabella "documenti" con colonne: id, cliente_id, tipo_documento, data_scadenza
+        // e tabella "clienti" con colonna "Cognome/Ragione sociale"
+        $query = "
+            SELECT d.id, d.tipo_documento, d.data_scadenza,
+                   c.`Cognome/Ragione sociale` AS cognome
+            FROM documenti d
+            JOIN clienti c ON d.cliente_id = c.id
+            WHERE (d.data_scadenza BETWEEN ? AND ?) OR (d.data_scadenza < ?)
+            ORDER BY d.data_scadenza ASC
+        ";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$oggi, $entro30, $oggi]);
+        $documenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($documenti) === 0): ?>
+            <p>Nessun documento in scadenza entro 30 giorni.</p>
+        <?php else: ?>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th style="border: 1px solid #ccc; padding: 6px;">Cognome/Ragione sociale</th>
+                        <th style="border: 1px solid #ccc; padding: 6px;">Tipo Documento</th>
+                        <th style="border: 1px solid #ccc; padding: 6px;">Data Scadenza</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($documenti as $doc): 
+                    $scaduto = strtotime($doc['data_scadenza']) < strtotime($oggi) ? 'background: #ffcccc;' : '';
+                ?>
+                    <tr style="<?= $scaduto ?>">
+                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['cognome']) ?></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['tipo_documento']) ?></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['data_scadenza']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
     </div>
 </div>
 
