@@ -3,20 +3,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_login();
-
-// Carica pratiche/clienti (supponiamo tabella clienti: id, cognome, nome)
 $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti ORDER BY `cognome/ragione sociale`, nome")->fetchAll();
 ?>
-
-
-
-<link rel="stylesheet" href="/assets/css/chat_widgets.css">
-
-<div class="crm-chat-widget-pratica" id="pratica-chat-widget">
-    <div class="crm-chat-header" id="pratica-chat-header" onclick="togglePraticaChat()">💬 Chat pratica</div>
-    <div class="crm-chat-body" id="pratica-chat-body">
+<div class="crm-chat-widget" id="chat-pratiche-widget">
+    <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
+        📁 Chat Pratiche
+    </div>
+    <div class="crm-chat-body">
         <form id="praticaChatForm" autocomplete="off">
-            <select class="form-select" id="clienteSelect" required>
+            <select class="form-select crm-chat-select" id="clienteSelect" required>
                 <option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>
                 <?php foreach ($clienti as $cli): ?>
                     <option value="<?= $cli['id'] ?>">
@@ -24,14 +19,21 @@ $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti 
                     </option>
                 <?php endforeach; ?>
             </select>
-            <div id="praticaChatBox"></div>
-            <div class="input-group">
-                <input type="text" id="praticaMsg" class="form-control" placeholder="Scrivi un messaggio..." autocomplete="off" disabled>
-                <button class="btn btn-success" type="submit" id="sendPraticaBtn" disabled>Invia</button>
+            <div class="crm-chat-messages" id="praticaChatBox">
+                <small class="text-muted">Seleziona una pratica per caricare la chat...</small>
+            </div>
+            <div class="crm-chat-input-group">
+                <input type="text" id="praticaMsg" class="form-control crm-chat-pratiche-input" placeholder="Scrivi un messaggio..." autocomplete="off" disabled>
+                <button class="crm-chat-send-btn btn btn-success" type="submit" id="sendPraticaBtn" disabled>Invia</button>
             </div>
         </form>
     </div>
 </div>
+<script>
+function toggleChatWidget(id) {
+    document.getElementById(id).classList.toggle('open');
+}
+</script>
 
 <script>
 function togglePraticaChat() {

@@ -3,15 +3,22 @@
 <script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget">
-    <div class="crm-chat-header" id="chat-header" onclick="toggleChat()">💬 Chat</div>
-    <div class="crm-chat-body" id="chat-body">
+    <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
+        💬 Chat Globale
+    </div>
+    <div class="crm-chat-body">
         <div class="crm-chat-messages" id="chat-messages"></div>
         <div class="crm-chat-input-group">
             <input type="text" class="crm-chat-input" id="chat-input" placeholder="Scrivi...">
-            <button onclick="inviaMsg()">➤</button>
+            <button class="crm-chat-send-btn btn btn-primary" onclick="inviaMsg()">Invia</button>
         </div>
     </div>
 </div>
+<script>
+function toggleChatWidget(id) {
+    document.getElementById(id).classList.toggle('open');
+}
+</script>
 
 
 <script>
@@ -56,8 +63,6 @@ fetch("/api/chat_cronologia.php")
     });
     div.scrollTop = div.scrollHeight;
 });
-function toggleChat() {
-    document.getElementById('chat-widget').classList.toggle('open');
-}
+
 </script>
 <?php endif; ?>

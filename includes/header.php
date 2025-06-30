@@ -127,6 +127,10 @@ if (isset($_SESSION['user_id'])) {
         </ul>
     </nav>
 </header>
-<?php include __DIR__ . '/chat_widget.php'; ?>
-<?php include __DIR__ . '/chat_pratiche_widget.php'; ?>
+<link rel="stylesheet" href="/assets/css/chat_widgets.css">
+
+<div id="crm-chat-container">
+    <?php include __DIR__ . '/chat_pratiche_widget.php'; ?>
+    <?php include __DIR__ . '/chat_widget.php'; ?>
+</div>
 <main style="padding: 20px;">
