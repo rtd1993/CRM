@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/vendor/autoload.php';
 putenv('GOOGLE_APPLICATION_CREDENTIALS=' . __DIR__ . '/google-calendar.json');
-$calendarId = 'gestione.ascontabilmente.com'; // <-- sostituisci con il tuo ID reale
+$calendarId = 'gestione.ascontabilmente@gmail.com'; // <-- sostituisci con il tuo ID reale
 
 $client = new Google_Client();
 $client->useApplicationDefaultCredentials();
