@@ -1,5 +1,5 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
-<link rel="stylesheet" href="/assets/css/chat_widget.css">
+<link rel="stylesheet" href="/assets/css/chat_widgets.css">
 <script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget">
@@ -56,6 +56,8 @@ fetch("/api/chat_cronologia.php")
     });
     div.scrollTop = div.scrollHeight;
 });
-
+function toggleChat() {
+    document.getElementById('chat-widget').classList.toggle('open');
+}
 </script>
 <?php endif; ?>

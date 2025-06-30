@@ -8,38 +8,9 @@ require_login();
 $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti ORDER BY `cognome/ragione sociale`, nome")->fetchAll();
 ?>
 
-<style>
-#pratica-chat-widget {
-    position: fixed;
-    bottom: 20px;
-    right: 380px; /* Affiancato a chat_widget che di solito è right:20px, width:350px */
-    width: 340px;
-    z-index: 1080;
-    font-family: 'Segoe UI', Arial, sans-serif;
-}
-#pratica-chat-header {
-    background: #007bff;
-    color: #fff;
-    padding: 10px 16px;
-    cursor: pointer;
-    border-radius: 10px 10px 0 0;
-    font-weight: bold;
-    box-shadow: 0 1px 2px #00336630;
-}
-#pratica-chat-body {
-    background: #f4f7fa;
-    border: 1px solid #e0e0e0;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    padding: 10px;
-    display: none;
-    max-height: 370px;
-    overflow-y: auto;
-}
-#pratica-chat-widget.open #pratica-chat-body {
-    display: block;
-}
-</style>
+
+
+<link rel="stylesheet" href="/assets/css/chat_widgets.css">
 
 <div class="crm-chat-widget-pratica" id="pratica-chat-widget">
     <div class="crm-chat-header" id="pratica-chat-header" onclick="togglePraticaChat()">💬 Chat pratica</div>
@@ -108,4 +79,7 @@ document.getElementById('praticaChatForm').addEventListener('submit', function(e
         }
     });
 });
+function togglePraticaChat() {
+    document.getElementById('pratica-chat-widget').classList.toggle('open');
+}
 </script>
