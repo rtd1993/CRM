@@ -60,22 +60,54 @@ include __DIR__ . '/includes/header.php';
         <!-- Documenti da aggiornare -->
         <h3 style="margin-top: 30px;">Documenti da aggiornare</h3>
         <?php
-        // ATTENZIONE: Modifica i nomi di tabella/colonne se diversi!
-        // Si presuppone: tabella "documenti" con colonne: id, cliente_id, tipo_documento, data_scadenza
-        // e tabella "clienti" con colonna "Cognome/Ragione sociale"
-        $query = "
-            SELECT d.id, d.tipo_documento, d.data_scadenza,
-                   c.`Cognome/Ragione sociale` AS cognome
-            FROM documenti d
-            JOIN clienti c ON d.cliente_id = c.id
-            WHERE (d.data_scadenza BETWEEN ? AND ?) OR (d.data_scadenza < ?)
-            ORDER BY d.data_scadenza ASC
+        // Cerchiamo clienti con carta d'identità o pec in scadenza entro 30 giorni o già scadute
+        // Puoi aggiungere altri documenti qui secondo necessità
+        $sql = "
+            SELECT 
+                id,
+                `Cognome/Ragione sociale` AS cognome,
+                `Numero carta d’identità` AS carta,
+                `Data di scadenza` AS carta_scad,
+                PEC,
+                `Scadenza PEC` AS pec_scad
+            FROM clienti
+            WHERE 
+                (`Data di scadenza` IS NOT NULL AND `Data di scadenza` <= ?)
+                OR
+                (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` <= ?)
+            ORDER BY 
+                LEAST(
+                    IFNULL(`Data di scadenza`, '9999-12-31'), 
+                    IFNULL(`Scadenza PEC`, '9999-12-31')
+                ) ASC
         ";
-        $stmt = $pdo->prepare($query);
-        $stmt->execute([$oggi, $entro30, $oggi]);
-        $documenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$entro30, $entro30]);
+        $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (count($documenti) === 0): ?>
+        // Costruiamo una tabella documenti da aggiornare
+        $documenti = [];
+        foreach ($clienti as $row) {
+            // Carta d'identità
+            if (!empty($row['carta']) && !empty($row['carta_scad'])) {
+                $documenti[] = [
+                    'cognome' => $row['cognome'],
+                    'tipo' => "Carta d'identità ({$row['carta']})",
+                    'scadenza' => $row['carta_scad'],
+                ];
+            }
+            // PEC
+            if (!empty($row['PEC']) && !empty($row['pec_scad'])) {
+                $documenti[] = [
+                    'cognome' => $row['cognome'],
+                    'tipo' => "PEC ({$row['PEC']})",
+                    'scadenza' => $row['pec_scad'],
+                ];
+            }
+        }
+        ?>
+
+        <?php if (empty($documenti)): ?>
             <p>Nessun documento in scadenza entro 30 giorni.</p>
         <?php else: ?>
             <table style="width: 100%; border-collapse: collapse;">
@@ -88,12 +120,12 @@ include __DIR__ . '/includes/header.php';
                 </thead>
                 <tbody>
                 <?php foreach ($documenti as $doc): 
-                    $scaduto = strtotime($doc['data_scadenza']) < strtotime($oggi) ? 'background: #ffcccc;' : '';
+                    $scaduto = strtotime($doc['scadenza']) < strtotime($oggi) ? 'background: #ffcccc;' : '';
                 ?>
                     <tr style="<?= $scaduto ?>">
                         <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['cognome']) ?></td>
-                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['tipo_documento']) ?></td>
-                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['data_scadenza']) ?></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['tipo']) ?></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><?= htmlspecialchars($doc['scadenza']) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
