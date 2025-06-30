@@ -5,7 +5,7 @@ require_once __DIR__ . '/auth.php';
 require_login();
 
 // Carica pratiche/clienti (supponiamo tabella clienti: id, cognome, nome)
-$clienti = $pdo->query("SELECT id, 'cognome/ragione sociale', nome FROM clienti ORDER BY cognome, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, 'cognome/ragione sociale', nome FROM clienti ORDER BY 'cognome/ragione sociale', nome")->fetchAll();
 ?>
 
 <div class="card shadow-sm mb-4" style="max-width: 420px;">
