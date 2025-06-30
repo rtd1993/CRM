@@ -2,16 +2,21 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-header('Content-Type: application/json');
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+// Sostituisci con il tuo Calendar ID
+$calendarId = 'gestione.ascontabilmente@gmail.com';
+
+// Service account credentials (JSON file path)
 putenv('GOOGLE_APPLICATION_CREDENTIALS=' . __DIR__ . '/google-calendar.json');
-$calendarId = 'gestione.ascontabilmente@gmail.com'; // <-- sostituisci con il tuo ID reale
 
 $client = new Google_Client();
 $client->useApplicationDefaultCredentials();
 $client->addScope(Google_Service_Calendar::CALENDAR);
 $service = new Google_Service_Calendar($client);
+
+header('Content-Type: application/json');
 
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
@@ -23,19 +28,22 @@ switch ($_SERVER['REQUEST_METHOD']) {
         ];
         if ($timeMin) $params['timeMin'] = $timeMin;
         if ($timeMax) $params['timeMax'] = $timeMax;
-
-        $events = $service->events->listEvents($calendarId, $params);
-        $output = [];
-        foreach ($events->getItems() as $event) {
-            $output[] = [
-                'id' => $event->getId(),
-                'title' => $event->getSummary(),
-                'start' => $event->start->dateTime ?: $event->start->date,
-                'end' => $event->end->dateTime ?: $event->end->date,
-            ];
+        try {
+            $events = $service->events->listEvents($calendarId, $params);
+            $output = [];
+            foreach ($events->getItems() as $event) {
+                $output[] = [
+                    'id' => $event->getId(),
+                    'title' => $event->getSummary(),
+                    'start' => $event->start->dateTime ?: $event->start->date,
+                    'end' => $event->end->dateTime ?: $event->end->date,
+                ];
+            }
+            echo json_encode($output);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
         }
-        header('Content-Type: application/json');
-        echo json_encode($output);
         break;
 
     case 'POST':
@@ -59,7 +67,6 @@ switch ($_SERVER['REQUEST_METHOD']) {
         ]);
         try {
             $createdEvent = $service->events->insert($calendarId, $event);
-            header('Content-Type: application/json');
             echo json_encode([
                 'id' => $createdEvent->getId(),
                 'title' => $createdEvent->getSummary(),
@@ -73,8 +80,8 @@ switch ($_SERVER['REQUEST_METHOD']) {
         break;
 
     case 'DELETE':
-        parse_str(file_get_contents("php://input"), $_DELETE);
-        $eventId = $_DELETE['id'] ?? null;
+        $input = json_decode(file_get_contents("php://input"), true);
+        $eventId = $input['id'] ?? null;
         if ($eventId) {
             try {
                 $service->events->delete($calendarId, $eventId);
@@ -91,8 +98,6 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     default:
         http_response_code(405);
-        header('Content-Type: application/json');
         echo json_encode(['error' => 'Metodo non supportato']);
         break;
 }
-?>
