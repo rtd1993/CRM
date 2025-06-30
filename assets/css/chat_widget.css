@@ -1,44 +1,77 @@
-#chat-widget {
+/* Stile base per entrambi i widget */
+.crm-chat-widget,
+.crm-chat-widget-pratica {
     position: fixed;
-    bottom: 15px;
-    right: 15px;
-    width: 280px;
-    background: white;
-    border: 1px solid #ccc;
-    box-shadow: 0 0 10px #aaa;
-    font-family: sans-serif;
-    font-size: 14px;
-    z-index: 999;
+    bottom: 20px;
+    width: 350px;
+    z-index: 1080;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-shadow: 0 2px 8px #00336633;
+    border-radius: 10px;
+    background: #fff;
 }
 
-#chat-header {
+/* Widget generale: in basso a destra */
+.crm-chat-widget {
+    right: 20px;
+}
+
+/* Widget pratiche: affiancato a sinistra */
+.crm-chat-widget-pratica {
+    right: 380px; /* Modifica se necessario per la distanza */
+}
+
+/* Header comune */
+.crm-chat-header {
     background: #007bff;
-    color: white;
-    padding: 8px;
+    color: #fff;
+    padding: 10px 16px;
     cursor: pointer;
-    text-align: center;
+    border-radius: 10px 10px 0 0;
+    font-weight: bold;
+    user-select: none;
 }
 
-#chat-body {
-    display: none;
+/* Corpo del widget */
+.crm-chat-body {
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
     padding: 10px;
+    display: none;
+    max-height: 370px;
+    background: #f4f7fa;
+    overflow-y: auto;
 }
 
-#chat-messages {
+/* Mostra corpo se open */
+.crm-chat-widget.open .crm-chat-body,
+.crm-chat-widget-pratica.open .crm-chat-body {
+    display: block;
+}
+
+/* Box messaggi */
+.crm-chat-messages, #praticaChatBox {
     height: 200px;
     overflow-y: auto;
-    border: 1px solid #ccc;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 8px;
     margin-bottom: 8px;
-    padding: 5px;
-    background: #f9f9f9;
 }
 
-#chat-body input[type="text"] {
-    width: 70%;
-    padding: 5px;
+/* Input e bottoni */
+.crm-chat-input-group, .input-group {
+    display: flex;
+    gap: 4px;
 }
 
-#chat-body button {
-    width: 25%;
-    padding: 5px;
+.crm-chat-input, #praticaMsg {
+    flex: 1 1 auto;
+}
+
+/* Personalizzazione pratica */
+.crm-chat-widget-pratica select.form-select {
+    margin-bottom: 8px;
 }

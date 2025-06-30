@@ -41,23 +41,19 @@ $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti 
 }
 </style>
 
-<div id="pratica-chat-widget">
-    <div id="pratica-chat-header" onclick="togglePraticaChat()">💬 Chat pratica</div>
-    <div id="pratica-chat-body">
+<div class="crm-chat-widget-pratica" id="pratica-chat-widget">
+    <div class="crm-chat-header" id="pratica-chat-header" onclick="togglePraticaChat()">💬 Chat pratica</div>
+    <div class="crm-chat-body" id="pratica-chat-body">
         <form id="praticaChatForm" autocomplete="off">
-            <div class="mb-2">
-                <select class="form-select" id="clienteSelect" required>
-                    <option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>
-                    <?php foreach ($clienti as $cli): ?>
-                        <option value="<?= $cli['id'] ?>">
-                            <?= htmlspecialchars($cli['cognome/ragione sociale']) . " " . htmlspecialchars($cli['nome']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div id="praticaChatBox" style="height:200px; overflow-y:auto; background:#fff; border:1px solid #e0e0e0; border-radius:5px; padding:8px; margin-bottom:8px;">
-                <small class="text-muted">Seleziona una pratica per caricare la chat...</small>
-            </div>
+            <select class="form-select" id="clienteSelect" required>
+                <option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>
+                <?php foreach ($clienti as $cli): ?>
+                    <option value="<?= $cli['id'] ?>">
+                        <?= htmlspecialchars($cli['cognome/ragione sociale']) . " " . htmlspecialchars($cli['nome']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <div id="praticaChatBox"></div>
             <div class="input-group">
                 <input type="text" id="praticaMsg" class="form-control" placeholder="Scrivi un messaggio..." autocomplete="off" disabled>
                 <button class="btn btn-success" type="submit" id="sendPraticaBtn" disabled>Invia</button>

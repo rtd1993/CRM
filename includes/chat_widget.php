@@ -2,14 +2,17 @@
 <link rel="stylesheet" href="/assets/css/chat_widget.css">
 <script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
 
-<div id="chat-widget">
-    <div id="chat-header" onclick="toggleChat()">💬 Chat</div>
-    <div id="chat-body">
-        <div id="chat-messages"></div>
-        <input type="text" id="chat-input" placeholder="Scrivi...">
-        <button onclick="inviaMsg()">➤</button>
+<div class="crm-chat-widget" id="chat-widget">
+    <div class="crm-chat-header" id="chat-header" onclick="toggleChat()">💬 Chat</div>
+    <div class="crm-chat-body" id="chat-body">
+        <div class="crm-chat-messages" id="chat-messages"></div>
+        <div class="crm-chat-input-group">
+            <input type="text" class="crm-chat-input" id="chat-input" placeholder="Scrivi...">
+            <button onclick="inviaMsg()">➤</button>
+        </div>
     </div>
 </div>
+
 
 <script>
 const user_id = <?= json_encode($_SESSION['user_id']) ?>;
