@@ -1,190 +1,168 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/header.php';
 require_login();
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/header.php';
 
-$baseDir = __DIR__ . '/files';
-$currentPath = isset($_GET['path']) ? realpath($baseDir . '/' . $_GET['path']) : $baseDir;
-$search = isset($_GET['q']) ? strtolower(trim($_GET['q'])) : '';
-$sortBy = $_GET['sort_by'] ?? 'az';
+$base_dir = '/var/www/CRM/local_drive/';
+$relative_path = $_GET['path'] ?? '';
+$current_dir = realpath($base_dir . $relative_path);
 
-if (strpos($currentPath, realpath($baseDir)) !== 0) {
-    die('Accesso non autorizzato');
+if (!$current_dir || strpos($current_dir, realpath($base_dir)) !== 0) {
+    $current_dir = $base_dir;
+    $relative_path = '';
 }
 
-$currentRelPath = str_replace($baseDir, '', $currentPath);
-$parentPath = dirname($currentRelPath);
-if ($parentPath === DIRECTORY_SEPARATOR) $parentPath = '';
-
-$items = scandir($currentPath);
-$folders = [];
-$files = [];
-
-foreach ($items as $item) {
-    if ($item === '.' || $item === '..') continue;
-    if ($search && stripos($item, $search) === false) continue;
-
-    $fullPath = $currentPath . '/' . $item;
-    if (is_dir($fullPath)) $folders[] = $item;
-    else $files[] = $item;
+// Percorso attuale (breadcrumb)
+$breadcrumbs = [];
+$tmp = '';
+foreach (explode('/', trim($relative_path, '/')) as $part) {
+    if ($part === '') continue;
+    $tmp .= '/' . $part;
+    $breadcrumbs[] = [
+        'name' => $part,
+        'path' => ltrim($tmp, '/')
+    ];
 }
 
-$sort_func = function($a, $b) use ($currentPath, $sortBy) {
-    $pa = $currentPath . '/' . $a;
-    $pb = $currentPath . '/' . $b;
-    if ($sortBy === 'za') return strcasecmp($b, $a);
-    if ($sortBy === 'date_asc') return filemtime($pa) <=> filemtime($pb);
-    if ($sortBy === 'date_desc') return filemtime($pb) <=> filemtime($pa);
-    return strcasecmp($a, $b);
-};
+// Ricerca e ordinamento
+$search = trim($_GET['search'] ?? '');
+$order = $_GET['order'] ?? 'name';
 
-usort($folders, $sort_func);
-usort($files, $sort_func);
+// Leggi contenuto directory
+$contents = [];
+if ($handle = opendir($current_dir)) {
+    while (($entry = readdir($handle)) !== false) {
+        if ($entry === '.' || $entry === '..') continue;
+        if ($search && stripos($entry, $search) === false) continue;
+        $full_path = $current_dir . '/' . $entry;
+        $is_dir = is_dir($full_path);
+        $size = $is_dir ? '' : filesize($full_path);
 
-$stmtClienti = $pdo->query("SELECT id, nome, 'Codice fiscale' FROM clienti WHERE 'Link cartella' IS NULL OR 'Link cartella' = ''");
-$clientiDisponibili = $stmtClienti->fetchAll(PDO::FETCH_ASSOC);
+        // Associa cliente se il nome cartella corrisponde al codice fiscale
+        $cliente = '';
+        if ($is_dir) {
+            $stmt = $pdo->prepare("SELECT `Cognome/Ragione sociale`, `Nome` FROM clienti WHERE `Codice fiscale` = ?");
+            $stmt->execute([$entry]);
+            if ($row = $stmt->fetch()) {
+                $cliente = $row['Cognome/Ragione sociale'] . ' ' . $row['Nome'];
+            }
+        }
 
-$rootPath = realpath(__DIR__ . '/files');
-$cartelleRoot = array_filter(scandir($rootPath), function ($item) use ($rootPath) {
-    return $item !== '.' && $item !== '..' && is_dir($rootPath . DIRECTORY_SEPARATOR . $item);
+        $contents[] = [
+            'name' => $entry,
+            'is_dir' => $is_dir,
+            'size' => $size,
+            'cliente' => $cliente
+        ];
+    }
+    closedir($handle);
+}
+
+// Ordinamento
+usort($contents, function($a, $b) use ($order) {
+    if ($a['is_dir'] !== $b['is_dir']) return $a['is_dir'] ? -1 : 1; // Cartelle prima
+    if ($order === 'size') return ($a['size'] ?? 0) <=> ($b['size'] ?? 0);
+    if ($order === 'cliente') return strcmp($a['cliente'], $b['cliente']);
+    return strcasecmp($a['name'], $b['name']); // Default: nome
 });
 ?>
 
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestione File</title>
-    <link rel="stylesheet" href="/style.css">
-    <script>
-        function mostraForm(id) {
-            document.querySelectorAll('.form-section').forEach(f => f.classList.add('hidden'));
-            if (id !== '') document.getElementById(id).classList.remove('hidden');
-        }
-    </script>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background: #f9f9f9; }
-        .container { background: #fff; padding: 20px; border-radius: 10px; }
-        .entry { padding: 8px; border-bottom: 1px solid #ccc; }
-        .folder { font-weight: bold; }
-        .hidden { display: none; }
-        .inline { display: inline-block; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="path">
-        <a href="drive.php">🏠 Home</a> |
-        Percorso: <strong><?= htmlspecialchars($currentRelPath ?: '/') ?></strong>
-        <form method="get" action="drive.php" class="inline">
-            <input type="hidden" name="path" value="<?= htmlspecialchars($currentRelPath) ?>">
-        </form>
-		<form method="get" action="drive.php" class="inline">
-		🔍 <input type="text" name="q" placeholder="Cerca" value="<?= htmlspecialchars($search) ?>">
-            <select name="sort_by">
-                <option value="az" <?= $sortBy === 'az' ? 'selected' : '' ?>>A-Z</option>
-                <option value="za" <?= $sortBy === 'za' ? 'selected' : '' ?>>Z-A</option>
-                <option value="date_desc" <?= $sortBy === 'date_desc' ? 'selected' : '' ?>>Più recenti</option>
-                <option value="date_asc" <?= $sortBy === 'date_asc' ? 'selected' : '' ?>>Più vecchi</option>
-            </select>
-            <button type="submit">Applica</button>
-			</form>
-    </div>
+<h2>📂 Drive Documentale</h2>
 
-    <?php if ($currentRelPath): ?>
-        <div class="back">
-            <a href="drive.php?path=<?= urlencode($parentPath) ?>">🔙 Su</a>
-        </div>
-    <?php endif; ?>
+<!-- Breadcrumb -->
+<nav style="margin-bottom:20px;">
+    <span>Percorso: </span>
+    <a href="drive.php">Root</a>
+    <?php foreach ($breadcrumbs as $b): ?>
+        / <a href="drive.php?path=<?= urlencode($b['path']) ?>"><?= htmlspecialchars($b['name']) ?></a>
+    <?php endforeach; ?>
+</nav>
 
-    <div class="gestione">
-        <label>Gestione:</label>
-        <select onchange="mostraForm(this.value)">
-            <option value="">-- Azione --</option>
-            <option value="form-cartella">📁 Crea</option>
-            <option value="form-upload">📤 Upload</option>
-            <option value="form-rinomina">✏️ Rinomina</option>
-        </select>
-    </div>
+<!-- Ricerca e ordinamento -->
+<form method="get" style="display:flex;align-items:center;gap:15px;margin-bottom:20px;">
+    <input type="hidden" name="path" value="<?= htmlspecialchars($relative_path) ?>">
+    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cerca file o cartella..." style="padding:7px;width:230px;">
+    <select name="order" style="padding:7px;">
+        <option value="name"<?= $order==='name'?' selected':'' ?>>Ordina per nome</option>
+        <option value="cliente"<?= $order==='cliente'?' selected':'' ?>>Ordina per cliente</option>
+        <option value="size"<?= $order==='size'?' selected':'' ?>>Ordina per dimensione</option>
+    </select>
+    <button type="submit" style="padding:7px 20px;">Cerca/Ordina</button>
+</form>
 
-    <div id="form-cartella" class="form-section hidden">
-        <form method="post" action="includes/drive_actions.php">
-            <input type="hidden" name="azione" value="crea_cartella">
-            <input type="hidden" name="percorso" value="<?= htmlspecialchars($currentRelPath) ?>">
-            <input type="text" name="nome_cartella" placeholder="Nome nuova cartella" required>
-            <button type="submit">Crea</button>
-        </form>
-    </div>
-
-    <div id="form-upload" class="form-section hidden">
-        <form method="post" action="includes/drive_actions.php" enctype="multipart/form-data">
-            <input type="hidden" name="azione" value="upload">
-            <input type="hidden" name="percorso" value="<?= htmlspecialchars($currentRelPath) ?>">
-            <input type="file" name="file" required>
-            <button type="submit">Upload</button>
-        </form>
-    </div>
-
-    <div id="form-rinomina" class="form-section hidden">
-        <form method="post" action="includes/drive_actions.php">
-            <input type="hidden" name="azione" value="rinomina">
-            <input type="hidden" name="percorso" value="<?= htmlspecialchars($currentRelPath) ?>">
-            <select name="vecchio_nome" required>
-                <option value="">-- Seleziona --</option>
-                <?php foreach ($folders as $f): ?>
-                    <option value="<?= htmlspecialchars($f) ?>"><?= htmlspecialchars($f) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <input type="text" name="nuovo_nome" placeholder="Nuovo nome" required>
-            <button type="submit">Rinomina</button>
-        </form>
-    </div>
-
-    <form method="post" style="margin: 20px 0;">
-        <h4>Associa cartella a cliente</h4>
-        <select name="cliente_id" required>
-            <option value="">-- Cliente --</option>
-            <?php foreach ($clientiDisponibili as $cliente): ?>
-                <option value="<?= $cliente['id'] ?>"><?= htmlspecialchars($cliente['nome']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <select name="nome_cartella" required>
-            <option value="">-- Cartella --</option>
-            <?php foreach ($cartelleRoot as $cartella): ?>
-                <option value="<?= htmlspecialchars($cartella) ?>"><?= htmlspecialchars($cartella) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button type="submit" name="associa_cartella">Associa</button>
-    </form>
-
-    <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['associa_cartella'])) {
-        $clienteId = $_POST['cliente_id'];
-        $cartella = $_POST['nome_cartella'];
-        if ($clienteId && $cartella) {
-            $stmtUpdate = $pdo->prepare("UPDATE clienti SET link_cartella = ? WHERE id = ?");
-            $stmtUpdate->execute([$cartella, $clienteId]);
-            echo "<p style='color: green;'>Cartella $cartella associata a cliente ID $clienteId</p>";
-            echo "<script>setTimeout(() => location.reload(), 1000);</script>";
-        }
-    }
+<!-- Tabella file/cartelle -->
+<table style="width:100%;border-collapse:collapse;background:#fff;">
+    <thead>
+        <tr style="background:#f8f9fa;">
+            <th style="text-align:left;padding:10px;">Nome</th>
+            <th style="text-align:left;padding:10px;">Cliente</th>
+            <th style="text-align:left;padding:10px;">Dimensione</th>
+            <th style="text-align:right;padding:10px;">Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php if (empty($contents)): ?>
+        <tr><td colspan="4" style="padding:20px;text-align:center;">Nessun file o cartella</td></tr>
+    <?php else: foreach ($contents as $c):
+        $icon = $c['is_dir'] ? '📁' : '📄';
+        $size_str = $c['is_dir'] ? '-' : number_format($c['size']/1024, 2) . ' KB';
     ?>
+        <tr>
+            <td style="padding:10px;">
+                <?= $icon ?>
+                <?php if ($c['is_dir']): ?>
+                    <a href="drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>" style="font-weight:bold;">
+                        <?= htmlspecialchars($c['name']) ?>
+                    </a>
+                <?php else: ?>
+                    <?= htmlspecialchars($c['name']) ?>
+                <?php endif; ?>
+            </td>
+            <td style="padding:10px;"><?= htmlspecialchars($c['cliente']) ?></td>
+            <td style="padding:10px;"><?= $size_str ?></td>
+            <td style="padding:10px;text-align:right;">
+                <!-- Burger menu -->
+                <div style="display:inline-block;position:relative;">
+                    <button type="button" onclick="toggleMenu(this)" style="background:none;border:none;font-size:18px;cursor:pointer;">☰</button>
+                    <div class="burger-menu" style="display:none;position:absolute;right:0;background:#f8f9fa;border:1px solid #ccc;border-radius:6px;box-shadow:0 2px 8px #eee;min-width:150px;z-index:10;">
+                        <?php if ($c['is_dir']): ?>
+                            <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">➕ Crea Cartella</a>
+                            <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">⏫ Upload File</a>
+                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">✏️ Rinomina</a>
+                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#d9534f;">🗑️ Elimina</a>
+                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">📂 Sposta</a>
+                        <?php else: ?>
+                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">✏️ Rinomina</a>
+                            <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">⬇️ Download</a>
+                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#d9534f;">🗑️ Elimina</a>
+                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" style="display:block;padding:8px;text-decoration:none;color:#333;">📂 Sposta</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    <?php endforeach; endif; ?>
+    </tbody>
+</table>
 
-    <h3>📁 Cartelle</h3>
-    <?php foreach ($folders as $folder): ?>
-        <div class="entry folder">
-            <a href="drive.php?path=<?= urlencode(trim($currentRelPath . '/' . $folder, '/')) ?>">
-                📁 <?= htmlspecialchars($folder) ?>
-            </a>
-        </div>
-    <?php endforeach; ?>
+<script>
+function toggleMenu(btn) {
+    // Chiudi altri menu aperti
+    document.querySelectorAll('.burger-menu').forEach(menu => menu.style.display = 'none');
+    // Apri questo
+    var menu = btn.nextElementSibling;
+    menu.style.display = 'block';
+    // Chiudi al click fuori
+    document.addEventListener('click', function handler(e) {
+        if (!menu.contains(e.target) && e.target !== btn) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', handler);
+        }
+    });
+}
+</script>
 
-    <h3>📄 File</h3>
-    <?php foreach ($files as $file): ?>
-        <div class="entry">
-            📄 <?= htmlspecialchars($file) ?>
-        </div>
-    <?php endforeach; ?>
-</div>
+</main>
 </body>
 </html>
