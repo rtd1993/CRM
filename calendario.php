@@ -3,6 +3,9 @@ require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 ?>
 
 <div class="container mt-4" style="max-width: 600px;">
