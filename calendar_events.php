@@ -6,9 +6,19 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-// DEBUG: Log all input and actions to a file for troubleshooting
+// DEBUG: Log everything for troubleshooting
 function dbg_log($msg) {
     file_put_contents(__DIR__ . '/calendar_debug.log', date('c') . " " . $msg . "\n", FILE_APPEND);
+}
+
+// Funzione per forzare il formato ISO8601 richiesto da Google Calendar
+function ensureIso8601($dt) {
+    // Se il formato è YYYY-MM-DDTHH:MM, aggiunge :00+02:00 (Italia, ora legale)
+    if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $dt)) {
+        return $dt . ':00+02:00';
+    }
+    // Se il formato è già valido (contiene almeno i secondi e un offset/z), lo lascia invariato
+    return $dt;
 }
 
 $calendarId = 'gestione.ascontabilmente@gmail.com';
@@ -69,14 +79,19 @@ switch ($_SERVER['REQUEST_METHOD']) {
             exit;
         }
         $timeZone = 'Europe/Rome';
+
+        // Fix formato data/ora
+        $start = ensureIso8601($input['start']);
+        $end = ensureIso8601($input['end']);
+
         $event = new Google_Service_Calendar_Event([
             'summary' => $input['title'],
             'start' => [
-                'dateTime' => $input['start'],
+                'dateTime' => $start,
                 'timeZone' => $timeZone
             ],
             'end' => [
-                'dateTime' => $input['end'],
+                'dateTime' => $end,
                 'timeZone' => $timeZone
             ]
         ]);
@@ -110,15 +125,20 @@ switch ($_SERVER['REQUEST_METHOD']) {
             exit;
         }
         $timeZone = 'Europe/Rome';
+
+        // Fix formato data/ora
+        $start = ensureIso8601($input['start']);
+        $end = ensureIso8601($input['end']);
+
         try {
             $event = $service->events->get($calendarId, $input['id']);
             $event->setSummary($input['title']);
             $event->setStart(new Google_Service_Calendar_EventDateTime([
-                'dateTime' => $input['start'],
+                'dateTime' => $start,
                 'timeZone' => $timeZone
             ]));
             $event->setEnd(new Google_Service_Calendar_EventDateTime([
-                'dateTime' => $input['end'],
+                'dateTime' => $end,
                 'timeZone' => $timeZone
             ]));
             dbg_log("PUT event to update: " . print_r($event, true));
