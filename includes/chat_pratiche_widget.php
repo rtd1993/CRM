@@ -5,7 +5,7 @@ require_once __DIR__ . '/auth.php';
 require_login();
 
 // Carica pratiche/clienti (supponiamo tabella clienti: id, cognome, nome)
-$clienti = $pdo->query("SELECT id, cognome, nome FROM clienti ORDER BY cognome, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, 'cognome/ragione sociale', nome FROM clienti ORDER BY cognome, nome")->fetchAll();
 ?>
 
 <div class="card shadow-sm mb-4" style="max-width: 420px;">
@@ -19,7 +19,7 @@ $clienti = $pdo->query("SELECT id, cognome, nome FROM clienti ORDER BY cognome, 
           <option value="" selected disabled>Seleziona pratica (cognome)...</option>
           <?php foreach ($clienti as $cli): ?>
             <option value="<?= $cli['id'] ?>">
-              <?= htmlspecialchars($cli['cognome']) . " " . htmlspecialchars($cli['nome']) ?>
+              <?= htmlspecialchars($cli['cognome/ragione sociale']) . " " . htmlspecialchars($cli['nome']) ?>
             </option>
           <?php endforeach; ?>
         </select>
