@@ -2,23 +2,35 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+header('Content-Type: application/json');
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+// DEBUG: Log all input and actions to a file for troubleshooting
+function dbg_log($msg) {
+    file_put_contents(__DIR__ . '/calendar_debug.log', date('c') . " " . $msg . "\n", FILE_APPEND);
+}
 
 $calendarId = 'gestione.ascontabilmente@gmail.com';
 putenv('GOOGLE_APPLICATION_CREDENTIALS=' . __DIR__ . '/google-calendar.json');
 
-$client = new Google_Client();
-$client->useApplicationDefaultCredentials();
-$client->addScope(Google_Service_Calendar::CALENDAR);
-$service = new Google_Service_Calendar($client);
-
-header('Content-Type: application/json');
+try {
+    $client = new Google_Client();
+    $client->useApplicationDefaultCredentials();
+    $client->addScope(Google_Service_Calendar::CALENDAR);
+    $service = new Google_Service_Calendar($client);
+} catch (Exception $e) {
+    dbg_log("Google Client Error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => "Google Client error: ".$e->getMessage()]);
+    exit;
+}
 
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         $timeMin = $_GET['start'] ?? null;
         $timeMax = $_GET['end'] ?? null;
+        dbg_log("GET start=$timeMin end=$timeMax");
         $params = [
             'singleEvents' => true,
             'orderBy' => 'startTime'
@@ -36,22 +48,24 @@ switch ($_SERVER['REQUEST_METHOD']) {
                     'end' => $event->end->dateTime ?: $event->end->date,
                 ];
             }
+            dbg_log("GET result: " . json_encode($output));
             echo json_encode($output);
         } catch (Exception $e) {
+            dbg_log("GET Error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
         }
         break;
 
     case 'POST':
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input) {
-    echo json_encode(['error' => 'JSON non valido', 'raw' => file_get_contents('php://input')]);
-    exit;
-}
+        $raw = file_get_contents('php://input');
+        dbg_log("POST raw input: $raw");
+        $input = json_decode($raw, true);
+        dbg_log("POST parsed input: " . json_encode($input));
         if (!$input || !isset($input['title'], $input['start'], $input['end'])) {
+            dbg_log("POST Error: Parametri mancanti o input non valido");
             http_response_code(400);
-            echo json_encode(['error' => 'Parametri mancanti']);
+            echo json_encode(['error' => 'Parametri mancanti o input non valido', 'input' => $input]);
             exit;
         }
         $timeZone = 'Europe/Rome';
@@ -66,26 +80,33 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 'timeZone' => $timeZone
             ]
         ]);
+        dbg_log("POST event to insert: " . print_r($event, true));
         try {
-            file_put_contents('/tmp/calendar_debug.txt', print_r($event, true), FILE_APPEND);
             $createdEvent = $service->events->insert($calendarId, $event);
-            echo json_encode([
+            $response = [
                 'id' => $createdEvent->getId(),
                 'title' => $createdEvent->getSummary(),
                 'start' => $createdEvent->start->dateTime,
                 'end' => $createdEvent->end->dateTime
-            ]);
+            ];
+            dbg_log("POST event created: " . json_encode($response));
+            echo json_encode($response);
         } catch (Exception $e) {
+            dbg_log("POST Error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
         }
         break;
 
     case 'PUT':
-        $input = json_decode(file_get_contents('php://input'), true);
+        $raw = file_get_contents('php://input');
+        dbg_log("PUT raw input: $raw");
+        $input = json_decode($raw, true);
+        dbg_log("PUT parsed input: " . json_encode($input));
         if (!$input || !isset($input['id'], $input['title'], $input['start'], $input['end'])) {
+            dbg_log("PUT Error: Parametri mancanti o input non valido");
             http_response_code(400);
-            echo json_encode(['error' => 'Parametri mancanti']);
+            echo json_encode(['error' => 'Parametri mancanti o input non valido', 'input' => $input]);
             exit;
         }
         $timeZone = 'Europe/Rome';
@@ -100,37 +121,48 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 'dateTime' => $input['end'],
                 'timeZone' => $timeZone
             ]));
+            dbg_log("PUT event to update: " . print_r($event, true));
             $updatedEvent = $service->events->update($calendarId, $event->getId(), $event);
-            echo json_encode([
+            $response = [
                 'id' => $updatedEvent->getId(),
                 'title' => $updatedEvent->getSummary(),
                 'start' => $updatedEvent->start->dateTime,
                 'end' => $updatedEvent->end->dateTime
-            ]);
+            ];
+            dbg_log("PUT event updated: " . json_encode($response));
+            echo json_encode($response);
         } catch (Exception $e) {
+            dbg_log("PUT Error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
         }
         break;
 
     case 'DELETE':
-        $input = json_decode(file_get_contents("php://input"), true);
+        $raw = file_get_contents("php://input");
+        dbg_log("DELETE raw input: $raw");
+        $input = json_decode($raw, true);
+        dbg_log("DELETE parsed input: " . json_encode($input));
         $eventId = $input['id'] ?? null;
         if ($eventId) {
             try {
                 $service->events->delete($calendarId, $eventId);
+                dbg_log("DELETE event deleted: $eventId");
                 echo json_encode(['status' => 'success']);
             } catch (Exception $e) {
+                dbg_log("DELETE Error: " . $e->getMessage());
                 http_response_code(500);
                 echo json_encode(['error' => $e->getMessage()]);
             }
         } else {
+            dbg_log("DELETE Error: ID mancante");
             http_response_code(400);
             echo json_encode(['error' => 'ID mancante']);
         }
         break;
 
     default:
+        dbg_log("Metodo non supportato: " . $_SERVER['REQUEST_METHOD']);
         http_response_code(405);
         echo json_encode(['error' => 'Metodo non supportato']);
         break;
