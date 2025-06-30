@@ -61,12 +61,12 @@ function has_doc_alert($row, $oggi, $entro30) {
 <table style="width: 100%; border-collapse: collapse; background:#fff; box-shadow:0 2px 8px #eee;">
     <thead>
         <tr style="background: #f8f9fa;">
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Cognome/Ragione sociale</th>
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Codice ditta</th>
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Mail</th>
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">PEC</th>
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Telefono</th>
-            <th style="padding:10px; border-bottom:2px solid #dee2e6;">Dettagli</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 22%;">Cognome/Ragione sociale</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 15%;">Codice ditta</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 20%;">Mail</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 20%;">PEC</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 13%;">Telefono</th>
+            <th style="padding: 10px; border-bottom:2px solid #dee2e6; text-align:left; width: 10%;">Dettagli</th>
         </tr>
     </thead>
     <tbody>
@@ -74,24 +74,24 @@ function has_doc_alert($row, $oggi, $entro30) {
         $alert = has_doc_alert($c, $oggi, $entro30);
     ?>
         <tr style="<?= $alert ? 'border-left: 5px solid #dc3545; background: #fff6f6;' : '' ?>">
-            <td style="padding:10px;">
+            <td style="padding:10px; text-align:left;">
                 <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" style="color:#007bff; font-weight:500; text-decoration:underline;">
                     <?= htmlspecialchars($c['cognome']) ?>
                 </a>
                 <?php if ($alert): ?><span title="Documenti in scadenza" style="color:#dc3545; margin-left:4px;">&#9888;</span><?php endif; ?>
             </td>
-            <td style="padding:10px;"><?= htmlspecialchars($c['Codice ditta']) ?></td>
-            <td style="padding:10px;"><?= htmlspecialchars($c['Mail']) ?></td>
-            <td style="padding:10px;"><?= htmlspecialchars($c['PEC']) ?></td>
-            <td style="padding:10px;"><?= htmlspecialchars($c['Telefono']) ?></td>
-            <td style="padding:10px;">
+            <td style="padding:10px; text-align:left;"><?= htmlspecialchars($c['Codice ditta']) ?></td>
+            <td style="padding:10px; text-align:left;"><?= htmlspecialchars($c['Mail']) ?></td>
+            <td style="padding:10px; text-align:left;"><?= htmlspecialchars($c['PEC']) ?></td>
+            <td style="padding:10px; text-align:left;"><?= htmlspecialchars($c['Telefono']) ?></td>
+            <td style="padding:10px; text-align:left;">
                 <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" style="background:#f5f5f5; border-radius:4px; padding:6px 10px; text-decoration:none; color:#333; font-weight:bold;">Dettagli</a>
             </td>
         </tr>
     <?php endforeach; ?>
     <?php if (empty($clienti)): ?>
         <tr>
-            <td colspan="6" style="text-align:center; padding: 20px;">Nessun cliente trovato.</td>
+            <td colspan="6" style="text-align:left; padding: 20px;">Nessun cliente trovato.</td>
         </tr>
     <?php endif; ?>
     </tbody>
