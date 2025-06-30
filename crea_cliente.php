@@ -69,9 +69,11 @@ function campo_input($nome, $type = 'text') {
     <fieldset style="margin-bottom: 30px; border: 2px solid #007BFF; padding: 15px; border-radius: 8px;">
         <legend style="font-size: 1.1em; font-weight: bold; color: #007BFF; padding: 0 10px;"><?= htmlspecialchars($titolo) ?></legend>
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <?php foreach ($campi as $campo): ?>
-                <?= campo_input($campo) ?>
-            <?php endforeach; ?>
+            <?php foreach ($campi as $campo):
+                // Se il nome campo contiene "Data" (case-insensitive), usa input type="date"
+                $type = (stripos($campo, 'data') !== false) ? 'date' : 'text';
+                echo campo_input($campo, $type);
+            endforeach; ?>
         </div>
     </fieldset>
 <?php endforeach; ?>
