@@ -15,7 +15,7 @@ function require_login() {
 }
 
 function current_user_role() {
-    return $_SESSION['role'] ?? null;
+    return $_SESSION['user_role'] ?? null;
 }
 
 function check_permission($required_role) {
