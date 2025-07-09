@@ -4,7 +4,7 @@ require_login();
 require_once __DIR__ . '/includes/header.php';
 
 // Solo admin/dev
-if (!in_array($_SESSION['ruolo'], ['admin', 'dev'])) {
+if (!in_array($_SESSION['ruolo'], ['admin', 'developer'])) {
     die("Non autorizzato.");
 }
 
