@@ -13,8 +13,8 @@ const io = new Server(httpServer, {
 // DB connection
 const db = mysql.createConnection({
     host: "localhost",
-    user: "crm_user",
-    password: "crm_pass",
+    user: "crmuser",
+    password: "Admin123!",
     database: "crm"
 });
 
