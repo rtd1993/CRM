@@ -1,21 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_login();
-require_on<?php if ($campi): ?>
-    <h4>Risultato SELECT</h4>
-    <div style="overflow-x:auto;">
-        <table border="1" cellpadding="5" cellspacing="0" style="min-width:100%;">
-            <tr>
-                <?php foreach ($campi as $c): ?><th><?= htmlspecialchars($c) ?></th><?php endforeach; ?>
-            </tr>
-            <?php foreach ($risultati as $r): ?>
-                <tr>
-                    <?php foreach ($campi as $c): ?><td><?= htmlspecialchars($r[$c]) ?></td><?php endforeach; ?>
-                </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-<?php endif; ?>'/includes/db.php';
+require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
 
 if ($_SESSION['user_role'] !== 'developer') {
@@ -78,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
     if ($cmd) {
         $service_output = shell_exec($cmd);
         file_put_contents(__DIR__.'/service_log.txt', date('Y-m-d H:i:s')." $cmd\n$service_output\n", FILE_APPEND);
+    }
 }
 ?>
 
