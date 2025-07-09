@@ -120,6 +120,7 @@ if (isset($_SESSION['user_id'])) {
             <li><a href="/info.php"<?php if(basename($_SERVER['PHP_SELF'])=='info.php') echo ' class="active"';?>>Info</a></li>
             <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
                 <li><a href="/gestione_utenti.php"<?php if(basename($_SERVER['PHP_SELF'])=='gestione_utenti.php') echo ' class="active"';?>>Utenti</a></li>
+                <li><a href="/admin_wireguard.php"<?php if(basename($_SERVER['PHP_SELF'])=='admin_wireguard.php') echo ' class="active"';?>>WireGuard</a></li>
             <?php endif; ?>
             <?php if ($ruolo_utente === 'developer'): ?>
                 <li><a href="/devtools.php"<?php if(basename($_SERVER['PHP_SELF'])=='devtools.php') echo ' class="active"';?>>DevTools</a></li>
