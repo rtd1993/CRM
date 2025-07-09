@@ -171,6 +171,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
 <p>
     <b>Prompt locale:</b> Puoi usare <a href="https://mobaxterm.mobatek.net/" target="_blank">MobaXterm</a>, <a href="https://www.putty.org/" target="_blank">PuTTY</a> o il prompt integrato di Windows 10+ (PowerShell) per aprire una shell SSH direttamente dal tuo PC.
 </p>
+<h3>🟢 Stato servizi</h3>
+<ul>
+<?php
+$services = [
+    "apache2" => "Apache2",
+    "mysql" => "MySQL/MariaDB",
+    "node-socket" => "Node.js Socket",
+    "wg-quick@wg0" => "WireGuard"
+];
+foreach ($services as $sysname => $friendly) {
+    $status = trim(shell_exec("systemctl is-active $sysname 2>&1"));
+    $color = ($status === "active") ? "green" : "red";
+    echo "<li><span style='color:$color;font-weight:bold;'>●</span> $friendly ($sysname): $status</li>";
+}
+?>
+</ul>
 
 <!-- Terminale output servizi -->
 <h3>📝 Output Servizi</h3>
