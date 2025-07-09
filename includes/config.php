@@ -5,7 +5,7 @@
 const DB_HOST = 'localhost';
 const DB_NAME = 'crm';
 const DB_USER = 'crmuser';
-const DB_PASS = 'Admin123';
+const DB_PASS = 'Admin123!';
 
 const SITE_NAME = 'CRM ASContabilmente';
 const BASE_URL = 'http://crm.local';
