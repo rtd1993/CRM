@@ -103,7 +103,9 @@ if (isset($_SESSION['user_id'])) {
         </div>
         <div class="crm-user text-end">
             <span class="d-none d-md-inline">Utente:</span>
-            <strong><?= htmlspecialchars($nome_utente) ?></strong>
+            <a href="/profilo.php" style="color: #ffcc00; text-decoration: none; margin-right: 10px;">
+                <strong><?= htmlspecialchars($nome_utente) ?></strong>
+            </a>
             <span class="badge bg-light text-dark ms-2"><?= htmlspecialchars($ruolo_utente) ?></span>
             |
             <a href="logout.php" style="color: #ffcc00; text-decoration: none;"><b>Logout</b></a>
@@ -120,6 +122,7 @@ if (isset($_SESSION['user_id'])) {
             <li><a href="/info.php"<?php if(basename($_SERVER['PHP_SELF'])=='info.php') echo ' class="active"';?>>Info</a></li>
             <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
                 <li><a href="/gestione_utenti.php"<?php if(basename($_SERVER['PHP_SELF'])=='gestione_utenti.php') echo ' class="active"';?>>Utenti</a></li>
+                <li><a href="/telegram_config.php"<?php if(basename($_SERVER['PHP_SELF'])=='telegram_config.php') echo ' class="active"';?>>Telegram</a></li>
                 <li><a href="/admin_wireguard.php"<?php if(basename($_SERVER['PHP_SELF'])=='admin_wireguard.php') echo ' class="active"';?>>WireGuard</a></li>
             <?php endif; ?>
             <?php if ($ruolo_utente === 'developer'): ?>

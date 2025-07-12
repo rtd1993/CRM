@@ -66,11 +66,22 @@ io.on("connection", socket => {
         });
 
         // Telegram agli offline
-        db.query("SELECT id, telegram_chat_id FROM utenti WHERE telegram_chat_id IS NOT NULL", (err, rows) => {
+        db.query("SELECT id, nome, telegram_chat_id FROM utenti WHERE telegram_chat_id IS NOT NULL AND telegram_chat_id != ''", (err, rows) => {
             if (err) return console.error("Errore utenti:", err);
+            
             rows.forEach(u => {
-                if (!utentiOnline.has(u.id)) {
-                    mandaTelegram(u.telegram_chat_id, `💬 <b>${utente_nome}</b> ha scritto: ${testo}`);
+                // Controlla se l'utente è offline E non è l'autore del messaggio
+                if (!utentiOnline.has(u.id) && u.id !== utente_id) {
+                    console.log(`📱 Invio notifica Telegram a ${u.nome} (offline)`);
+                    
+                    const notificationText = `🔔 <b>Nuovo messaggio CRM</b>
+
+� <b>${utente_nome}</b>
+💬 ${testo}
+
+📅 ${dayjs().format('DD/MM/YYYY HH:mm')}`;
+                    
+                    mandaTelegram(u.telegram_chat_id, notificationText);
                 }
             });
         });
