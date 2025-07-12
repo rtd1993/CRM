@@ -55,6 +55,13 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <h2>📋 Task Mensili</h2>
+
+<?php if (isset($_GET['success']) && $_GET['success'] == '1'): ?>
+    <div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; border: 1px solid #c3e6cb; margin-bottom: 1rem;">
+        <strong>✅ Successo!</strong> Task creato correttamente.
+    </div>
+<?php endif; ?>
+
 <p><a href="crea_task.php"><button>➕ Crea nuovo task</button></a></p>
 
 <form method="get" style="margin-bottom: 20px;">
