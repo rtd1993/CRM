@@ -255,9 +255,6 @@ $gruppi = [
     background: #218838;
     transform: translateY(-2px);
 }
-    background: #218838;
-    transform: translateY(-2px);
-}
 
 .back-link {
     display: inline-flex;

@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
@@ -10,26 +14,61 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
-$stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
-$stmt->execute([$id]);
-$cliente = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$cliente) {
-    echo "<p>Cliente non trovato.</p></main></body></html>";
+try {
+    $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
+    $stmt->execute([$id]);
+    $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$cliente) {
+        echo "<p>Cliente non trovato.</p></main></body></html>";
+        exit;
+    }
+} catch (Exception $e) {
+    error_log("Errore database in modifica_cliente.php: " . $e->getMessage());
+    echo "<p>Errore durante il caricamento del cliente.</p></main></body></html>";
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $campi = array_keys($_POST);
-    $valori = array_map(fn($c) => $_POST[$c] ?? null, $campi);
-    $update_sql = implode(', ', array_map(fn($c) => "`$c` = ?", $campi));
-
-    $stmt = $pdo->prepare("UPDATE clienti SET $update_sql WHERE id = ?");
-    if ($stmt->execute([...$valori, $id])) {
-        header("Location: info_cliente.php?id=$id&success=1");
-        exit;
-    } else {
-        echo "<p style='color:red;'>Errore durante l'aggiornamento.</p>";
+    try {
+        // Filtra i campi POST (escludi eventuali campi non validi)
+        $campi_validi = [];
+        $valori_validi = [];
+        
+        foreach ($_POST as $campo => $valore) {
+            // Verifica che il campo esista nella tabella
+            if (!empty($campo) && $campo !== 'submit') {
+                $campi_validi[] = $campo;
+                $valori_validi[] = $valore;
+            }
+        }
+        
+        if (empty($campi_validi)) {
+            throw new Exception("Nessun campo valido da aggiornare");
+        }
+        
+        // Costruisci la query UPDATE in modo sicuro
+        $update_parts = [];
+        foreach ($campi_validi as $campo) {
+            $update_parts[] = "`$campo` = ?";
+        }
+        $update_sql = implode(', ', $update_parts);
+        
+        // Prepara ed esegui la query
+        $stmt = $pdo->prepare("UPDATE clienti SET $update_sql WHERE id = ?");
+        $valori_validi[] = $id; // Aggiungi ID alla fine
+        
+        if ($stmt->execute($valori_validi)) {
+            header("Location: info_cliente.php?id=$id&success=1");
+            exit;
+        } else {
+            throw new Exception("Errore durante l'esecuzione della query");
+        }
+        
+    } catch (Exception $e) {
+        error_log("Errore in modifica_cliente.php: " . $e->getMessage());
+        $errore = "Errore durante l'aggiornamento del cliente: " . $e->getMessage();
     }
 }
 
@@ -172,11 +211,34 @@ $gruppi = [
     cursor: pointer;
 }
 
-/* Campo modificato */
 .form-control.modified {
     border-color: #ffc107;
     background: #fff3cd;
     box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #f5c6cb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #c3e6cb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .form-actions {
@@ -269,6 +331,12 @@ $gruppi = [
 </div>
 
 <div class="client-form">
+    <?php if (!empty($errore)): ?>
+        <div class="error-message">
+            <strong>⚠️</strong> <?= htmlspecialchars($errore) ?>
+        </div>
+    <?php endif; ?>
+    
     <form method="post">
         <?php foreach ($gruppi as $titolo => $campi): ?>
             <div class="form-section">
