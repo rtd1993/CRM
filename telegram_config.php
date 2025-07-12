@@ -226,6 +226,28 @@ $users = $stmt->fetchAll();
     transform: none;
 }
 
+.get-chatid-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.get-chatid-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
 .success-message {
     background: #d4edda;
     color: #155724;
@@ -301,36 +323,10 @@ $users = $stmt->fetchAll();
     </div>
 </div>
 
-<div class="telegram-setup">
-    <h3>🔧 Configurazione Bot Telegram</h3>
-    <p>Per abilitare le notifiche Telegram, segui questi passaggi:</p>
-    
-    <div class="setup-steps">
-        <div class="setup-step" data-step="1">
-            <h4>📞 Contatta BotFather</h4>
-            <p>Apri Telegram e cerca <strong>@BotFather</strong></p>
-            <p>Invia il comando: <code>/newbot</code></p>
-            <p>Segui le istruzioni per creare il bot</p>
-        </div>
-        
-        <div class="setup-step" data-step="2">
-            <h4>🔑 Ottieni Token</h4>
-            <p>BotFather ti fornirà un token simile a:</p>
-            <div class="code-block">123456789:ABCdefGHIjklMNOpqrsTUVwxyz</div>
-            <p>Salva questo token nel file <code>config.php</code></p>
-        </div>
-        
-        <div class="setup-step" data-step="3">
-            <h4>👥 Configura Utenti</h4>
-            <p>Ogni utente deve:</p>
-            <ul style="text-align: left; margin: 1rem 0;">
-                <li>Avviare il bot creato</li>
-                <li>Inviare il comando <code>/start</code></li>
-                <li>Ottenere il proprio Chat ID</li>
-                <li>Inserirlo nel profilo utente</li>
-            </ul>
-        </div>
-    </div>
+<div style="text-align: center; margin-bottom: 2rem;">
+    <a href="telegram_get_id.php" class="get-chatid-btn">
+        🔍 Trova Chat ID Telegram
+    </a>
 </div>
 
 <div class="users-table">
