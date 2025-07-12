@@ -94,56 +94,360 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
 ?>
 
-<h2>🔒 Admin WireGuard: Gestione VPN</h2>
-<?php if ($msg): ?>
-    <div style="background:#d4edda;color:#155724;padding:10px;margin:10px 0;border-radius:5px;"><?= $msg ?></div>
-<?php endif; ?>
+<style>
+.wireguard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
-<h3>1. Configurazione lato server</h3>
-<pre>
+.alert {
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section h3 {
+    margin-top: 0;
+    color: #495057;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.config-box {
+    background: #1e1e1e;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border: 1px solid #444;
+    overflow-x: auto;
+}
+
+.peers-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.peers-table th {
+    background: #007bff;
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.peers-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.peers-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.peers-table tr:last-child td {
+    border-bottom: none;
+}
+
+.pubkey-cell {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    max-width: 200px;
+    word-break: break-all;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.add-peer-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.commands-box {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    margin-top: 15px;
+}
+
+.commands-box h4 {
+    margin-top: 0;
+    color: #495057;
+}
+
+.commands-box pre {
+    background: #1e1e1e;
+    color: #f8f8f2;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    margin: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .pubkey-cell {
+        max-width: 150px;
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+</style>
+
+<div class="wireguard-container">
+    <h2>🔒 Admin WireGuard - Gestione VPN</h2>
+    
+    <?php if ($msg): ?>
+        <div class="alert alert-success">
+            <strong>✅ Successo:</strong> <?= htmlspecialchars($msg) ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="grid-2">
+        <!-- Configurazione Server -->
+        <div class="section">
+            <h3>🖥️ Configurazione Server</h3>
+            <div class="config-box">
 [Interface]
 Address = 10.10.0.1/24
 ListenPort = 51820
-PrivateKey = <?= htmlspecialchars($privatekey ?: '---') ?>
-</pre>
+PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
+            </div>
+            <?php if (!$privatekey): ?>
+                <div class="alert" style="background: #fff3cd; color: #856404; border-color: #ffeaa7; margin-top: 10px;">
+                    <strong>⚠️ Attenzione:</strong> Private key non trovata. Configurare WireGuard prima di procedere.
+                </div>
+            <?php endif; ?>
+        </div>
 
-<h3>2. Peer attualmente configurati</h3>
-<table style="border-collapse:collapse;">
-    <tr>
-        <th style="padding:6px;border-bottom:1px solid #ccc;">PublicKey</th>
-        <th style="padding:6px;border-bottom:1px solid #ccc;">AllowedIPs</th>
-        <th style="padding:6px;border-bottom:1px solid #ccc;">Azione</th>
-    </tr>
-    <?php foreach ($peers as $peer): ?>
-    <tr>
-        <td style="padding:6px;"><?= htmlspecialchars($peer['PublicKey'] ?? '-') ?></td>
-        <td style="padding:6px;"><?= htmlspecialchars($peer['AllowedIPs'] ?? '-') ?></td>
-        <td style="padding:6px;">
-            <form method="post" style="display:inline;" onsubmit="return confirm('Rimuovere questo peer?');">
-                <input type="hidden" name="remove_peer" value="<?= htmlspecialchars($peer['PublicKey']) ?>">
-                <button type="submit" style="background:#dc3545;color:#fff;border:none;padding:5px 10px;border-radius:3px;">Rimuovi</button>
+        <!-- Stato WireGuard -->
+        <div class="section">
+            <h3>📊 Stato WireGuard</h3>
+            <div style="margin-bottom: 15px;">
+                <strong>Servizio:</strong> 
+                <span class="status-badge status-active">Attivo</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Peers configurati:</strong> 
+                <span style="font-weight: bold; color: #007bff;"><?= count($peers) ?></span>
+            </div>
+            <div>
+                <strong>Porta:</strong> 51820 (UDP)
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabella Peers -->
+    <div class="section">
+        <h3>👥 Peers Configurati</h3>
+        
+        <?php if (empty($peers)): ?>
+            <div class="empty-state">
+                <div class="icon">🔌</div>
+                <h4>Nessun peer configurato</h4>
+                <p>Aggiungi il primo peer usando il form sottostante.</p>
+            </div>
+        <?php else: ?>
+            <table class="peers-table">
+                <thead>
+                    <tr>
+                        <th>🔑 Public Key</th>
+                        <th>🌐 Allowed IPs</th>
+                        <th>⚙️ Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($peers as $peer): ?>
+                    <tr>
+                        <td class="pubkey-cell"><?= htmlspecialchars($peer['PublicKey'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($peer['AllowedIPs'] ?? '-') ?></td>
+                        <td>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('⚠️ Rimuovere questo peer?\n\nQuesta azione non può essere annullata.');">
+                                <input type="hidden" name="remove_peer" value="<?= htmlspecialchars($peer['PublicKey']) ?>">
+                                <button type="submit" class="btn btn-danger">🗑️ Rimuovi</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
+    <!-- Form Aggiungi Peer -->
+    <div class="section">
+        <h3>➕ Aggiungi Nuovo Peer</h3>
+        <div class="add-peer-form">
+            <form method="post">
+                <input type="hidden" name="add_peer" value="1">
+                
+                <div class="form-group">
+                    <label for="pubkey">🔑 Public Key del Client:</label>
+                    <input type="text" 
+                           id="pubkey"
+                           name="pubkey" 
+                           class="form-control" 
+                           placeholder="Es: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/="
+                           required 
+                           pattern="[A-Za-z0-9+/=]{43,44}"
+                           title="La chiave pubblica deve essere di 43-44 caratteri (base64)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allowedip">🌐 Allowed IPs:</label>
+                    <input type="text" 
+                           id="allowedip"
+                           name="allowedip" 
+                           class="form-control" 
+                           value="10.10.0.2/32" 
+                           placeholder="Es: 10.10.0.2/32"
+                           required>
+                    <small style="color: #6c757d; margin-top: 5px; display: block;">
+                        💡 Usa /32 per un singolo IP, /24 per una subnet
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    ➕ Aggiungi Peer e Riavvia WireGuard
+                </button>
             </form>
-        </td>
-    </tr>
-    <?php endforeach; ?>
-</table>
+        </div>
+    </div>
 
-<h3>3. Aggiungi nuovo Peer (PC Client)</h3>
-<form method="post" style="margin-bottom:20px;">
-    <input type="hidden" name="add_peer" value="1">
-    <label>
-        PublicKey del client:<br>
-        <input type="text" name="pubkey" style="width:400px;" required pattern="[A-Za-z0-9+/=]{43,44}">
-    </label><br>
-    <label>
-        AllowedIPs (es: 10.10.0.2/32):<br>
-        <input type="text" name="allowedip" style="width:200px;" value="10.10.0.2/32" required>
-    </label><br>
-    <button type="submit" style="margin-top:8px;">➕ Aggiungi Peer</button>
-</form>
-
-<hr>
-<h4>Comandi utili:</h4>
-<pre>
-sudo wg show
-</pre>
+    <!-- Comandi Utili -->
+    <div class="section">
+        <div class="commands-box">
+            <h4>🛠️ Comandi Utili</h4>
+            <p><strong>Mostra stato WireGuard:</strong></p>
+            <pre>sudo wg show</pre>
+            
+            <p><strong>Riavvia WireGuard:</strong></p>
+            <pre>sudo wg-quick down wg0 && sudo wg-quick up wg0</pre>
+            
+            <p><strong>Visualizza configurazione:</strong></p>
+            <pre>sudo cat /etc/wireguard/wg0.conf</pre>
+        </div>
+    </div>
+</div>
