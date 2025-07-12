@@ -135,7 +135,20 @@ function remove_peer($conf, $pubkey_to_remove) {
         $content .= "\n";
     }
     
-    return file_put_contents($conf, $content) !== false;
+    // Usa file temporaneo e sudo per scrivere
+    $temp_file = tempnam(sys_get_temp_dir(), 'wg_remove_');
+    if ($temp_file !== false && file_put_contents($temp_file, $content) !== false) {
+        $copy_result = shell_exec("sudo cp " . escapeshellarg($temp_file) . " " . escapeshellarg($conf) . " 2>&1");
+        unlink($temp_file);
+        
+        // Ripristina permessi
+        shell_exec("sudo chown root:root " . escapeshellarg($conf));
+        shell_exec("sudo chmod 600 " . escapeshellarg($conf));
+        
+        return file_exists($conf);
+    }
+    
+    return false;
 }
 
 // Inizializza i peer e l'IP successivo
@@ -149,8 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['init_config'])) {
         if (create_initial_config($WG_CONF, $privatekey)) {
             $msg = "File di configurazione WireGuard creato con successo.";
+            // Ricarica i peer dopo la creazione
+            $peers = get_peers($WG_CONF);
+            $next_ip = get_next_available_ip($peers);
         } else {
-            $msg = "Errore durante la creazione del file di configurazione.";
+            $debug_info = get_debug_info($WG_CONF);
+            $msg = "Errore durante la creazione del file di configurazione. Debug: WG installato=" . ($debug_info['wg_installed'] ? 'Sì' : 'No') . ", Utente web=" . $debug_info['web_user'];
         }
     }
     
@@ -168,9 +185,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pubkey = trim($_POST['pubkey']);
         $allowedip = trim($_POST['allowedip'] ?? '10.10.0.2/32');
         $peer_conf = "\n[Peer]\nPublicKey = $pubkey\nAllowedIPs = $allowedip\n";
-        @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
         
-        if (file_put_contents($WG_CONF, $peer_conf, FILE_APPEND) !== false) {
+        // Crea backup
+        $backup_file = $WG_CONF . '.bak_' . date('Ymd_His');
+        shell_exec("sudo cp " . escapeshellarg($WG_CONF) . " " . escapeshellarg($backup_file));
+        
+        // Legge il contenuto attuale e aggiunge il peer
+        $current_content = file_get_contents($WG_CONF);
+        $new_content = $current_content . $peer_conf;
+        
+        // Crea un file temporaneo e poi lo sposta con sudo
+        $temp_file = tempnam(sys_get_temp_dir(), 'wg_peer_');
+        if ($temp_file !== false && file_put_contents($temp_file, $new_content) !== false) {
+            $copy_result = shell_exec("sudo cp " . escapeshellarg($temp_file) . " " . escapeshellarg($WG_CONF) . " 2>&1");
+            unlink($temp_file);
+            
+            // Ripristina permessi
+            shell_exec("sudo chown root:root " . escapeshellarg($WG_CONF));
+            shell_exec("sudo chmod 600 " . escapeshellarg($WG_CONF));
+            
             shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
             $msg .= "Peer aggiunto e servizio WireGuard riavviato.";
             // Ricarica i peer per aggiornare l'IP successivo
@@ -183,7 +216,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (isset($_POST['remove_peer'])) {
         $pubkey = $_POST['remove_peer'];
-        @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
+        
+        // Crea backup
+        $backup_file = $WG_CONF . '.bak_' . date('Ymd_His');
+        shell_exec("sudo cp " . escapeshellarg($WG_CONF) . " " . escapeshellarg($backup_file));
+        
         if (remove_peer($WG_CONF, $pubkey)) {
             shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
             $msg = "Peer rimosso e servizio WireGuard riavviato.";
@@ -209,6 +246,25 @@ function check_wireguard_status() {
     return !empty($output);
 }
 
+// Funzione per verificare se WireGuard è installato
+function check_wireguard_installed() {
+    $output = shell_exec('which wg 2>/dev/null');
+    return !empty($output);
+}
+
+// Funzione per ottenere informazioni di debug
+function get_debug_info($conf_file) {
+    $info = [];
+    $info['wg_installed'] = check_wireguard_installed();
+    $info['conf_exists'] = file_exists($conf_file);
+    $info['conf_readable'] = is_readable($conf_file);
+    $info['conf_writable'] = is_writable($conf_file);
+    $info['conf_permissions'] = file_exists($conf_file) ? substr(sprintf('%o', fileperms($conf_file)), -4) : 'N/A';
+    $info['conf_owner'] = file_exists($conf_file) ? posix_getpwuid(fileowner($conf_file))['name'] : 'N/A';
+    $info['web_user'] = posix_getpwuid(posix_geteuid())['name'];
+    return $info;
+}
+
 // Funzione per creare il file di configurazione iniziale
 function create_initial_config($conf_file, $private_key) {
     $initial_config = "[Interface]\n";
@@ -222,18 +278,36 @@ function create_initial_config($conf_file, $private_key) {
     // Crea directory se non esiste
     $dir = dirname($conf_file);
     if (!is_dir($dir)) {
-        shell_exec("sudo mkdir -p $dir");
+        shell_exec("sudo mkdir -p " . escapeshellarg($dir));
     }
     
-    // Crea il file
-    $result = file_put_contents($conf_file, $initial_config);
-    if ($result !== false) {
-        // Imposta permessi corretti
-        shell_exec("sudo chown root:root $conf_file");
-        shell_exec("sudo chmod 600 $conf_file");
-        return true;
+    // Crea un file temporaneo e poi lo sposta con sudo
+    $temp_file = tempnam(sys_get_temp_dir(), 'wg_config_');
+    if ($temp_file === false) {
+        return false;
     }
-    return false;
+    
+    // Scrive il contenuto nel file temporaneo
+    $result = file_put_contents($temp_file, $initial_config);
+    if ($result === false) {
+        unlink($temp_file);
+        return false;
+    }
+    
+    // Sposta il file temporaneo nella posizione finale con sudo
+    $copy_result = shell_exec("sudo cp " . escapeshellarg($temp_file) . " " . escapeshellarg($conf_file) . " 2>&1");
+    unlink($temp_file);
+    
+    // Verifica che il file sia stato creato
+    if (!file_exists($conf_file)) {
+        return false;
+    }
+    
+    // Imposta permessi corretti
+    shell_exec("sudo chown root:root " . escapeshellarg($conf_file));
+    shell_exec("sudo chmod 600 " . escapeshellarg($conf_file));
+    
+    return true;
 }
 
 // Funzione per verificare e correggere i permessi
@@ -552,6 +626,10 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
             <div style="margin-bottom: 15px;">
                 <strong>Porta:</strong> 51820 (UDP)
             </div>
+            <div style="margin-bottom: 15px;">
+                <strong>WireGuard installato:</strong> 
+                <span style="font-size: 12px; color: #6c757d;"><?= check_wireguard_installed() ? '✅ Sì' : '❌ No' ?></span>
+            </div>
             <div>
                 <strong>File configurazione:</strong> 
                 <span style="font-size: 12px; color: #6c757d;"><?= file_exists($WG_CONF) ? '✅ Presente' : '❌ Non trovato' ?></span>
@@ -741,4 +819,52 @@ PersistentKeepalive = 25</pre>
             <p>Questo instraderà solo il traffico verso la rete VPN (10.10.0.x) e la rete locale del server (192.168.1.x).</p>
         </div>
     </div>
+
+    <!-- Sezione Debug/Troubleshooting -->
+    <?php if (!check_wireguard_installed() || !file_exists($WG_CONF) || !$privatekey): ?>
+    <div class="section">
+        <h3>🔧 Troubleshooting</h3>
+        
+        <?php 
+        $debug_info = get_debug_info($WG_CONF);
+        ?>
+        
+        <div class="commands-box">
+            <h4>📋 Informazioni di Sistema</h4>
+            <ul>
+                <li><strong>WireGuard installato:</strong> <?= $debug_info['wg_installed'] ? '✅ Sì' : '❌ No' ?></li>
+                <li><strong>File configurazione esiste:</strong> <?= $debug_info['conf_exists'] ? '✅ Sì' : '❌ No' ?></li>
+                <li><strong>File configurazione leggibile:</strong> <?= $debug_info['conf_readable'] ? '✅ Sì' : '❌ No' ?></li>
+                <li><strong>Permessi file:</strong> <?= $debug_info['conf_permissions'] ?></li>
+                <li><strong>Proprietario file:</strong> <?= $debug_info['conf_owner'] ?></li>
+                <li><strong>Utente web server:</strong> <?= $debug_info['web_user'] ?></li>
+                <li><strong>Chiave privata presente:</strong> <?= $privatekey ? '✅ Sì' : '❌ No' ?></li>
+                <li><strong>Chiave pubblica presente:</strong> <?= $publickey ? '✅ Sì' : '❌ No' ?></li>
+            </ul>
+        </div>
+        
+        <?php if (!$debug_info['wg_installed']): ?>
+        <div class="commands-box">
+            <h4>🚨 WireGuard non installato</h4>
+            <p>WireGuard non è installato sul sistema. Installa WireGuard con:</p>
+            <pre>sudo apt update && sudo apt install wireguard</pre>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (!$privatekey): ?>
+        <div class="commands-box">
+            <h4>🔑 Chiavi Server Mancanti</h4>
+            <p>Le chiavi del server WireGuard non sono state trovate. Genera le chiavi con:</p>
+            <pre>sudo wg genkey | tee /var/www/CRM/privatekey | wg pubkey | tee /var/www/CRM/publickey</pre>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($debug_info['wg_installed'] && $privatekey && !$debug_info['conf_exists']): ?>
+        <div class="commands-box">
+            <h4>📄 File di Configurazione Mancante</h4>
+            <p>Il file di configurazione WireGuard non esiste. Usa il bottone "Crea File Config" sopra o crealo manualmente.</p>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
