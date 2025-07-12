@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Task Management</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        code { background: #f8f9fa; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Task Management</h1>
+    
+    <div class="debug-section info">
+        <h3>📋 Problemi Identificati</h3>
+        <ul>
+            <li><strong>Redirect non funziona:</strong> Possibile output prima degli header</li>
+            <li><strong>Pagina bianca:</strong> Errore PHP non mostrato</li>
+            <li><strong>Session issues:</strong> Possibili problemi con $_SESSION</li>
+        </ul>
+    </div>
+    
+    <div class="debug-section warning">
+        <h3>🔧 Correzioni Applicate</h3>
+        <ul>
+            <li>✅ Aggiunto <code>ob_start()</code> all'inizio di task.php e crea_task.php</li>
+            <li>✅ Aggiunto <code>ob_end_flush()</code> alla fine</li>
+            <li>✅ Aggiunto campo hidden <code>edit_id</code> nel form</li>
+            <li>✅ Aggiunto try-catch per gestire errori</li>
+            <li>✅ Aggiunto exit esplicito dopo ogni redirect</li>
+        </ul>
+    </div>
+    
+    <div class="debug-section success">
+        <h3>🧪 Test da Eseguire</h3>
+        <ol>
+            <li><strong>Test Creazione:</strong>
+                <ul>
+                    <li>Vai su <a href="crea_task.php">crea_task.php</a></li>
+                    <li>Compila tutti i campi</li>
+                    <li>Clicca "Salva Task"</li>
+                    <li>Dovresti essere reindirizzato a task.php con messaggio verde</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Modifica:</strong>
+                <ul>
+                    <li>Vai su <a href="task.php">task.php</a></li>
+                    <li>Clicca "Modifica" su un task esistente</li>
+                    <li>Modifica alcuni dati</li>
+                    <li>Clicca "Salva Modifiche"</li>
+                    <li>Dovresti tornare a task.php con messaggio di modifica</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Completamento:</strong>
+                <ul>
+                    <li>Vai su <a href="task.php">task.php</a></li>
+                    <li>Clicca "Completato" su un task</li>
+                    <li>Conferma l'azione</li>
+                    <li>Dovresti tornare a task.php con messaggio di completamento</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+    
+    <div class="debug-section error">
+        <h3>⚠️ Se Ancora Non Funziona</h3>
+        <p>Controlla i log di errore PHP:</p>
+        <ul>
+            <li>Attiva error reporting in PHP</li>
+            <li>Controlla error_log di Apache/Nginx</li>
+            <li>Verifica che la tabella 'task' esista nel database</li>
+            <li>Controlla che non ci siano caratteri nascosti nei file</li>
+        </ul>
+        
+        <p>Puoi anche eseguire questo test:</p>
+        <code>
+            php -l task.php<br>
+            php -l crea_task.php
+        </code>
+    </div>
+    
+    <div class="debug-section info">
+        <h3>📊 Link Utili</h3>
+        <p>
+            <a href="task.php">📋 Lista Task</a> |
+            <a href="crea_task.php">➕ Crea Task</a> |
+            <a href="test_debug.php">🐛 Debug Script</a> |
+            <a href="task.php?success=1">✅ Test Successo</a> |
+            <a href="task.php?error=Test errore">❌ Test Errore</a>
+        </p>
+    </div>
+    
+    <div class="debug-section">
+        <h3>📝 Dettagli Tecnici</h3>
+        <p><strong>Buffer di Output:</strong> Abbiamo aggiunto ob_start() per catturare qualsiasi output prima degli header HTTP</p>
+        <p><strong>Campo Hidden:</strong> Il form ora passa l'ID del task tramite un campo nascosto</p>
+        <p><strong>Error Handling:</strong> Tutti i database operations sono ora in try-catch</p>
+        <p><strong>Exit Statements:</strong> Ogni redirect ha un exit() esplicito</p>
+    </div>
+</body>
+</html>

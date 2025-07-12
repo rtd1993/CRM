@@ -1,5 +1,8 @@
 
 <?php
+// Avvia buffer di output per evitare problemi con header
+ob_start();
+
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
@@ -26,15 +29,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descrizione = $_POST['descrizione'] ?? '';
     $scadenza = $_POST['scadenza'] ?? '';
     $ricorrenza = isset($_POST['ricorrenza']) && $_POST['ricorrenza'] !== '' ? intval($_POST['ricorrenza']) : null;
+    
+    // Se c'è un campo hidden con l'ID, siamo in modalità modifica
+    $edit_id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : null;
+    $is_edit = !empty($edit_id);
 
     if (!empty($descrizione) && !empty($scadenza)) {
-        if ($edit_mode) {
+        if ($is_edit) {
             // Modifica task esistente
             $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ? WHERE id = ?");
             $stmt->bindValue(1, $descrizione);
             $stmt->bindValue(2, $scadenza);
             $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindValue(4, $task_id);
+            $stmt->bindValue(4, $edit_id);
             $stmt->execute();
             
             // Redirect alla lista task con messaggio di successo
@@ -250,6 +257,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <form method="post">
+        <?php if ($edit_mode): ?>
+            <input type="hidden" name="edit_id" value="<?= $task_data['id'] ?>">
+        <?php endif; ?>
         <div class="form-group">
             <label class="form-label" for="descrizione">📝 Descrizione</label>
             <input type="text" 
@@ -328,3 +338,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
 </main>
 </body>
 </html>
+
+<?php
+// Flush del buffer di output
+ob_end_flush();
+?>

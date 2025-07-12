@@ -1,4 +1,7 @@
 <?php
+// Avvia buffer di output per evitare problemi con header
+ob_start();
+
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
@@ -9,9 +12,15 @@ $user_name = $_SESSION['user_name'];
 // Elimina task
 if (isset($_POST['delete_id'])) {
     $id = intval($_POST['delete_id']);
-    $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
-    header("Location: task.php?deleted=1");
-    exit;
+    try {
+        $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
+        header("Location: task.php?deleted=1");
+        exit;
+    } catch (Exception $e) {
+        error_log("Errore eliminazione task: " . $e->getMessage());
+        header("Location: task.php?error=Errore durante l'eliminazione del task");
+        exit;
+    }
 }
 
 // Completa task
@@ -22,35 +31,45 @@ if (isset($_POST['complete_id'])) {
     $task = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($task) {
-        // Invia notifica chat
-        $msg = "$user_name ha completato il task: " . $task['descrizione'];
-        $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())")
-            ->execute([$_SESSION['user_id'], $msg]);
+        try {
+            // Invia notifica chat
+            $msg = "$user_name ha completato il task: " . $task['descrizione'];
+            $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())")
+                ->execute([$_SESSION['user_id'], $msg]);
 
-        if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
-            // Task ricorrente: elimina il task attuale e lo ricrea con la scadenza successiva
-            
-            // Calcola la nuova scadenza
-            $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
-            
-            // Elimina il task attuale
-            $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
-            
-            // Ricrea il task con la nuova scadenza
-            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-            $stmt->execute([$task['descrizione'], $nuova_scadenza, $task['ricorrenza']]);
-            
-            // Log per debug
-            error_log("Task ricorrente ricreato: '{$task['descrizione']}' - Nuova scadenza: {$nuova_scadenza}");
-            
-            header("Location: task.php?completed=recurring");
-        } else {
-            // Task non ricorrente: elimina definitivamente
-            $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
-            header("Location: task.php?completed=deleted");
+            if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
+                // Task ricorrente: elimina il task attuale e lo ricrea con la scadenza successiva
+                
+                // Calcola la nuova scadenza
+                $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
+                
+                // Elimina il task attuale
+                $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
+                
+                // Ricrea il task con la nuova scadenza
+                $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
+                $stmt->execute([$task['descrizione'], $nuova_scadenza, $task['ricorrenza']]);
+                
+                // Log per debug
+                error_log("Task ricorrente ricreato: '{$task['descrizione']}' - Nuova scadenza: {$nuova_scadenza}");
+                
+                header("Location: task.php?completed=recurring");
+                exit;
+            } else {
+                // Task non ricorrente: elimina definitivamente
+                $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
+                header("Location: task.php?completed=deleted");
+                exit;
+            }
+        } catch (Exception $e) {
+            error_log("Errore completamento task: " . $e->getMessage());
+            header("Location: task.php?error=Errore durante il completamento del task");
+            exit;
         }
+    } else {
+        header("Location: task.php?error=Task non trovato");
+        exit;
     }
-    exit;
 }
 
 // Ricerca
@@ -611,3 +630,8 @@ setTimeout(() => {
 </main>
 </body>
 </html>
+
+<?php
+// Flush del buffer di output
+ob_end_flush();
+?>
