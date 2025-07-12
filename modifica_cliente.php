@@ -30,6 +30,9 @@ try {
     exit;
 }
 
+// Inizializza variabile errore
+$errore = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Filtra i campi POST (escludi eventuali campi non validi)
@@ -73,7 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function campo_input($nome, $valore, $type = 'text') {
-    return "<div class=\"form-field\"><label class=\"form-label\">$nome</label><input type=\"$type\" name=\"$nome\" value=\"" . htmlspecialchars($valore) . "\" class=\"form-control\"></div>";
+    // Escape del nome del campo per HTML
+    $nome_escaped = htmlspecialchars($nome);
+    $valore_escaped = htmlspecialchars($valore ?? '');
+    
+    return "<div class=\"form-field\">
+        <label class=\"form-label\">{$nome_escaped}</label>
+        <input type=\"{$type}\" name=\"{$nome}\" value=\"{$valore_escaped}\" class=\"form-control\">
+    </div>";
 }
 
 $gruppi = [
