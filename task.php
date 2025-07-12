@@ -267,29 +267,71 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     opacity: 1;
 }
 
+/* Tooltip per pulsanti */
+        .task-actions .btn {
+            position: relative;
+        }
+        
+        .task-actions .btn[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+        
+        .task-actions .btn[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
 .alert {
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     border-radius: 8px;
-    margin-bottom: 1rem;
-    border: 1px solid transparent;
+    margin-bottom: 1.5rem;
+    border: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .alert-success {
     background: #d4edda;
     color: #155724;
-    border-color: #c3e6cb;
 }
 
-.alert-info {
-    background: #cce7ff;
-    color: #0c5460;
-    border-color: #b8daff;
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
 }
 
-.alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border-color: #ffeaa7;
+.alert-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    color: inherit;
+}
+
+.alert-dismiss:hover {
+    opacity: 1;
 }
 
 .task-stats {
@@ -375,27 +417,52 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <?php
-// Messaggi di feedback
-if (isset($_GET['success']) && $_GET['success'] == '1'):
+// Messaggi di successo/errore
+$success_message = '';
+$error_message = '';
+
+if (isset($_GET['success'])) {
+    switch ($_GET['success']) {
+        case '1':
+            $success_message = 'Task creato con successo!';
+            break;
+        case '2':
+            $success_message = 'Task modificato con successo!';
+            break;
+    }
+}
+
+if (isset($_GET['deleted'])) {
+    $success_message = 'Task eliminato con successo!';
+}
+
+if (isset($_GET['completed'])) {
+    switch ($_GET['completed']) {
+        case 'recurring':
+            $success_message = 'Task ricorrente completato! È stato ricreato con la prossima scadenza.';
+            break;
+        case 'deleted':
+            $success_message = 'Task completato ed eliminato!';
+            break;
+    }
+}
+
+if (isset($_GET['error'])) {
+    $error_message = $_GET['error'];
+}
 ?>
+
+<?php if ($success_message): ?>
     <div class="alert alert-success">
-        <strong>✅ Successo!</strong> Task creato correttamente.
+        <strong>✅ Successo!</strong> <?= $success_message ?>
+        <button class="alert-dismiss" onclick="this.parentElement.style.display='none';">×</button>
     </div>
 <?php endif; ?>
 
-<?php if (isset($_GET['completed'])): ?>
-    <div class="alert alert-info">
-        <?php if ($_GET['completed'] === 'recurring'): ?>
-            <strong>🔄 Task ricorrente completato!</strong> Il task è stato eliminato e ricreato con la prossima scadenza.
-        <?php else: ?>
-            <strong>✅ Task completato!</strong> Il task è stato eliminato definitivamente.
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
-
-<?php if (isset($_GET['deleted'])): ?>
-    <div class="alert alert-warning">
-        <strong>🗑️ Task eliminato!</strong> Il task è stato rimosso definitivamente.
+<?php if ($error_message): ?>
+    <div class="alert alert-error">
+        <strong>❌ Errore!</strong> <?= $error_message ?>
+        <button class="alert-dismiss" onclick="this.parentElement.style.display='none';">×</button>
     </div>
 <?php endif; ?>
 
@@ -505,21 +572,23 @@ foreach ($task_list as $task) {
                     <td class="task-actions">
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
-                            <form method="post" style="display:inline;">
+                            <a href="crea_task.php?edit=<?= $task['id'] ?>" class="btn btn-primary btn-sm" data-tooltip="Modifica questo task">✏️ Modifica</a>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task ricorrente? Sarà ricreato con la prossima scadenza.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà ricreato con la prossima scadenza">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task ricorrente? Questa azione non può essere annullata.');">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-danger btn-sm" data-tooltip="Elimina definitivamente questo task ricorrente">🗑️ Elimina</button>
                             </form>
                         <?php else: ?>
                             <!-- Task non ricorrente -->
-                            <form method="post" style="display:inline;">
+                            <a href="crea_task.php?edit=<?= $task['id'] ?>" class="btn btn-primary btn-sm" data-tooltip="Modifica questo task">✏️ Modifica</a>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task? Sarà eliminato definitivamente.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà eliminato definitivamente">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task? Questa azione non può essere annullata.');">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-danger btn-sm" data-tooltip="Elimina definitivamente questo task">🗑️ Elimina</button>
                             </form>

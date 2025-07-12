@@ -5,21 +5,53 @@ require_login();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
 
+// Verifica se siamo in modalità modifica
+$edit_mode = isset($_GET['edit']) && is_numeric($_GET['edit']);
+$task_id = $edit_mode ? intval($_GET['edit']) : null;
+$task_data = null;
+
+// Se siamo in modalità modifica, carica i dati del task
+if ($edit_mode) {
+    $stmt = $pdo->prepare("SELECT * FROM task WHERE id = ?");
+    $stmt->execute([$task_id]);
+    $task_data = $stmt->fetch();
+    
+    if (!$task_data) {
+        header("Location: task.php?error=Task non trovato");
+        exit;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descrizione = $_POST['descrizione'] ?? '';
     $scadenza = $_POST['scadenza'] ?? '';
     $ricorrenza = isset($_POST['ricorrenza']) && $_POST['ricorrenza'] !== '' ? intval($_POST['ricorrenza']) : null;
 
     if (!empty($descrizione) && !empty($scadenza)) {
-        $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-        $stmt->bindValue(1, $descrizione);
-        $stmt->bindValue(2, $scadenza);
-        $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->execute();
-        
-        // Redirect alla lista task con messaggio di successo
-        header("Location: task.php?success=1");
-        exit;
+        if ($edit_mode) {
+            // Modifica task esistente
+            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ? WHERE id = ?");
+            $stmt->bindValue(1, $descrizione);
+            $stmt->bindValue(2, $scadenza);
+            $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(4, $task_id);
+            $stmt->execute();
+            
+            // Redirect alla lista task con messaggio di successo
+            header("Location: task.php?success=2");
+            exit;
+        } else {
+            // Crea nuovo task
+            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
+            $stmt->bindValue(1, $descrizione);
+            $stmt->bindValue(2, $scadenza);
+            $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->execute();
+            
+            // Redirect alla lista task con messaggio di successo
+            header("Location: task.php?success=1");
+            exit;
+        }
     } else {
         $errore = "Inserisci almeno descrizione e scadenza.";
     }
@@ -206,8 +238,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </style>
 
 <div class="task-header">
-    <h2>➕ Crea Nuovo Task</h2>
-    <p>Aggiungi un nuovo task al sistema di gestione</p>
+    <h2><?= $edit_mode ? '✏️ Modifica Task' : '➕ Crea Nuovo Task' ?></h2>
+    <p><?= $edit_mode ? 'Modifica il task esistente' : 'Aggiungi un nuovo task al sistema di gestione' ?></p>
 </div>
 
 <div class="task-form">
@@ -226,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    class="form-control" 
                    required 
                    placeholder="Inserisci una descrizione dettagliata del task"
-                   value="<?= htmlspecialchars($_POST['descrizione'] ?? '') ?>">
+                   value="<?= htmlspecialchars($task_data['descrizione'] ?? $_POST['descrizione'] ?? '') ?>">
         </div>
 
         <div class="form-group">
@@ -236,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    name="scadenza" 
                    class="form-control" 
                    required
-                   value="<?= htmlspecialchars($_POST['scadenza'] ?? '') ?>">
+                   value="<?= htmlspecialchars($task_data['scadenza'] ?? $_POST['scadenza'] ?? '') ?>">
         </div>
 
         <div class="form-group">
@@ -248,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    min="1" 
                    max="365"
                    placeholder="Lascia vuoto se non ricorrente"
-                   value="<?= htmlspecialchars($_POST['ricorrenza'] ?? '') ?>">
+                   value="<?= htmlspecialchars($task_data['ricorrenza'] ?? $_POST['ricorrenza'] ?? '') ?>">
             <div class="form-help">
                 Se inserisci un numero, il task si ripeterà ogni X giorni dopo il completamento
             </div>
@@ -265,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">💾 Salva Task</button>
+            <button type="submit" class="btn btn-primary">💾 <?= $edit_mode ? 'Salva Modifiche' : 'Salva Task' ?></button>
             <a href="task.php" class="btn btn-secondary">❌ Annulla</a>
         </div>
     </form>
