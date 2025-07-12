@@ -2,9 +2,10 @@
 <link rel="stylesheet" href="/assets/css/chat_widgets.css">
 <script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
 
-<div class="crm-chat-widget" id="chat-widget">
+<div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
-        💬 Chat Globale
+        <span class="chat-icon">💬</span>
+        <span class="chat-text">Chat Globale</span>
     </div>
     <div class="crm-chat-body">
         <div class="crm-chat-messages" id="chat-messages"></div>
@@ -16,8 +17,75 @@
 </div>
 <script>
 function toggleChatWidget(id) {
-    document.getElementById(id).classList.toggle('open');
+    const widget = document.getElementById(id);
+    widget.classList.toggle('open');
+    
+    // Rimuovi notifica quando aperto
+    if (widget.classList.contains('open')) {
+        widget.classList.remove('has-notification');
+    }
+    
+    // Effetto sonoro (opzionale)
+    if (widget.classList.contains('open')) {
+        playNotificationSound();
+    }
 }
+
+function playNotificationSound() {
+    // Crea un suono sottile di apertura
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+}
+
+// Simula notifiche periodiche per demo
+function simulateNotifications() {
+    const widgets = document.querySelectorAll('.crm-chat-widget:not(.open)');
+    widgets.forEach(widget => {
+        if (Math.random() > 0.7) { // 30% di probabilità
+            widget.classList.add('has-notification');
+            
+            // Rimuovi notifica dopo 10 secondi
+            setTimeout(() => {
+                widget.classList.remove('has-notification');
+            }, 10000);
+        }
+    });
+}
+
+// Avvia simulazione notifiche ogni 30 secondi
+setInterval(simulateNotifications, 30000);
+
+// Gestisci l'animazione quando si passa il mouse
+document.addEventListener('DOMContentLoaded', function() {
+    const widgets = document.querySelectorAll('.crm-chat-widget');
+    
+    widgets.forEach(widget => {
+        widget.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('open')) {
+                this.style.animation = 'none';
+            }
+        });
+        
+        widget.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('open')) {
+                this.style.animation = 'pulse 2s infinite';
+            }
+        });
+    });
+});
 </script>
 
 

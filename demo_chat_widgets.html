@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Chat Widgets - CRM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/chat_widgets.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 2rem;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .demo-header h1 {
+            color: #003366;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .demo-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .demo-card {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .demo-card h3 {
+            color: #003366;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+        
+        .demo-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .demo-btn {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #0056b3 0%, #003366 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 83, 179, 0.4);
+        }
+        
+        .demo-btn.secondary {
+            background: #6c757d;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .instructions h3 {
+            color: #0056b3;
+            margin-bottom: 1rem;
+        }
+        
+        .instructions ul {
+            margin-bottom: 0;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+        
+        .status-closed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-open {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🎯 Demo Chat Widgets</h1>
+            <p>Nuovi widget chat con design a sfere quando chiusi</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Istruzioni</h3>
+            <ul>
+                <li><strong>Stato Chiuso:</strong> I widget appaiono come sfere eleganti con solo l'icona</li>
+                <li><strong>Hover:</strong> Passa il mouse sopra per vedere il tooltip con il nome</li>
+                <li><strong>Click:</strong> Clicca per aprire/chiudere il widget</li>
+                <li><strong>Notifiche:</strong> Indicatori rossi per nuovi messaggi (simulati)</li>
+                <li><strong>Animazioni:</strong> Effetti di pulsazione e hover fluidi</li>
+            </ul>
+        </div>
+        
+        <div class="demo-content">
+            <div class="demo-card">
+                <h3>💬 Chat Globale</h3>
+                <p>Widget per chat generale tra utenti del sistema</p>
+                <div>
+                    <span class="status-indicator status-closed" id="global-status">Chiuso</span>
+                </div>
+                <p class="mt-3">
+                    <small>Clicca sulla sfera blu in basso a destra per testare</small>
+                </p>
+            </div>
+            
+            <div class="demo-card">
+                <h3>📁 Chat Pratiche</h3>
+                <p>Widget per chat specifiche delle pratiche clienti</p>
+                <div>
+                    <span class="status-indicator status-closed" id="practice-status">Chiuso</span>
+                </div>
+                <p class="mt-3">
+                    <small>Clicca sulla sfera con icona cartella per testare</small>
+                </p>
+            </div>
+        </div>
+        
+        <div class="demo-actions">
+            <button class="demo-btn" onclick="simulateNotification()">
+                🔔 Simula Notifica
+            </button>
+            <button class="demo-btn secondary" onclick="toggleAllWidgets()">
+                📱 Apri/Chiudi Tutti
+            </button>
+            <button class="demo-btn secondary" onclick="resetDemo()">
+                🔄 Reset Demo
+            </button>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <p class="text-muted">
+                <strong>Caratteristiche:</strong> Responsive, animazioni fluide, tooltips, notifiche, effetti hover
+            </p>
+        </div>
+    </div>
+    
+    <!-- Chat Widgets -->
+    <div id="crm-chat-container">
+        <div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
+            <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
+                <span class="chat-icon">📁</span>
+                <span class="chat-text">Chat Pratiche</span>
+            </div>
+            <div class="crm-chat-body">
+                <div class="crm-chat-messages">
+                    <div style="padding: 1rem; text-align: center; color: #666;">
+                        <strong>Demo Chat Pratiche</strong><br>
+                        <small>Questo è un widget di esempio per le chat delle pratiche</small>
+                    </div>
+                </div>
+                <div class="crm-chat-input-group">
+                    <input type="text" class="form-control" placeholder="Scrivi un messaggio...">
+                    <button class="btn btn-success">Invia</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
+            <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
+                <span class="chat-icon">💬</span>
+                <span class="chat-text">Chat Globale</span>
+            </div>
+            <div class="crm-chat-body">
+                <div class="crm-chat-messages">
+                    <div style="padding: 1rem; text-align: center; color: #666;">
+                        <strong>Demo Chat Globale</strong><br>
+                        <small>Questo è un widget di esempio per la chat globale</small>
+                    </div>
+                </div>
+                <div class="crm-chat-input-group">
+                    <input type="text" class="form-control" placeholder="Scrivi un messaggio...">
+                    <button class="btn btn-primary">Invia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleChatWidget(id) {
+            const widget = document.getElementById(id);
+            widget.classList.toggle('open');
+            
+            // Aggiorna status
+            const statusId = id === 'chat-widget' ? 'global-status' : 'practice-status';
+            const statusEl = document.getElementById(statusId);
+            
+            if (widget.classList.contains('open')) {
+                statusEl.textContent = 'Aperto';
+                statusEl.className = 'status-indicator status-open';
+                widget.classList.remove('has-notification');
+            } else {
+                statusEl.textContent = 'Chiuso';
+                statusEl.className = 'status-indicator status-closed';
+            }
+            
+            // Effetto sonoro
+            playNotificationSound();
+        }
+        
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Ignore audio errors
+            }
+        }
+        
+        function simulateNotification() {
+            const widgets = document.querySelectorAll('.crm-chat-widget:not(.open)');
+            widgets.forEach(widget => {
+                widget.classList.add('has-notification');
+                
+                // Rimuovi notifica dopo 5 secondi
+                setTimeout(() => {
+                    widget.classList.remove('has-notification');
+                }, 5000);
+            });
+        }
+        
+        function toggleAllWidgets() {
+            const widgets = document.querySelectorAll('.crm-chat-widget');
+            widgets.forEach(widget => {
+                widget.classList.toggle('open');
+            });
+            
+            // Aggiorna tutti gli status
+            updateAllStatus();
+        }
+        
+        function resetDemo() {
+            const widgets = document.querySelectorAll('.crm-chat-widget');
+            widgets.forEach(widget => {
+                widget.classList.remove('open', 'has-notification');
+            });
+            
+            updateAllStatus();
+        }
+        
+        function updateAllStatus() {
+            const globalWidget = document.getElementById('chat-widget');
+            const practiceWidget = document.getElementById('chat-pratiche-widget');
+            const globalStatus = document.getElementById('global-status');
+            const practiceStatus = document.getElementById('practice-status');
+            
+            // Global
+            if (globalWidget.classList.contains('open')) {
+                globalStatus.textContent = 'Aperto';
+                globalStatus.className = 'status-indicator status-open';
+            } else {
+                globalStatus.textContent = 'Chiuso';
+                globalStatus.className = 'status-indicator status-closed';
+            }
+            
+            // Practice
+            if (practiceWidget.classList.contains('open')) {
+                practiceStatus.textContent = 'Aperto';
+                practiceStatus.className = 'status-indicator status-open';
+            } else {
+                practiceStatus.textContent = 'Chiuso';
+                practiceStatus.className = 'status-indicator status-closed';
+            }
+        }
+        
+        // Gestisci animazioni
+        document.addEventListener('DOMContentLoaded', function() {
+            const widgets = document.querySelectorAll('.crm-chat-widget');
+            
+            widgets.forEach(widget => {
+                widget.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('open')) {
+                        this.style.animation = 'none';
+                    }
+                });
+                
+                widget.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('open')) {
+                        this.style.animation = 'pulse 2s infinite';
+                    }
+                });
+            });
+        });
+        
+        // Simulazione notifiche automatiche
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                simulateNotification();
+            }
+        }, 15000);
+    </script>
+</body>
+</html>

@@ -15,11 +15,151 @@
     border-radius: 12px;
     font-family: 'Segoe UI', Arial, sans-serif;
     background: #fff;
-    transition: box-shadow 0.18s;
+    transition: all 0.3s ease;
     overflow: hidden;
 }
 
-.crm-chat-header {
+/* Stato chiuso: sfera con icona */
+.crm-chat-widget:not(.open) {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0056b3 0%, #003366 100%);
+    box-shadow: 0 4px 16px rgba(0, 83, 179, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
+    position: relative;
+    overflow: visible;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.crm-chat-widget:not(.open):hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 83, 179, 0.6);
+    animation: none;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Indicatore di notifica */
+.crm-chat-widget:not(.open)::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.crm-chat-widget:not(.open).has-notification::after {
+    opacity: 1;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-4px);
+    }
+    60% {
+        transform: translateY(-2px);
+    }
+}
+
+/* Animazione pulsante */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 16px rgba(0, 83, 179, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(0, 83, 179, 0.7);
+        transform: scale(1.05);
+    }
+    100% {
+        box-shadow: 0 4px 16px rgba(0, 83, 179, 0.4);
+        transform: scale(1);
+    }
+}
+
+/* Header quando chiuso: solo icona centrata */
+.crm-chat-widget:not(.open) .crm-chat-header {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1.8rem;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Icona quando chiuso */
+.crm-chat-widget:not(.open) .chat-icon {
+    display: inline;
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: transform 0.3s ease;
+}
+
+.crm-chat-widget:not(.open):hover .chat-icon {
+    transform: scale(1.1);
+}
+
+/* Nasconde il testo quando chiuso */
+.crm-chat-widget:not(.open) .chat-text {
+    display: none;
+}
+
+/* Tooltip quando hoveri sulla sfera */
+.crm-chat-widget:not(.open):hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10000;
+    opacity: 0;
+    animation: fadeInTooltip 0.3s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes fadeInTooltip {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Header quando aperto: stile normale */
+.crm-chat-widget.open .crm-chat-header {
     background: linear-gradient(90deg, #0056b3 0%, #003366 100%);
     color: #fff;
     font-weight: 600;
@@ -36,6 +176,11 @@
     border-bottom: 1px solid #00336620;
 }
 
+/* Mostra il testo quando aperto */
+.crm-chat-widget.open .crm-chat-header .chat-text {
+    display: inline;
+}
+
 .crm-chat-body {
     display: none;
     background: #f4f7fa;
@@ -43,6 +188,7 @@
     border-radius: 0 0 12px 12px;
     border-top: 1px solid #e0e0e0;
 }
+
 .crm-chat-widget.open .crm-chat-body {
     display: block;
 }
@@ -63,6 +209,7 @@
     gap: 5px;
     margin-bottom: 0;
 }
+
 .crm-chat-input, .crm-chat-select, .crm-chat-pratiche-input {
     flex: 1 1 auto;
 }
@@ -73,4 +220,44 @@
 
 .crm-chat-send-btn {
     min-width: 54px;
+}
+
+/* Effetto hover per le sfere */
+.crm-chat-widget:not(.open)::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0056b3, #003366);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.crm-chat-widget:not(.open):hover::after {
+    opacity: 0.3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #crm-chat-container {
+        bottom: 16px;
+        right: 16px;
+    }
+    
+    .crm-chat-widget {
+        width: 320px;
+    }
+    
+    .crm-chat-widget:not(.open) {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .crm-chat-widget:not(.open) .crm-chat-header {
+        font-size: 1.3rem;
+    }
 }

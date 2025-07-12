@@ -5,9 +5,10 @@ require_once __DIR__ . '/auth.php';
 require_login();
 $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti ORDER BY `cognome/ragione sociale`, nome")->fetchAll();
 ?>
-<div class="crm-chat-widget" id="chat-pratiche-widget">
+<div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
-        📁 Chat Pratiche
+        <span class="chat-icon">📁</span>
+        <span class="chat-text">Chat Pratiche</span>
     </div>
     <div class="crm-chat-body">
         <form id="praticaChatForm" autocomplete="off">
