@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging (remove in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
@@ -10,12 +14,19 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
-$stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
-$stmt->execute([$id]);
-$cliente = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$cliente) {
-    echo "<p>Cliente non trovato.</p></main></body></html>";
+try {
+    $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
+    $stmt->execute([$id]);
+    $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$cliente) {
+        echo "<p>Cliente non trovato.</p></main></body></html>";
+        exit;
+    }
+} catch (Exception $e) {
+    error_log("Errore database in info_cliente.php: " . $e->getMessage());
+    echo "<p>Errore durante il caricamento del cliente.</p></main></body></html>";
     exit;
 }
 
@@ -244,6 +255,9 @@ $gruppi = [
     background: #218838;
     transform: translateY(-2px);
 }
+    background: #218838;
+    transform: translateY(-2px);
+}
 
 .back-link {
     display: inline-flex;
@@ -329,15 +343,6 @@ $gruppi = [
 
 .alert-dismiss:hover {
     opacity: 1;
-}
-
-.section-icons {
-    '👤': 'Anagrafica',
-    '📞': 'Contatti', 
-    '🏢': 'Sedi',
-    '📄': 'Documenti',
-    '💼': 'Fiscali',
-    '📋': 'Altro'
 }
 
 @media (max-width: 768px) {
