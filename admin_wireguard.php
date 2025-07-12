@@ -23,9 +23,23 @@ function get_peers($conf) {
         return [];
     }
     
+    $content = '';
+    if (is_readable($conf)) {
+        $content = file_get_contents($conf);
+    }
+    
+    // Se PHP non riesce a leggere, prova con sudo
+    if ($content === false || empty($content)) {
+        $content = shell_exec("sudo cat " . escapeshellarg($conf) . " 2>/dev/null");
+    }
+    
+    if (empty($content)) {
+        return [];
+    }
+    
     $peers = [];
     $current_peer = null;
-    $lines = file($conf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $lines = explode("\n", $content);
     
     foreach ($lines as $line) {
         $line = trim($line);
@@ -76,7 +90,21 @@ function remove_peer($conf, $pubkey_to_remove) {
         return false;
     }
     
-    $lines = file($conf, FILE_IGNORE_NEW_LINES);
+    $content = '';
+    if (is_readable($conf)) {
+        $content = file_get_contents($conf);
+    }
+    
+    // Se PHP non riesce a leggere, prova con sudo
+    if ($content === false || empty($content)) {
+        $content = shell_exec("sudo cat " . escapeshellarg($conf) . " 2>/dev/null");
+    }
+    
+    if (empty($content)) {
+        return false;
+    }
+    
+    $lines = explode("\n", $content);
     $new_lines = [];
     $current_section = null;
     $skip_peer = false;
@@ -142,8 +170,8 @@ function remove_peer($conf, $pubkey_to_remove) {
         unlink($temp_file);
         
         // Ripristina permessi
-        shell_exec("sudo chown root:root " . escapeshellarg($conf));
-        shell_exec("sudo chmod 600 " . escapeshellarg($conf));
+        shell_exec("sudo chown root:www-data " . escapeshellarg($conf));
+        shell_exec("sudo chmod 777 " . escapeshellarg($conf));
         
         return file_exists($conf);
     }
@@ -191,7 +219,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         shell_exec("sudo cp " . escapeshellarg($WG_CONF) . " " . escapeshellarg($backup_file));
         
         // Legge il contenuto attuale e aggiunge il peer
-        $current_content = file_get_contents($WG_CONF);
+        $current_content = '';
+        if (file_exists($WG_CONF) && is_readable($WG_CONF)) {
+            $current_content = file_get_contents($WG_CONF);
+            if ($current_content === false) {
+                // Se non riesce a leggere con PHP, prova con sudo
+                $current_content = shell_exec("sudo cat " . escapeshellarg($WG_CONF));
+            }
+        }
+        
+        // Assicurati che il contenuto non sia vuoto per un file esistente
+        if (empty($current_content) && file_exists($WG_CONF)) {
+            $current_content = shell_exec("sudo cat " . escapeshellarg($WG_CONF));
+        }
+        
         $new_content = $current_content . $peer_conf;
         
         // Crea un file temporaneo e poi lo sposta con sudo
@@ -201,14 +242,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unlink($temp_file);
             
             // Ripristina permessi
-            shell_exec("sudo chown root:root " . escapeshellarg($WG_CONF));
-            shell_exec("sudo chmod 600 " . escapeshellarg($WG_CONF));
+            shell_exec("sudo chown root:www-data " . escapeshellarg($WG_CONF));
+            shell_exec("sudo chmod 777 " . escapeshellarg($WG_CONF));
             
             shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
             $msg .= "Peer aggiunto e servizio WireGuard riavviato.";
             // Ricarica i peer per aggiornare l'IP successivo
             $peers = get_peers($WG_CONF);
             $next_ip = get_next_available_ip($peers);
+            
+            // Debug: mostra il contenuto del file
+            $debug_content = shell_exec("sudo cat " . escapeshellarg($WG_CONF) . " 2>/dev/null");
+            if (!empty($debug_content)) {
+                $msg .= " [Debug: File contiene " . substr_count($debug_content, '[Peer]') . " peer(s)]";
+            }
         } else {
             $msg = "Errore durante l'aggiunta del peer.";
         }
@@ -304,8 +351,8 @@ function create_initial_config($conf_file, $private_key) {
     }
     
     // Imposta permessi corretti
-    shell_exec("sudo chown root:root " . escapeshellarg($conf_file));
-    shell_exec("sudo chmod 600 " . escapeshellarg($conf_file));
+    shell_exec("sudo chown root:www-data " . escapeshellarg($conf_file));
+    shell_exec("sudo chmod 777 " . escapeshellarg($conf_file));
     
     return true;
 }
@@ -318,9 +365,9 @@ function check_and_fix_permissions($conf_file) {
     
     // Verifica se possiamo leggere il file
     if (!is_readable($conf_file)) {
-        // Prova a correggere i permessi
-        shell_exec("sudo chmod 644 $conf_file");
-        shell_exec("sudo chown www-data:www-data $conf_file");
+        // Prova a correggere i permessi per permettere la lettura
+        shell_exec("sudo chmod 777 " . escapeshellarg($conf_file));
+        shell_exec("sudo chown root:www-data " . escapeshellarg($conf_file));
     }
     
     return is_readable($conf_file);
@@ -843,6 +890,13 @@ PersistentKeepalive = 25</pre>
             </ul>
         </div>
         
+        <?php if (file_exists($WG_CONF)): ?>
+        <div class="commands-box">
+            <h4>📄 Contenuto File di Configurazione</h4>
+            <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto;"><?= htmlspecialchars(shell_exec("sudo cat " . escapeshellarg($WG_CONF) . " 2>/dev/null") ?: 'Impossibile leggere il file') ?></pre>
+        </div>
+        <?php endif; ?>
+        
         <?php if (!$debug_info['wg_installed']): ?>
         <div class="commands-box">
             <h4>🚨 WireGuard non installato</h4>
@@ -865,6 +919,17 @@ PersistentKeepalive = 25</pre>
             <p>Il file di configurazione WireGuard non esiste. Usa il bottone "Crea File Config" sopra o crealo manualmente.</p>
         </div>
         <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    
+    <!-- Sezione Debug sempre visibile per troubleshooting -->
+    <?php if (file_exists($WG_CONF)): ?>
+    <div class="section">
+        <h3>🔍 Debug - Contenuto File WireGuard</h3>
+        <div class="commands-box">
+            <h4>📄 Contenuto Attuale di <?= htmlspecialchars($WG_CONF) ?></h4>
+            <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; max-height: 400px; overflow-y: auto;"><?= htmlspecialchars(shell_exec("sudo cat " . escapeshellarg($WG_CONF) . " 2>/dev/null") ?: 'Impossibile leggere il file') ?></pre>
+        </div>
     </div>
     <?php endif; ?>
 </div>
