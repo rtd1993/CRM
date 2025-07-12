@@ -220,6 +220,11 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     transform: translateY(-1px);
 }
 
+.btn-success:active {
+    transform: translateY(0);
+    background: #1e7e34;
+}
+
 .btn-danger {
     background: #dc3545;
     color: white;
@@ -228,6 +233,38 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 .btn-danger:hover {
     background: #c82333;
     transform: translateY(-1px);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+    background: #bd2130;
+}
+
+/* Tooltip per spiegare le azioni */
+.btn-sm {
+    position: relative;
+}
+
+.btn-sm::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.btn-sm:hover::after {
+    opacity: 1;
 }
 
 .alert {
@@ -468,23 +505,23 @@ foreach ($task_list as $task) {
                     <td class="task-actions">
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task ricorrente? Sarà ricreato con la prossima scadenza.')">
+                            <form method="post" style="display:inline;">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
-                                <button type="submit" class="btn btn-success btn-sm">✅ Completato</button>
+                                <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà ricreato con la prossima scadenza">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task ricorrente?')">
+                            <form method="post" style="display:inline;">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
-                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Elimina</button>
+                                <button type="submit" class="btn btn-danger btn-sm" data-tooltip="Elimina definitivamente questo task ricorrente">🗑️ Elimina</button>
                             </form>
                         <?php else: ?>
                             <!-- Task non ricorrente -->
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task? Sarà eliminato definitivamente.')">
+                            <form method="post" style="display:inline;">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
-                                <button type="submit" class="btn btn-success btn-sm">✅ Completato</button>
+                                <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà eliminato definitivamente">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task?')">
+                            <form method="post" style="display:inline;">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
-                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Elimina</button>
+                                <button type="submit" class="btn btn-danger btn-sm" data-tooltip="Elimina definitivamente questo task">🗑️ Elimina</button>
                             </form>
                         <?php endif; ?>
                     </td>
