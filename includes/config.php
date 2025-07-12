@@ -12,7 +12,7 @@ const BASE_URL = 'http://crm.local';
 
 // Telegram bot configuration
 // Sostituire con il token reale fornito da BotFather
-const TELEGRAM_BOT_TOKEN = 'your_telegram_bot_token_here';
+const TELEGRAM_BOT_TOKEN = '7235317891:AAGpr8mOFVVksFV9LbF5Fe8RPWsLqdcOAd4';
 const TELEGRAM_CHAT_ID = 'your_default_chat_id_here';
 
 // Per ottenere il token:

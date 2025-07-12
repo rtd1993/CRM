@@ -3,8 +3,8 @@ require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/header.php';
 
-// Configurazione del bot (da modificare con il token reale)
-$bot_token = 'INSERISCI_IL_TUO_BOT_TOKEN_QUI';
+// Configurazione del bot (token configurato automaticamente)
+$bot_token = '7235317891:AAGpr8mOFVVksFV9LbF5Fe8RPWsLqdcOAd4';
 
 $chat_ids = [];
 $error = null;
