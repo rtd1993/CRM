@@ -28,10 +28,11 @@ if (isset($_POST['complete_id'])) {
             ->execute([$user_name, $msg]);
 
         if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
-            // Sposta la scadenza di N giorni
+            // Task ricorrente: sposta la scadenza di N giorni
             $pdo->prepare("UPDATE task SET scadenza = DATE_ADD(scadenza, INTERVAL ? DAY) WHERE id = ?")
                 ->execute([$task['ricorrenza'], $id]);
         } else {
+            // Task non ricorrente: elimina definitivamente
             $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
         }
     }
@@ -90,14 +91,27 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </td>
             <td><?= htmlspecialchars($task['ricorrenza'] ?? '—') ?></td>
             <td>
-                <form method="post" style="display:inline;">
-                    <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
-                    <button type="submit">✅ Completato</button>
-                </form>
-                <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare il task?')">
-                    <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
-                    <button type="submit">🗑️ Elimina</button>
-                </form>
+                <?php if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0): ?>
+                    <!-- Task ricorrente -->
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task? La prossima scadenza sarà tra <?= $task['ricorrenza'] ?> giorni.')">
+                        <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px;">✅ Completato</button>
+                    </form>
+                    <form method="post" style="display:inline;" onsubmit="return confirm('ATTENZIONE: Eliminare definitivamente questo task ricorrente?')">
+                        <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px;">🗑️ Elimina</button>
+                    </form>
+                <?php else: ?>
+                    <!-- Task non ricorrente -->
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task? Verrà eliminato definitivamente.')">
+                        <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px;">✅ Completato</button>
+                    </form>
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task?')">
+                        <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px;">🗑️ Elimina</button>
+                    </form>
+                <?php endif; ?>
             </td>
         </tr>
         <?php endforeach; ?>
