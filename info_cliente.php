@@ -35,35 +35,558 @@ $gruppi = [
 ];
 ?>
 
-<h2>👤 Informazioni Cliente</h2>
+<style>
+.client-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
 
-<?php foreach ($gruppi as $titolo => $campi): ?>
-    <fieldset style="margin-bottom: 30px; border: 2px solid #007BFF; padding: 15px; border-radius: 8px;">
-        <legend style="font-size: 1.1em; font-weight: bold; color: #007BFF; padding: 0 10px;"><?= htmlspecialchars($titolo) ?></legend>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <?php foreach ($campi as $campo): ?>
-                <?php if (isset($cliente[$campo])): ?>
-                    <div style="flex: 1 1 22%; margin-bottom: 15px;">
-                        <strong><?= format_label($campo) ?>:</strong><br>
-                        <div style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; background: #f9f9f9;">
-                            <?= htmlspecialchars($cliente[$campo]) ?>
+.client-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.client-header h2 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.client-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.client-info {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.client-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #17a2b8, #6f42c1);
+}
+
+.info-section {
+    margin-bottom: 2rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.info-section:hover {
+    border-color: #17a2b8;
+    background: white;
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.1);
+    transform: translateY(-2px);
+}
+
+.info-section-title {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: white;
+    padding: 0 15px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #17a2b8;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.info-field {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 70px;
+}
+
+.info-field:hover {
+    border-color: #17a2b8;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
+}
+
+.info-field.highlight {
+    border-color: #ffc107;
+    background: #fff3cd;
+}
+
+.info-field.empty {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 500;
+    word-wrap: break-word;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.info-value.empty {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.client-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 160px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 1rem;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: #17a2b8;
+}
+
+.client-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border: 1px solid #dee2e6;
+    position: relative;
+}
+
+.client-summary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #17a2b8, #6f42c1);
+    border-radius: 12px 12px 0 0;
+}
+
+.client-summary h3 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.client-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.client-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.alert-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    color: inherit;
+}
+
+.alert-dismiss:hover {
+    opacity: 1;
+}
+
+.section-icons {
+    '👤': 'Anagrafica',
+    '📞': 'Contatti', 
+    '🏢': 'Sedi',
+    '📄': 'Documenti',
+    '💼': 'Fiscali',
+    '📋': 'Altro'
+}
+
+@media (max-width: 768px) {
+    .client-header h2 {
+        font-size: 2rem;
+    }
+    
+    .client-info {
+        padding: 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .client-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media print {
+    .client-actions, .back-link {
+        display: none;
+    }
+    
+    .info-section {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+    
+    .client-header {
+        background: #17a2b8 !important;
+        color: white !important;
+    }
+}
+</style>
+
+<?php
+// Messaggi di successo
+if (isset($_GET['success'])) {
+    echo '<div class="alert alert-success">✅ Cliente aggiornato con successo! <button class="alert-dismiss" onclick="this.parentElement.style.display=\'none\'">×</button></div>';
+}
+
+// Icone per le sezioni
+$section_icons = [
+    'Anagrafica' => '👤',
+    'Contatti' => '📞',
+    'Sedi' => '🏢',
+    'Documenti' => '📄',
+    'Fiscali' => '💼',
+    'Altro' => '📋'
+];
+?>
+
+<div class="client-header">
+    <h2>👤 Informazioni Cliente</h2>
+    <p>Visualizza tutti i dettagli del cliente selezionato</p>
+</div>
+
+<div class="client-summary">
+    <h3><?= htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A') ?></h3>
+    <div class="client-summary-grid">
+        <div class="client-summary-item">
+            <strong>🆔 ID:</strong> <?= htmlspecialchars($cliente['id'] ?? 'N/A') ?>
+        </div>
+        <div class="client-summary-item">
+            <strong>📧 Email:</strong> <?= htmlspecialchars($cliente['Mail'] ?? 'N/A') ?>
+        </div>
+        <div class="client-summary-item">
+            <strong>📞 Telefono:</strong> <?= htmlspecialchars($cliente['Telefono'] ?? 'N/A') ?>
+        </div>
+        <div class="client-summary-item">
+            <strong>🏛️ Cod. Fiscale:</strong> <?= htmlspecialchars($cliente['Codice fiscale'] ?? 'N/A') ?>
+        </div>
+    </div>
+</div>
+
+<div class="client-info">
+    <?php foreach ($gruppi as $titolo => $campi): ?>
+        <div class="info-section">
+            <div class="info-section-title">
+                <?= $section_icons[$titolo] ?? '📋' ?> <?= htmlspecialchars($titolo) ?>
+            </div>
+            <div class="info-grid">
+                <?php foreach ($campi as $campo): ?>
+                    <?php 
+                    $valore = $cliente[$campo] ?? '';
+                    $is_empty = empty($valore);
+                    $is_important = in_array($campo, ['Codice fiscale', 'Partita IVA', 'Mail', 'Telefono']);
+                    ?>
+                    <div class="info-field <?= $is_empty ? 'empty' : '' ?> <?= $is_important && !$is_empty ? 'highlight' : '' ?>">
+                        <div class="info-label"><?= htmlspecialchars(format_label($campo)) ?></div>
+                        <div class="info-value <?= $is_empty ? 'empty' : '' ?>">
+                            <?= $is_empty ? 'Non specificato' : htmlspecialchars($valore) ?>
                         </div>
                     </div>
-                <?php endif; ?>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
-    </fieldset>
-<?php endforeach; ?>
+    <?php endforeach; ?>
+</div>
 
-<p>
-    <a href="modifica_cliente.php?id=<?= $cliente['id'] ?>">
-        <button style="padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 5px;">✏️ Modifica Cliente</button>
+<div class="client-actions">
+    <a href="modifica_cliente.php?id=<?= $cliente['id'] ?>" class="btn btn-primary">
+        ✏️ Modifica Cliente
     </a>
-    <button onclick="window.print()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px;">🖨️ Stampa PDF</button>
-</p>
+    <button onclick="window.print()" class="btn btn-secondary">
+        🖨️ Stampa PDF
+    </button>
+    <a href="clienti.php" class="btn btn-success">
+        📋 Lista Clienti
+    </a>
+</div>
 
-<p><a href="clienti.php">⬅️ Torna alla lista clienti</a></p>
+<a href="clienti.php" class="back-link">⬅️ Torna alla lista clienti</a>
 
 </main>
 </body>
 </html>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Evidenzia campi importanti
+    const importantFields = document.querySelectorAll('.info-field.highlight');
+    importantFields.forEach(field => {
+        field.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.02)';
+        });
+        field.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Smooth scroll per sezioni
+    const sections = document.querySelectorAll('.info-section');
+    sections.forEach((section, index) => {
+        section.style.animationDelay = `${index * 0.1}s`;
+        section.classList.add('fade-in');
+    });
+    
+    // Copia contenuto al click
+    const infoValues = document.querySelectorAll('.info-value:not(.empty)');
+    infoValues.forEach(value => {
+        value.addEventListener('click', function() {
+            const text = this.textContent.trim();
+            if (text && text !== 'Non specificato') {
+                navigator.clipboard.writeText(text).then(() => {
+                    // Feedback visivo
+                    const original = this.innerHTML;
+                    this.innerHTML = '✅ Copiato!';
+                    this.style.color = '#28a745';
+                    setTimeout(() => {
+                        this.innerHTML = original;
+                        this.style.color = '';
+                    }, 1000);
+                }).catch(() => {
+                    // Fallback per browser non supportati
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+            }
+        });
+        
+        // Tooltip per indicare che è cliccabile
+        value.setAttribute('title', 'Clicca per copiare');
+        value.style.cursor = 'pointer';
+    });
+    
+    // Filtro campi vuoti
+    const toggleEmpty = document.createElement('button');
+    toggleEmpty.innerHTML = '👁️ Nascondi campi vuoti';
+    toggleEmpty.className = 'btn btn-secondary';
+    toggleEmpty.style.position = 'fixed';
+    toggleEmpty.style.bottom = '20px';
+    toggleEmpty.style.right = '20px';
+    toggleEmpty.style.zIndex = '1000';
+    toggleEmpty.style.fontSize = '0.9rem';
+    toggleEmpty.style.padding = '0.5rem 1rem';
+    
+    let hideEmpty = false;
+    toggleEmpty.addEventListener('click', function() {
+        hideEmpty = !hideEmpty;
+        const emptyFields = document.querySelectorAll('.info-field.empty');
+        emptyFields.forEach(field => {
+            field.style.display = hideEmpty ? 'none' : 'block';
+        });
+        this.innerHTML = hideEmpty ? '👁️ Mostra campi vuoti' : '👁️ Nascondi campi vuoti';
+    });
+    
+    document.body.appendChild(toggleEmpty);
+    
+    // Evidenzia sezione al click sul titolo
+    const sectionTitles = document.querySelectorAll('.info-section-title');
+    sectionTitles.forEach(title => {
+        title.addEventListener('click', function() {
+            const section = this.parentElement;
+            section.classList.toggle('active');
+            
+            // Rimuovi active da altre sezioni
+            sections.forEach(s => {
+                if (s !== section) {
+                    s.classList.remove('active');
+                }
+            });
+        });
+        title.style.cursor = 'pointer';
+        title.setAttribute('title', 'Clicca per evidenziare questa sezione');
+    });
+});
+</script>
+
+<style>
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.info-section.active {
+    border-color: #17a2b8;
+    background: white;
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.2);
+    transform: translateY(-5px);
+}
+
+.info-section.active .info-section-title {
+    background: #17a2b8;
+    color: white;
+    transform: scale(1.05);
+}
+
+.info-value:not(.empty):hover {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+</style>
