@@ -468,21 +468,21 @@ foreach ($task_list as $task) {
                     <td class="task-actions">
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task ricorrente?\n\nIl task attuale verrà eliminato e ricreato con la prossima scadenza tra <?= $task['ricorrenza'] ?> giorni.\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>')">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task ricorrente? Sarà ricreato con la prossima scadenza.')">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('⚠️ ATTENZIONE!\n\nEliminare definitivamente questo task ricorrente?\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>\nRicorrenza: Ogni <?= $task['ricorrenza'] ?> giorni\n\nQuesta azione NON può essere annullata!')">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task ricorrente?')">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-danger btn-sm">🗑️ Elimina</button>
                             </form>
                         <?php else: ?>
                             <!-- Task non ricorrente -->
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task?\n\nIl task verrà eliminato definitivamente.\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>')">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task? Sarà eliminato definitivamente.')">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm">✅ Completato</button>
                             </form>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task?\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>\n\nQuesta azione NON può essere annullata!')">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Eliminare definitivamente questo task?')">
                                 <input type="hidden" name="delete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-danger btn-sm">🗑️ Elimina</button>
                             </form>
@@ -500,14 +500,6 @@ foreach ($task_list as $task) {
 setTimeout(() => {
     location.reload();
 }, 300000);
-
-// Conferma prima di lasciare la pagina se ci sono task in scadenza
-window.addEventListener('beforeunload', function(e) {
-    <?php if ($overdue_tasks > 0): ?>
-    e.preventDefault();
-    e.returnValue = 'Ci sono <?= $overdue_tasks ?> task in scadenza. Sei sicuro di voler lasciare la pagina?';
-    <?php endif; ?>
-});
 </script>
 
 </main>
