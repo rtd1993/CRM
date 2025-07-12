@@ -1,5 +1,5 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
-<link rel="stylesheet" href="/assets/css/chat_widgets.css">
+<link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">
 <script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
@@ -16,6 +16,15 @@
     </div>
 </div>
 <script>
+// Assicuriamoci che i widget partano chiusi
+document.addEventListener('DOMContentLoaded', function() {
+    const widgets = document.querySelectorAll('.crm-chat-widget');
+    widgets.forEach(widget => {
+        widget.classList.remove('open');
+        console.log('Widget ' + widget.id + ' impostato come chiuso');
+    });
+});
+
 function toggleChatWidget(id) {
     const widget = document.getElementById(id);
     widget.classList.toggle('open');

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sfere Chat</title>
+    <link rel="stylesheet" href="/assets/css/chat_widgets.css">
+</head>
+<body style="background: #f0f0f0; height: 100vh; margin: 0;">
+    <h1 style="text-align: center; color: #333; margin-top: 50px;">Test Visualizzazione Sfere</h1>
+    
+    <div id="crm-chat-container">
+        <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
+            <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
+                <span class="chat-icon">💬</span>
+                <span class="chat-text">Chat Globale</span>
+            </div>
+            <div class="crm-chat-body">
+                <div class="crm-chat-messages" id="chat-messages">
+                    <p>Messaggio di test</p>
+                </div>
+                <div class="crm-chat-input-group">
+                    <input type="text" class="crm-chat-input" placeholder="Scrivi...">
+                    <button class="crm-chat-send-btn">Invia</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="crm-chat-widget" id="chat-pratiche" data-tooltip="Chat Pratiche">
+            <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche')">
+                <span class="chat-icon">📋</span>
+                <span class="chat-text">Chat Pratiche</span>
+            </div>
+            <div class="crm-chat-body">
+                <div class="crm-chat-messages">
+                    <p>Messaggio di test pratiche</p>
+                </div>
+                <div class="crm-chat-input-group">
+                    <input type="text" class="crm-chat-input" placeholder="Scrivi...">
+                    <button class="crm-chat-send-btn">Invia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Assicuriamoci che i widget partano chiusi
+        document.addEventListener('DOMContentLoaded', function() {
+            const widgets = document.querySelectorAll('.crm-chat-widget');
+            widgets.forEach(widget => {
+                widget.classList.remove('open');
+                console.log('Widget ' + widget.id + ' impostato come chiuso');
+            });
+        });
+
+        function toggleChatWidget(id) {
+            const widget = document.getElementById(id);
+            widget.classList.toggle('open');
+            console.log('Widget ' + id + ' stato:', widget.classList.contains('open') ? 'aperto' : 'chiuso');
+        }
+    </script>
+</body>
+</html>
