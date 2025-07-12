@@ -24,17 +24,24 @@ if (isset($_POST['complete_id'])) {
     if ($task) {
         // Invia notifica chat
         $msg = "$user_name ha completato il task: " . $task['descrizione'];
-        $pdo->prepare("INSERT INTO chat (mittente, messaggio, timestamp) VALUES (?, ?, NOW())")
-            ->execute([$user_name, $msg]);
+        $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())")
+            ->execute([$_SESSION['user_id'], $msg]);
 
         if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
-            // Task ricorrente: sposta la scadenza di N giorni
-            $stmt = $pdo->prepare("UPDATE task SET scadenza = DATE_ADD(scadenza, INTERVAL ? DAY) WHERE id = ?");
-            $stmt->execute([$task['ricorrenza'], $id]);
+            // Task ricorrente: elimina il task attuale e lo ricrea con la scadenza successiva
             
-            // Debug: verifica se l'update è stato eseguito
-            $affected_rows = $stmt->rowCount();
-            error_log("Task ricorrente aggiornato: ID {$id}, Giorni {$task['ricorrenza']}, Righe modificate: {$affected_rows}");
+            // Calcola la nuova scadenza
+            $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
+            
+            // Elimina il task attuale
+            $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
+            
+            // Ricrea il task con la nuova scadenza
+            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
+            $stmt->execute([$task['descrizione'], $nuova_scadenza, $task['ricorrenza']]);
+            
+            // Log per debug
+            error_log("Task ricorrente ricreato: '{$task['descrizione']}' - Nuova scadenza: {$nuova_scadenza}");
             
             header("Location: task.php?completed=recurring");
         } else {
@@ -342,7 +349,7 @@ if (isset($_GET['success']) && $_GET['success'] == '1'):
 <?php if (isset($_GET['completed'])): ?>
     <div class="alert alert-info">
         <?php if ($_GET['completed'] === 'recurring'): ?>
-            <strong>🔄 Task ricorrente completato!</strong> La scadenza è stata aggiornata automaticamente.
+            <strong>🔄 Task ricorrente completato!</strong> Il task è stato eliminato e ricreato con la prossima scadenza.
         <?php else: ?>
             <strong>✅ Task completato!</strong> Il task è stato eliminato definitivamente.
         <?php endif; ?>
@@ -461,7 +468,7 @@ foreach ($task_list as $task) {
                     <td class="task-actions">
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
-                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task ricorrente?\n\nLa prossima scadenza sarà tra <?= $task['ricorrenza'] ?> giorni.\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>')">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Completare il task ricorrente?\n\nIl task attuale verrà eliminato e ricreato con la prossima scadenza tra <?= $task['ricorrenza'] ?> giorni.\n\nDescrizione: <?= htmlspecialchars($task['descrizione']) ?>')">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm">✅ Completato</button>
                             </form>
