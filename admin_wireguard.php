@@ -10,64 +10,132 @@ if (!in_array($_SESSION['user_role'], ['admin', 'developer'])) {
 
 // Configurazione percorsi
 $WG_CONF = '/etc/wireguard/wg0.conf';
-$WG_PRIVKEY = '/etc/wireguard/privatekey';
+$WG_PRIVKEY = '/var/www/CRM/privatekey';
+$WG_PUBKEY = '/var/www/CRM/publickey';
 
-// Leggi privatekey server
+// Leggi chiavi server
 $privatekey = trim(@file_get_contents($WG_PRIVKEY));
+$publickey = trim(@file_get_contents($WG_PUBKEY));
 
-// Funzione per leggere peers già presenti
+// Funzione per leggere peers dal file di configurazione WireGuard
 function get_peers($conf) {
+    if (!file_exists($conf)) {
+        return [];
+    }
+    
     $peers = [];
-    $current = [];
-    $index = 0;
-    foreach (file($conf) as $line) {
+    $current_peer = null;
+    $lines = file($conf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    foreach ($lines as $line) {
         $line = trim($line);
-        if ($line === '[Peer]') {
-            if ($current) {
-                $current['_index'] = $index++;
-                $peers[] = $current;
+        
+        // Ignora commenti e linee vuote
+        if (empty($line) || $line[0] === '#') {
+            continue;
+        }
+        
+        // Inizia una nuova sezione [Peer]
+        if (strtolower($line) === '[peer]') {
+            // Salva il peer precedente se esiste
+            if ($current_peer !== null && isset($current_peer['PublicKey'])) {
+                $peers[] = $current_peer;
             }
-            $current = ['raw' => '[Peer]'];
-        } elseif ($line && strpos($line, '=') !== false) {
-            list($k, $v) = array_map('trim', explode('=', $line, 2));
-            $current[$k] = $v;
-            $current['raw'] .= "\n$k = $v";
+            $current_peer = [];
+            continue;
+        }
+        
+        // Ignora sezione [Interface]
+        if (strtolower($line) === '[interface]') {
+            $current_peer = null;
+            continue;
+        }
+        
+        // Processa le righe chiave = valore solo se siamo in una sezione [Peer]
+        if ($current_peer !== null && strpos($line, '=') !== false) {
+            $parts = explode('=', $line, 2);
+            if (count($parts) === 2) {
+                $key = trim($parts[0]);
+                $value = trim($parts[1]);
+                $current_peer[$key] = $value;
+            }
         }
     }
-    if ($current && isset($current['PublicKey'])) {
-        $current['_index'] = $index++;
-        $peers[] = $current;
+    
+    // Aggiungi l'ultimo peer se esiste
+    if ($current_peer !== null && isset($current_peer['PublicKey'])) {
+        $peers[] = $current_peer;
     }
+    
     return $peers;
 }
 
 // Funzione per riscrivere il wg0.conf senza un peer specifico
-function remove_peer($conf, $pubkey) {
-    $lines = file($conf);
+function remove_peer($conf, $pubkey_to_remove) {
+    if (!file_exists($conf)) {
+        return false;
+    }
+    
+    $lines = file($conf, FILE_IGNORE_NEW_LINES);
     $new_lines = [];
-    $skip = false;
+    $current_section = null;
+    $skip_peer = false;
+    $peer_buffer = [];
+    
     foreach ($lines as $line) {
-        if (trim($line) === '[Peer]') {
-            $skip = false;
-            $buffer = [$line];
+        $trimmed = trim($line);
+        
+        // Identifica sezioni
+        if (preg_match('/^\[(\w+)\]$/', $trimmed, $matches)) {
+            $section = strtolower($matches[1]);
+            
+            // Se stavamo processando un peer, decidere se salvarlo
+            if ($current_section === 'peer' && !empty($peer_buffer)) {
+                if (!$skip_peer) {
+                    $new_lines = array_merge($new_lines, $peer_buffer);
+                }
+                $peer_buffer = [];
+                $skip_peer = false;
+            }
+            
+            $current_section = $section;
+            
+            if ($section === 'interface') {
+                $new_lines[] = $line;
+            } elseif ($section === 'peer') {
+                $peer_buffer = [$line];
+            }
             continue;
         }
-        if (isset($buffer)) {
-            $buffer[] = $line;
-            if (stripos($line, 'PublicKey') !== false && trim(explode('=', $line)[1]) === $pubkey) {
-                $skip = true;
-            }
-            if (trim($line) === '' || $line === end($lines)) {
-                if (!$skip) {
-                    $new_lines = array_merge($new_lines, $buffer);
-                }
-                unset($buffer);
-            }
-        } else {
+        
+        // Processa contenuto delle sezioni
+        if ($current_section === 'interface') {
             $new_lines[] = $line;
+        } elseif ($current_section === 'peer') {
+            $peer_buffer[] = $line;
+            
+            // Controlla se questo peer deve essere rimosso
+            if (strpos($trimmed, 'PublicKey') === 0) {
+                $pubkey_value = trim(explode('=', $trimmed, 2)[1]);
+                if ($pubkey_value === $pubkey_to_remove) {
+                    $skip_peer = true;
+                }
+            }
         }
     }
-    file_put_contents($conf, implode('', $new_lines));
+    
+    // Gestisci l'ultimo peer se necessario
+    if ($current_section === 'peer' && !empty($peer_buffer) && !$skip_peer) {
+        $new_lines = array_merge($new_lines, $peer_buffer);
+    }
+    
+    // Scrivi il file aggiornato
+    $content = implode("\n", $new_lines);
+    if (!empty($content) && substr($content, -1) !== "\n") {
+        $content .= "\n";
+    }
+    
+    return file_put_contents($conf, $content) !== false;
 }
 
 // Aggiungi peer
@@ -85,13 +153,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['remove_peer'])) {
         $pubkey = $_POST['remove_peer'];
         @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
-        remove_peer($WG_CONF, $pubkey);
-        shell_exec('sudo wg-quick down wg0 && sudo wg-quick up wg0');
-        $msg = "Peer rimosso e servizio WireGuard riavviato.";
+        if (remove_peer($WG_CONF, $pubkey)) {
+            shell_exec('sudo wg-quick down wg0 && sudo wg-quick up wg0');
+            $msg = "Peer rimosso e servizio WireGuard riavviato.";
+        } else {
+            $msg = "Errore durante la rimozione del peer.";
+        }
     }
 }
 
 $peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
+
+// Funzione per verificare lo stato di WireGuard
+function check_wireguard_status() {
+    $output = shell_exec('sudo wg show 2>/dev/null');
+    return !empty($output);
+}
+
+$wg_running = check_wireguard_status();
 ?>
 
 <style>
@@ -334,10 +413,15 @@ $peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
 Address = 10.10.0.1/24
 ListenPort = 51820
 PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
+
+PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
             </div>
-            <?php if (!$privatekey): ?>
+            <?php if (!$privatekey || !$publickey): ?>
                 <div class="alert" style="background: #fff3cd; color: #856404; border-color: #ffeaa7; margin-top: 10px;">
-                    <strong>⚠️ Attenzione:</strong> Private key non trovata. Configurare WireGuard prima di procedere.
+                    <strong>⚠️ Attenzione:</strong> 
+                    <?php if (!$privatekey): ?>Private key non trovata in /etc/wireguard/privatekey. <?php endif; ?>
+                    <?php if (!$publickey): ?>Public key non trovata in /var/www/CRM/publickey. <?php endif; ?>
+                    Configurare WireGuard prima di procedere.
                 </div>
             <?php endif; ?>
         </div>
@@ -347,14 +431,20 @@ PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
             <h3>📊 Stato WireGuard</h3>
             <div style="margin-bottom: 15px;">
                 <strong>Servizio:</strong> 
-                <span class="status-badge status-active">Attivo</span>
+                <span class="status-badge <?= $wg_running ? 'status-active' : 'status-inactive' ?>">
+                    <?= $wg_running ? 'Attivo' : 'Inattivo' ?>
+                </span>
             </div>
             <div style="margin-bottom: 15px;">
                 <strong>Peers configurati:</strong> 
                 <span style="font-weight: bold; color: #007bff;"><?= count($peers) ?></span>
             </div>
-            <div>
+            <div style="margin-bottom: 15px;">
                 <strong>Porta:</strong> 51820 (UDP)
+            </div>
+            <div>
+                <strong>File configurazione:</strong> 
+                <span style="font-size: 12px; color: #6c757d;"><?= file_exists($WG_CONF) ? '✅ Presente' : '❌ Non trovato' ?></span>
             </div>
         </div>
     </div>
@@ -375,6 +465,7 @@ PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
                     <tr>
                         <th>🔑 Public Key</th>
                         <th>🌐 Allowed IPs</th>
+                        <th>📍 Endpoint</th>
                         <th>⚙️ Azioni</th>
                     </tr>
                 </thead>
@@ -383,8 +474,9 @@ PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
                     <tr>
                         <td class="pubkey-cell"><?= htmlspecialchars($peer['PublicKey'] ?? '-') ?></td>
                         <td><?= htmlspecialchars($peer['AllowedIPs'] ?? '-') ?></td>
+                        <td style="font-size: 12px;"><?= htmlspecialchars($peer['Endpoint'] ?? 'N/A') ?></td>
                         <td>
-                            <form method="post" style="display:inline;" onsubmit="return confirm('⚠️ Rimuovere questo peer?\n\nQuesta azione non può essere annullata.');">
+                            <form method="post" style="display:inline;" onsubmit="return confirm('⚠️ Rimuovere questo peer?\n\nQuesta azione rimuoverà il peer dalla configurazione e riavvierà WireGuard.');">
                                 <input type="hidden" name="remove_peer" value="<?= htmlspecialchars($peer['PublicKey']) ?>">
                                 <button type="submit" class="btn btn-danger">🗑️ Rimuovi</button>
                             </form>
@@ -421,11 +513,11 @@ PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
                            id="allowedip"
                            name="allowedip" 
                            class="form-control" 
-                           value="10.10.0.2/32" 
+                           value="10.10.0.<?= count($peers) + 2 ?>/32" 
                            placeholder="Es: 10.10.0.2/32"
                            required>
                     <small style="color: #6c757d; margin-top: 5px; display: block;">
-                        💡 Usa /32 per un singolo IP, /24 per una subnet
+                        💡 IP automatico assegnato: 10.10.0.<?= count($peers) + 2 ?> (DHCP-like)
                     </small>
                 </div>
                 
@@ -436,18 +528,88 @@ PrivateKey = <?= htmlspecialchars($privatekey ?: '--- NON CONFIGURATO ---') ?>
         </div>
     </div>
 
-    <!-- Comandi Utili -->
+    <!-- Guida Configurazione Windows -->
     <div class="section">
+        <h3>📋 Guida: Collegare PC Windows a WireGuard</h3>
+        
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h4 style="margin-top: 0; color: #1976d2;">🎯 Configurazione Automatica</h4>
+            <p>Il sistema assegna automaticamente gli IP ai nuovi peer come un DHCP. Non devi specificare manualmente l'indirizzo IP.</p>
+            <p><strong>Prossimo IP disponibile:</strong> <code>10.10.0.<?= count($peers) + 2 ?></code></p>
+        </div>
+
         <div class="commands-box">
-            <h4>🛠️ Comandi Utili</h4>
-            <p><strong>Mostra stato WireGuard:</strong></p>
-            <pre>sudo wg show</pre>
-            
-            <p><strong>Riavvia WireGuard:</strong></p>
-            <pre>sudo wg-quick down wg0 && sudo wg-quick up wg0</pre>
-            
-            <p><strong>Visualizza configurazione:</strong></p>
-            <pre>sudo cat /etc/wireguard/wg0.conf</pre>
+            <h4>� Passo 1: Installare WireGuard su Windows</h4>
+            <ol>
+                <li>Scarica WireGuard per Windows: <a href="https://www.wireguard.com/install/" target="_blank">https://www.wireguard.com/install/</a></li>
+                <li>Installa e avvia WireGuard</li>
+                <li>Clicca su "Aggiungi tunnel vuoto" o premi <kbd>Ctrl+N</kbd></li>
+            </ol>
+        </div>
+
+        <div class="commands-box">
+            <h4>⚙️ Passo 2: Configurare il Client</h4>
+            <p>Copia e incolla questa configurazione nel client WireGuard:</p>
+            <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; margin: 10px 0;">
+[Interface]
+# IP automatico assegnato (DHCP-like)
+Address = 10.10.0.<?= count($peers) + 2 ?>/24
+# Chiave privata generata automaticamente dal client
+PrivateKey = &lt;GENERATA_AUTOMATICAMENTE&gt;
+# DNS del server
+DNS = 8.8.8.8, 1.1.1.1
+
+[Peer]
+# Chiave pubblica del server
+PublicKey = <?= htmlspecialchars($publickey ?: 'CONFIGURARE_SERVER_PRIMA') ?>
+
+# Indirizzo del server (sostituire con IP pubblico)
+Endpoint = <?= htmlspecialchars($_SERVER['SERVER_ADDR'] ?? 'IP_PUBBLICO_SERVER') ?>:51820
+
+# Tutto il traffico attraverso VPN
+AllowedIPs = 0.0.0.0/0
+
+# Mantieni connessione attiva
+PersistentKeepalive = 25</pre>
+        </div>
+
+        <div class="commands-box">
+            <h4>🔑 Passo 3: Ottenere la Public Key del Client</h4>
+            <ol>
+                <li>Dopo aver incollato la configurazione, WireGuard genererà automaticamente una <strong>PrivateKey</strong></li>
+                <li>Nella finestra di configurazione, troverai la <strong>PublicKey</strong> corrispondente</li>
+                <li>Copia la <strong>PublicKey</strong> del client (lunga 44 caratteri)</li>
+                <li>Incollala nel form "Aggiungi Nuovo Peer" qui sopra</li>
+            </ol>
+        </div>
+
+        <div class="commands-box">
+            <h4>🚀 Passo 4: Attivare la Connessione</h4>
+            <ol>
+                <li>Salva la configurazione con un nome (es: "CRM Server")</li>
+                <li>Dopo aver aggiunto il peer qui sopra, clicca "Attiva" in WireGuard</li>
+                <li>Verifica la connessione: dovresti vedere traffico in entrata/uscita</li>
+                <li>Testa l'accesso: <code>ping 10.10.0.1</code> dal prompt di Windows</li>
+            </ol>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <h4 style="margin-top: 0; color: #856404;">⚠️ Informazioni Importanti</h4>
+            <ul style="margin-bottom: 0;">
+                <li><strong>IP Server:</strong> Sostituisci <code>IP_PUBBLICO_SERVER</code> con l'IP pubblico reale del server</li>
+                <li><strong>Porta:</strong> Assicurati che la porta 51820 UDP sia aperta nel firewall</li>
+                <li><strong>DNS:</strong> Puoi cambiare i DNS con quelli del tuo provider</li>
+                <li><strong>AllowedIPs:</strong> <code>0.0.0.0/0</code> instrada tutto il traffico tramite VPN</li>
+            </ul>
+        </div>
+
+        <div style="background: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; margin-top: 15px;">
+            <h4 style="margin-top: 0; color: #155724;">✅ Configurazione Alternativa (Solo Rete Locale)</h4>
+            <p>Se vuoi accedere solo alla rete locale del server, cambia:</p>
+            <pre style="background: #1e1e1e; color: #f8f8f2; padding: 10px; border-radius: 4px; margin: 10px 0;">
+# Invece di: AllowedIPs = 0.0.0.0/0
+# Usa: AllowedIPs = 10.10.0.0/24, 192.168.1.0/24</pre>
+            <p>Questo instraderà solo il traffico verso la rete VPN (10.10.0.x) e la rete locale del server (192.168.1.x).</p>
         </div>
     </div>
 </div>
