@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_dir($cartella)) {
                 mkdir($cartella, 0775, true);
             }
-            header("Location: clienti.php");
+            header("Location: clienti.php?success=1");
             exit;
         } else {
             $errore = "Errore durante l'inserimento.";
@@ -61,34 +61,319 @@ function campo_input($nome) {
             break;
         }
     }
-    return "<div style=\"flex: 1 1 22%; margin-bottom: 15px;\"><label style=\"font-weight:bold;\">$nome:<br><input type=\"$type\" name=\"$nome\" style=\"width:100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;\"></label></div>";
+    return "<div class=\"form-field\"><label class=\"form-label\">$nome</label><input type=\"$type\" name=\"$nome\" class=\"form-control\"></div>";
 }
 ?>
 
-<h2>➕ Crea Nuovo Cliente</h2>
+<style>
+.client-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    text-align: center;
+}
 
-<?php if (!empty($errore)): ?>
-    <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
-        <?= htmlspecialchars($errore) ?>
-    </div>
-<?php endif; ?>
+.client-header h2 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
 
-<form method="post" autocomplete="off">
-<?php foreach ($gruppi as $titolo => $campi): ?>
-    <fieldset style="margin-bottom: 30px; border: 2px solid #007BFF; padding: 15px; border-radius: 8px;">
-        <legend style="font-size: 1.1em; font-weight: bold; color: #007BFF; padding: 0 10px;"><?= htmlspecialchars($titolo) ?></legend>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <?php foreach ($campi as $campo): ?>
-                <?= campo_input($campo) ?>
-            <?php endforeach; ?>
+.client-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.client-form {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+}
+
+.client-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    border-color: #28a745;
+    background: white;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+}
+
+/* Sezione attiva */
+.form-section.active {
+    border-color: #28a745;
+    background: white;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.15);
+    transform: translateY(-2px);
+}
+
+.form-section.active .form-section-title {
+    background: #28a745;
+    color: white;
+}
+
+.form-section-title {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: white;
+    padding: 0 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #28a745;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.form-control {
+    padding: 0.8rem 1rem;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    background: #f8fff9;
+}
+
+.form-control[type="date"] {
+    cursor: pointer;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #f5c6cb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e1e5e9;
+}
+
+.btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 1rem;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: #28a745;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .client-header h2 {
+        font-size: 2rem;
+    }
+    
+    .client-form {
+        padding: 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="client-header">
+    <h2>👤 Crea Nuovo Cliente</h2>
+    <p>Inserisci i dati del nuovo cliente nel sistema</p>
+</div>
+
+<div class="client-form">
+    <?php if (!empty($errore)): ?>
+        <div class="error-message">
+            <strong>⚠️</strong> <?= htmlspecialchars($errore) ?>
         </div>
-    </fieldset>
-<?php endforeach; ?>
-    <button type="submit" style="padding: 10px 20px; font-size: 1em; background-color: #28a745; color: white; border: none; border-radius: 5px;">💾 Salva Cliente</button>
-</form>
+    <?php endif; ?>
 
-<p><a href="clienti.php">⬅️ Torna alla lista clienti</a></p>
+    <form method="post" autocomplete="off">
+        <?php foreach ($gruppi as $titolo => $campi): ?>
+            <div class="form-section">
+                <div class="form-section-title"><?= htmlspecialchars($titolo) ?></div>
+                <div class="form-grid">
+                    <?php foreach ($campi as $campo): ?>
+                        <?php
+                        $is_required = (strpos($campo, 'Codice fiscale') !== false);
+                        $field_html = str_replace('class="form-label"', 'class="form-label' . ($is_required ? ' required-field' : '') . '"', campo_input($campo));
+                        echo $field_html;
+                        ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Salva Cliente</button>
+            <a href="clienti.php" class="btn btn-secondary">❌ Annulla</a>
+        </div>
+    </form>
+</div>
+
+<a href="clienti.php" class="back-link">⬅️ Torna alla lista clienti</a>
 
 </main>
 </body>
 </html>
+
+<script>
+// Miglioramenti UX per form clienti
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus automatico sul primo campo
+    const firstInput = document.querySelector('.form-control');
+    if (firstInput) {
+        firstInput.focus();
+    }
+    
+    // Evidenzia sezione attiva
+    const formSections = document.querySelectorAll('.form-section');
+    formSections.forEach(section => {
+        const inputs = section.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                // Rimuovi classe active da tutte le sezioni
+                formSections.forEach(s => s.classList.remove('active'));
+                // Aggiungi classe active alla sezione corrente
+                section.classList.add('active');
+            });
+        });
+    });
+    
+    // Validazione form
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = submitBtn.innerHTML.replace('Salva', 'Salvataggio...');
+            }
+        });
+    }
+    
+    // Auto-uppercase per codice fiscale
+    const cfInput = document.querySelector('input[name="Codice fiscale"]');
+    if (cfInput) {
+        cfInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
