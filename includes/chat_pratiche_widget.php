@@ -1,3 +1,4 @@
+<?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/db.php';
@@ -86,3 +87,4 @@ function togglePraticaChat() {
     document.getElementById('pratica-chat-widget').classList.toggle('open');
 }
 </script>
+<?php endif; ?>

@@ -37,9 +37,6 @@
     position: relative !important;
     overflow: visible !important;
     border: 3px solid rgba(255, 255, 255, 0.2) !important;
-    /* DEBUG: Bordo rosso per test */
-    outline: 2px solid red !important;
-    outline-offset: 2px !important;
 }
 
 /* Nasconde il body quando chiuso */
