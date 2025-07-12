@@ -138,29 +138,68 @@ function remove_peer($conf, $pubkey_to_remove) {
     return file_put_contents($conf, $content) !== false;
 }
 
+// Inizializza i peer e l'IP successivo
+$peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
+$next_ip = get_next_available_ip($peers);
+
 // Aggiungi peer
 $msg = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Inizializza configurazione WireGuard se non esiste
+    if (isset($_POST['init_config'])) {
+        if (create_initial_config($WG_CONF, $privatekey)) {
+            $msg = "File di configurazione WireGuard creato con successo.";
+        } else {
+            $msg = "Errore durante la creazione del file di configurazione.";
+        }
+    }
+    
     if (isset($_POST['add_peer']) && preg_match('/^[A-Za-z0-9+\/=]{43,44}$/', $_POST['pubkey'])) {
+        // Verifica che il file di configurazione esista
+        if (!file_exists($WG_CONF)) {
+            if (create_initial_config($WG_CONF, $privatekey)) {
+                $msg = "File di configurazione creato automaticamente. ";
+            } else {
+                $msg = "Errore: impossibile creare il file di configurazione.";
+                goto end_processing;
+            }
+        }
+        
         $pubkey = trim($_POST['pubkey']);
         $allowedip = trim($_POST['allowedip'] ?? '10.10.0.2/32');
         $peer_conf = "\n[Peer]\nPublicKey = $pubkey\nAllowedIPs = $allowedip\n";
         @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
-        file_put_contents($WG_CONF, $peer_conf, FILE_APPEND);
-        shell_exec('sudo wg-quick down wg0 && sudo wg-quick up wg0');
-        $msg = "Peer aggiunto e servizio WireGuard riavviato.";
+        
+        if (file_put_contents($WG_CONF, $peer_conf, FILE_APPEND) !== false) {
+            shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
+            $msg .= "Peer aggiunto e servizio WireGuard riavviato.";
+            // Ricarica i peer per aggiornare l'IP successivo
+            $peers = get_peers($WG_CONF);
+            $next_ip = get_next_available_ip($peers);
+        } else {
+            $msg = "Errore durante l'aggiunta del peer.";
+        }
     }
+    
     if (isset($_POST['remove_peer'])) {
         $pubkey = $_POST['remove_peer'];
         @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
         if (remove_peer($WG_CONF, $pubkey)) {
-            shell_exec('sudo wg-quick down wg0 && sudo wg-quick up wg0');
+            shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
             $msg = "Peer rimosso e servizio WireGuard riavviato.";
+            // Ricarica i peer per aggiornare l'IP successivo
+            $peers = get_peers($WG_CONF);
+            $next_ip = get_next_available_ip($peers);
         } else {
             $msg = "Errore durante la rimozione del peer.";
         }
     }
+    
+    end_processing:
 }
+
+// Verifica e correggi permessi se necessario
+check_and_fix_permissions($WG_CONF);
 
 $peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
 
@@ -170,7 +209,78 @@ function check_wireguard_status() {
     return !empty($output);
 }
 
+// Funzione per creare il file di configurazione iniziale
+function create_initial_config($conf_file, $private_key) {
+    $initial_config = "[Interface]\n";
+    $initial_config .= "Address = 10.10.0.1/24\n";
+    $initial_config .= "ListenPort = 51820\n";
+    if ($private_key) {
+        $initial_config .= "PrivateKey = $private_key\n";
+    }
+    $initial_config .= "\n";
+    
+    // Crea directory se non esiste
+    $dir = dirname($conf_file);
+    if (!is_dir($dir)) {
+        shell_exec("sudo mkdir -p $dir");
+    }
+    
+    // Crea il file
+    $result = file_put_contents($conf_file, $initial_config);
+    if ($result !== false) {
+        // Imposta permessi corretti
+        shell_exec("sudo chown root:root $conf_file");
+        shell_exec("sudo chmod 600 $conf_file");
+        return true;
+    }
+    return false;
+}
+
+// Funzione per verificare e correggere i permessi
+function check_and_fix_permissions($conf_file) {
+    if (!file_exists($conf_file)) {
+        return false;
+    }
+    
+    // Verifica se possiamo leggere il file
+    if (!is_readable($conf_file)) {
+        // Prova a correggere i permessi
+        shell_exec("sudo chmod 644 $conf_file");
+        shell_exec("sudo chown www-data:www-data $conf_file");
+    }
+    
+    return is_readable($conf_file);
+}
+
+// Funzione per calcolare prossimo IP disponibile
+function get_next_available_ip($peers) {
+    $used_ips = [];
+    foreach ($peers as $peer) {
+        if (isset($peer['AllowedIPs'])) {
+            $ip = explode('/', $peer['AllowedIPs'])[0];
+            if (preg_match('/^10\.10\.0\.(\d+)$/', $ip, $matches)) {
+                $used_ips[] = intval($matches[1]);
+            }
+        }
+    }
+    
+    // Inizia da 10.10.0.2 (il server usa 10.10.0.1)
+    for ($i = 2; $i <= 254; $i++) {
+        if (!in_array($i, $used_ips)) {
+            return "10.10.0.$i";
+        }
+    }
+    
+    return "10.10.0.2"; // fallback
+}
+
 $wg_running = check_wireguard_status();
+
+// Reinizializza i peer e l'IP successivo se non già fatto nel POST
+if (!isset($peers)) {
+    $peers = file_exists($WG_CONF) ? get_peers($WG_CONF) : [];
+    $next_ip = get_next_available_ip($peers);
+}
 ?>
 
 <style>
@@ -445,6 +555,14 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
             <div>
                 <strong>File configurazione:</strong> 
                 <span style="font-size: 12px; color: #6c757d;"><?= file_exists($WG_CONF) ? '✅ Presente' : '❌ Non trovato' ?></span>
+                <?php if (!file_exists($WG_CONF) && $privatekey): ?>
+                    <form method="post" style="display: inline-block; margin-left: 10px;">
+                        <input type="hidden" name="init_config" value="1">
+                        <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;">
+                            🔧 Crea File Config
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -491,6 +609,17 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
     <!-- Form Aggiungi Peer -->
     <div class="section">
         <h3>➕ Aggiungi Nuovo Peer</h3>
+        
+        <?php if (!file_exists($WG_CONF)): ?>
+            <div class="alert" style="background: #fff3cd; color: #856404; border-color: #ffeaa7; margin-bottom: 20px;">
+                <strong>⚠️ Attenzione:</strong> 
+                Il file di configurazione WireGuard non esiste. Verrà creato automaticamente quando aggiungi il primo peer.
+                <?php if ($privatekey): ?>
+                    <br>Oppure puoi crearlo manualmente usando il bottone "Crea File Config" nella sezione Stato WireGuard.
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        
         <div class="add-peer-form">
             <form method="post">
                 <input type="hidden" name="add_peer" value="1">
@@ -513,11 +642,11 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
                            id="allowedip"
                            name="allowedip" 
                            class="form-control" 
-                           value="10.10.0.<?= count($peers) + 2 ?>/32" 
+                           value="<?= $next_ip ?>/32" 
                            placeholder="Es: 10.10.0.2/32"
                            required>
                     <small style="color: #6c757d; margin-top: 5px; display: block;">
-                        💡 IP automatico assegnato: 10.10.0.<?= count($peers) + 2 ?> (DHCP-like)
+                        💡 IP automatico assegnato: <?= $next_ip ?> (DHCP-like)
                     </small>
                 </div>
                 
@@ -535,7 +664,7 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
         <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <h4 style="margin-top: 0; color: #1976d2;">🎯 Configurazione Automatica</h4>
             <p>Il sistema assegna automaticamente gli IP ai nuovi peer come un DHCP. Non devi specificare manualmente l'indirizzo IP.</p>
-            <p><strong>Prossimo IP disponibile:</strong> <code>10.10.0.<?= count($peers) + 2 ?></code></p>
+            <p><strong>Prossimo IP disponibile:</strong> <code><?= $next_ip ?></code></p>
         </div>
 
         <div class="commands-box">
@@ -553,7 +682,7 @@ PublicKey = <?= htmlspecialchars($publickey ?: '--- NON CONFIGURATO ---') ?>
             <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; margin: 10px 0;">
 [Interface]
 # IP automatico assegnato (DHCP-like)
-Address = 10.10.0.<?= count($peers) + 2 ?>/24
+Address = <?= $next_ip ?>/24
 # Chiave privata generata automaticamente dal client
 PrivateKey = &lt;GENERATA_AUTOMATICAMENTE&gt;
 # DNS del server
