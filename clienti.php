@@ -475,9 +475,6 @@ foreach ($clienti as $c) {
         <h4>🔧 Azioni Multiple</h4>
         <p>Seleziona i clienti nella tabella e scegli un'azione da eseguire:</p>
         <div class="bulk-buttons">
-            <button type="button" class="btn btn-primary" onclick="bulkEdit()">
-                ✏️ Modifica Selezionati
-            </button>
             <button type="button" class="btn btn-warning" onclick="bulkExport()">
                 📤 Esporta Selezionati
             </button>
@@ -715,19 +712,6 @@ function exportToCSV() {
 }
 
 // Azioni multiple
-function bulkEdit() {
-    const selected = getSelectedClients();
-    if (selected.length === 0) {
-        showNotification('⚠️ Seleziona almeno un cliente', 'warning');
-        return;
-    }
-    
-    if (confirm(`Vuoi modificare ${selected.length} clienti selezionati?`)) {
-        // Qui potresti implementare la logica per modifiche multiple
-        showNotification('🔧 Funzionalità in arrivo!', 'info');
-    }
-}
-
 function bulkExport() {
     const selected = getSelectedClients();
     if (selected.length === 0) {
