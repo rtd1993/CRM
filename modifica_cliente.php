@@ -70,8 +70,7 @@ $campi_db = [
     'Password' => 'password',
     'Scadenza PEC' => 'date',
     'Rinnovo Pec' => 'date',
-    'SDI' => 'text',
-    'Link cartella' => 'url'
+    'SDI' => 'text'
 ];
 
 // Gestione dell'aggiornamento
@@ -182,9 +181,6 @@ $sezioni = [
     ],
     'Contatti' => [
         'Telefono', 'Mail', 'PEC', 'User Aruba', 'Password', 'Scadenza PEC', 'Rinnovo Pec', 'SDI'
-    ],
-    'Altro' => [
-        'Link cartella'
     ]
 ];
 ?>
@@ -675,6 +671,58 @@ $sezioni = [
                     </a>
                 </div>
             </form>
+
+            <!-- Sezione Gestione Cartella -->
+            <div class="section" style="margin-top: 30px;">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span><i class="fas fa-folder"></i> Gestione Cartella Cliente</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label>Cartella Local Drive</label>
+                        <?php
+                        $codice_fiscale = $cliente['Codice fiscale'] ?? '';
+                        $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale;
+                        $cartella_esiste = !empty($codice_fiscale) && is_dir($cartella_path);
+                        ?>
+                        
+                        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
+                            <?php if ($cartella_esiste): ?>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.2em;"></i>
+                                    <span style="color: #28a745; font-weight: bold;">Cartella trovata</span>
+                                    <a href="drive.php?path=<?php echo urlencode($codice_fiscale); ?>" 
+                                       class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
+                                        <i class="fas fa-folder-open"></i> Apri Cartella
+                                    </a>
+                                </div>
+                            <?php elseif (!empty($codice_fiscale)): ?>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 1.2em;"></i>
+                                    <span style="color: #ffc107; font-weight: bold;">Cartella non trovata</span>
+                                    <button type="button" 
+                                            onclick="creaCartella('<?php echo htmlspecialchars($codice_fiscale); ?>')" 
+                                            class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
+                                        <i class="fas fa-plus"></i> Crea Cartella
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 1.2em;"></i>
+                                    <span style="color: #17a2b8; font-weight: bold;">Inserire prima il Codice Fiscale per gestire la cartella</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <?php if (!empty($codice_fiscale)): ?>
+                            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
+                                <strong>Percorso:</strong> /var/www/CRM/local_drive/<?php echo htmlspecialchars($codice_fiscale); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
 </div>
 
 <div id="notification" class="notification"></div>
@@ -800,6 +848,47 @@ $sezioni = [
                 }
             });
         });
+
+        // Funzione per creare la cartella
+        function creaCartella(codiceFiscale) {
+            if (!codiceFiscale) {
+                showNotification('Codice fiscale non valido', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creazione...';
+
+            fetch('api_crea_cartella.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'codice_fiscale=' + encodeURIComponent(codiceFiscale) + '&cliente_id=' + <?php echo $cliente_id; ?>
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Cartella creata con successo!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('Errore: ' + (data.message || 'Impossibile creare la cartella'), 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Errore di connessione', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        }
     </script>
 
 </main>
