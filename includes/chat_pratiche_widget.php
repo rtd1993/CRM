@@ -19,6 +19,7 @@ $clienti = $pdo->query("SELECT id, `cognome/ragione sociale`, nome FROM clienti 
                     <option value="<?= $cli['id'] ?>">
                         <?= htmlspecialchars($cli['cognome/ragione sociale']) . " " . htmlspecialchars($cli['nome']) ?>
                     </option>
+                    
                 <?php endforeach; ?>
             </select>
             <div class="crm-chat-messages" id="praticaChatBox">
