@@ -1,20 +1,16 @@
 <?php
-session_start();
-require_once 'includes/auth.php';
-require_once 'includes/db.php';
-require_once 'includes/config.php';
+require_once __DIR__ . '/includes/auth.php';
+require_login();
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/db.php';
 
-// Verifico che l'utente sia loggato
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
+include __DIR__ . '/includes/header.php';
 
 // Recupero l'ID del cliente da modificare
 $cliente_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($cliente_id <= 0) {
-    header("Location: clienti.php");
+    echo "<div class='alert alert-danger'>ID cliente non valido.</div></main></body></html>";
     exit();
 }
 
@@ -24,7 +20,7 @@ $stmt->execute([$cliente_id]);
 $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cliente) {
-    header("Location: clienti.php");
+    echo "<div class='alert alert-danger'>Cliente non trovato.</div></main></body></html>";
     exit();
 }
 
@@ -122,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $success_message = "Cliente aggiornato con successo!";
             
+            // Redirect dopo 2 secondi per mostrare il messaggio
+            header("refresh:2;url=info_cliente.php?id=$cliente_id");
+            
             // Ricarico i dati aggiornati
             $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
             $stmt->execute([$cliente_id]);
@@ -168,90 +167,57 @@ $sezioni = [
 ];
 ?>
 
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifica Cliente - CRM</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+<style>
+.modifica-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    position: relative;
+}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            animation: slideIn 0.5s ease-out;
-        }
+.modifica-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+.modifica-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
+.back-btn {
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 1.1em;
+}
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .back-btn {
-            position: absolute;
-            left: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 1.1em;
-        }
-
-        .back-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-50%) scale(1.05);
-        }
+.back-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-50%) scale(1.05);
+    color: white;
+    text-decoration: none;
+}
 
         .alert {
             padding: 15px;
-            margin: 20px 30px;
+            margin: 20px 0;
             border-radius: 8px;
             font-weight: bold;
             animation: fadeIn 0.5s ease-out;
@@ -270,7 +236,10 @@ $sezioni = [
         }
 
         .form-container {
-            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         .section {
@@ -505,6 +474,7 @@ $sezioni = [
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
+            padding: 0 30px;
         }
 
         .stat-item {
@@ -532,17 +502,23 @@ $sezioni = [
             font-size: 0.9em;
         }
 
+        .submit-section {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .form-content {
+            padding: 30px;
+        }
+
         @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
-            }
-            
-            .header {
+            .modifica-header {
                 padding: 20px;
             }
             
-            .header h1 {
+            .modifica-header h2 {
                 font-size: 2em;
             }
             
@@ -552,63 +528,65 @@ $sezioni = [
                 top: 0;
                 transform: none;
                 margin-bottom: 15px;
+                display: block;
+                width: fit-content;
             }
             
             .section-content {
                 grid-template-columns: 1fr;
             }
             
-            .form-container {
+            .form-content {
                 padding: 20px;
             }
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <a href="clienti.php" class="back-btn">
-                <i class="fas fa-arrow-left"></i> Indietro
-            </a>
-            <h1><i class="fas fa-user-edit"></i> Modifica Cliente</h1>
-            <div class="subtitle">ID: <?php echo htmlspecialchars($cliente['id']); ?> - <?php echo htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A'); ?></div>
-        </div>
 
-        <?php if (isset($success_message)): ?>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
-            </div>
-        <?php endif; ?>
+<div class="modifica-header">
+    <a href="info_cliente.php?id=<?php echo $cliente_id; ?>" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Indietro
+    </a>
+    <h2><i class="fas fa-user-edit"></i> Modifica Cliente</h2>
+    <p>ID: <?php echo htmlspecialchars($cliente['id']); ?> - <?php echo htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A'); ?></p>
+</div>
 
-        <?php if (isset($error_message)): ?>
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error_message); ?>
-            </div>
-        <?php endif; ?>
+<?php if (isset($success_message)): ?>
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
+    </div>
+<?php endif; ?>
 
-        <div class="form-container">
-            <div class="stats">
-                <div class="stat-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <div class="number"><?php echo $cliente['Inizio rapporto'] ? date('d/m/Y', strtotime($cliente['Inizio rapporto'])) : 'N/A'; ?></div>
-                    <div class="label">Inizio Rapporto</div>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-envelope"></i>
-                    <div class="number"><?php echo $cliente['Mail'] ? 'Sì' : 'No'; ?></div>
-                    <div class="label">Email</div>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-phone"></i>
-                    <div class="number"><?php echo $cliente['Telefono'] ? 'Sì' : 'No'; ?></div>
-                    <div class="label">Telefono</div>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-certificate"></i>
-                    <div class="number"><?php echo $cliente['PEC'] ? 'Sì' : 'No'; ?></div>
-                    <div class="label">PEC</div>
-                </div>
-            </div>
+<?php if (isset($error_message)): ?>
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error_message); ?>
+    </div>
+<?php endif; ?>
+
+<div class="stats">
+    <div class="stat-item">
+        <i class="fas fa-calendar-alt"></i>
+        <div class="number"><?php echo $cliente['Inizio rapporto'] ? date('d/m/Y', strtotime($cliente['Inizio rapporto'])) : 'N/A'; ?></div>
+        <div class="label">Inizio Rapporto</div>
+    </div>
+    <div class="stat-item">
+        <i class="fas fa-envelope"></i>
+        <div class="number"><?php echo $cliente['Mail'] ? 'Sì' : 'No'; ?></div>
+        <div class="label">Email</div>
+    </div>
+    <div class="stat-item">
+        <i class="fas fa-phone"></i>
+        <div class="number"><?php echo $cliente['Telefono'] ? 'Sì' : 'No'; ?></div>
+        <div class="label">Telefono</div>
+    </div>
+    <div class="stat-item">
+        <i class="fas fa-certificate"></i>
+        <div class="number"><?php echo $cliente['PEC'] ? 'Sì' : 'No'; ?></div>
+        <div class="label">PEC</div>
+    </div>
+</div>
+
+<div class="form-container">
+    <div class="form-content">
 
             <form method="POST" id="clienteForm">
                 <?php foreach ($sezioni as $nome_sezione => $campi_sezione): ?>
@@ -683,15 +661,14 @@ $sezioni = [
                             <div class="spinner"></div>
                         </span>
                     </button>
-                    <a href="clienti.php" class="btn btn-secondary">
+                    <a href="info_cliente.php?id=<?php echo $cliente_id; ?>" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Annulla
                     </a>
                 </div>
             </form>
-        </div>
-    </div>
+</div>
 
-    <div id="notification" class="notification"></div>
+<div id="notification" class="notification"></div>
 
     <script>
         // Variabili globali
@@ -866,5 +843,7 @@ $sezioni = [
             });
         });
     </script>
+
+</main>
 </body>
 </html>
