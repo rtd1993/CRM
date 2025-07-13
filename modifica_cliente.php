@@ -93,14 +93,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("URL non valido per il campo: $campo");
                 }
                 
+                // Gestione dei tipi di dato
                 if ($tipo === 'checkbox') {
                     $valore = $valore === 'on' ? 1 : 0;
-                }
-                
-                if ($tipo === 'date' && !empty($valore)) {
-                    $date = DateTime::createFromFormat('Y-m-d', $valore);
-                    if (!$date) {
-                        throw new Exception("Data non valida per il campo: $campo");
+                } elseif ($tipo === 'number') {
+                    // Per i campi numerici, converti stringa vuota in NULL
+                    if ($valore === '' || $valore === null || trim($valore) === '') {
+                        $valore = null;
+                    } else {
+                        $valore = is_numeric($valore) ? intval($valore) : null;
+                    }
+                } elseif ($tipo === 'date') {
+                    // Per le date, converti stringa vuota in NULL
+                    if ($valore === '' || $valore === null) {
+                        $valore = null;
+                    } else {
+                        $date = DateTime::createFromFormat('Y-m-d', $valore);
+                        if (!$date) {
+                            throw new Exception("Data non valida per il campo: $campo");
+                        }
+                    }
+                } else {
+                    // Per i campi di testo, mantieni stringa vuota se fornita
+                    if ($valore === null) {
+                        $valore = '';
                     }
                 }
                 
@@ -114,17 +130,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $values[] = $cliente_id;
             
             $stmt = $pdo->prepare($sql);
-            $stmt->execute($values);
             
-            $success_message = "Cliente aggiornato con successo!";
+            // Eseguiamo con binding esplicito per gestire meglio NULL
+            $result = $stmt->execute($values);
             
-            // Redirect dopo 2 secondi per mostrare il messaggio
-            header("refresh:2;url=info_cliente.php?id=$cliente_id");
-            
-            // Ricarico i dati aggiornati
-            $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
-            $stmt->execute([$cliente_id]);
-            $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($result) {
+                $success_message = "Cliente aggiornato con successo!";
+                
+                // Redirect dopo 2 secondi per mostrare il messaggio
+                header("refresh:2;url=info_cliente.php?id=$cliente_id");
+                
+                // Ricarico i dati aggiornati
+                $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
+                $stmt->execute([$cliente_id]);
+                $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+            } else {
+                throw new Exception("Errore nell'esecuzione dell'aggiornamento nel database");
+            }
         }
         
     } catch (Exception $e) {
