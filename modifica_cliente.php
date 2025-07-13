@@ -403,16 +403,6 @@ $sezioni = [
             transform: translateY(-2px);
         }
 
-        .btn-draft {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .btn-draft:hover {
-            background: #e0a800;
-            transform: translateY(-2px);
-        }
-
         .loader {
             display: none;
             margin-left: 10px;
@@ -652,9 +642,6 @@ $sezioni = [
                 <?php endforeach; ?>
 
                 <div class="submit-section">
-                    <button type="button" class="btn btn-draft" onclick="saveDraft()">
-                        <i class="fas fa-save"></i> Salva Bozza
-                    </button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Aggiorna Cliente
                         <span class="loader">
@@ -673,7 +660,6 @@ $sezioni = [
     <script>
         // Variabili globali
         let originalValues = {};
-        let draftSaved = false;
 
         // Inizializzazione
         document.addEventListener('DOMContentLoaded', function() {
@@ -684,17 +670,11 @@ $sezioni = [
                 originalValues[key] = value;
             }
 
-            // Carico bozza salvata
-            loadDraft();
-
             // Auto-focus sul primo campo
             const firstInput = document.querySelector('input[type="text"], input[type="email"], textarea');
             if (firstInput) {
                 firstInput.focus();
             }
-
-            // Salvataggio automatico bozza ogni 30 secondi
-            setInterval(saveDraft, 30000);
         });
 
         // Toggle sezioni
@@ -750,41 +730,6 @@ $sezioni = [
             input.value = value;
         }
 
-        // Salvataggio bozza
-        function saveDraft() {
-            const form = document.getElementById('clienteForm');
-            const formData = new FormData(form);
-            const draftData = {};
-            
-            for (let [key, value] of formData.entries()) {
-                draftData[key] = value;
-            }
-            
-            localStorage.setItem('cliente_draft_<?php echo $cliente_id; ?>', JSON.stringify(draftData));
-            showNotification('Bozza salvata automaticamente', 'info');
-            draftSaved = true;
-        }
-
-        // Caricamento bozza
-        function loadDraft() {
-            const draft = localStorage.getItem('cliente_draft_<?php echo $cliente_id; ?>');
-            if (draft) {
-                const draftData = JSON.parse(draft);
-                for (let [key, value] of Object.entries(draftData)) {
-                    const element = document.querySelector(`[name="${key}"]`);
-                    if (element) {
-                        if (element.type === 'checkbox') {
-                            element.checked = value === 'on';
-                        } else {
-                            element.value = value;
-                        }
-                        markChanged(element);
-                    }
-                }
-                showNotification('Bozza caricata', 'info');
-            }
-        }
-
         // Notifiche
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
@@ -804,15 +749,12 @@ $sezioni = [
             
             submitBtn.disabled = true;
             loader.style.display = 'inline-block';
-            
-            // Rimuovo la bozza se il form viene inviato
-            localStorage.removeItem('cliente_draft_<?php echo $cliente_id; ?>');
         });
 
         // Avviso se si sta lasciando la pagina con modifiche non salvate
         window.addEventListener('beforeunload', function(e) {
             const changedElements = document.querySelectorAll('.changed');
-            if (changedElements.length > 0 && !draftSaved) {
+            if (changedElements.length > 0) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -820,12 +762,6 @@ $sezioni = [
 
         // Shortcuts da tastiera
         document.addEventListener('keydown', function(e) {
-            // Ctrl+S per salvare bozza
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                saveDraft();
-            }
-            
             // Ctrl+Enter per inviare form
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
