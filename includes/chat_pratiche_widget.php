@@ -51,8 +51,14 @@ document.getElementById('clienteSelect').addEventListener('change', function() {
 function loadPraticaChat(clienteId) {
     const chatBox = document.getElementById('praticaChatBox');
     chatBox.innerHTML = '<span class="text-secondary">Caricamento...</span>';
-    fetch('/ajax/pratica_chat_fetch.php?cliente_id=' + clienteId)
-      .then(r => r.json())
+    const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+    fetch(baseUrl + '/ajax/pratica_chat_fetch.php?cliente_id=' + clienteId)
+      .then(r => {
+        if (!r.ok) {
+            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+      })
       .then(messages => {
         if (!messages.length) {
             chatBox.innerHTML = '<small class="text-muted">Nessun messaggio per questa pratica.</small>';
@@ -62,6 +68,10 @@ function loadPraticaChat(clienteId) {
             ).join('');
             chatBox.scrollTop = chatBox.scrollHeight;
         }
+      })
+      .catch(error => {
+        console.error('Errore caricamento chat:', error);
+        chatBox.innerHTML = '<span class="text-danger">Errore: ' + error.message + '</span>';
       });
 }
 
@@ -70,17 +80,31 @@ document.getElementById('praticaChatForm').addEventListener('submit', function(e
     let clienteId = document.getElementById('clienteSelect').value;
     let msg = document.getElementById('praticaMsg').value.trim();
     if (!clienteId || !msg) return;
-    fetch('/ajax/pratica_chat_send.php', {
+    
+    const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+    fetch(baseUrl + '/ajax/pratica_chat_send.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'cliente_id=' + encodeURIComponent(clienteId) + '&msg=' + encodeURIComponent(msg)
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+    })
     .then(resp => {
         if (resp.ok) {
             loadPraticaChat(clienteId);
             document.getElementById('praticaMsg').value = '';
+        } else {
+            console.error('Errore invio messaggio:', resp.error);
+            alert('Errore nell\'invio del messaggio: ' + (resp.error || 'Errore sconosciuto'));
         }
+    })
+    .catch(error => {
+        console.error('Errore invio messaggio:', error);
+        alert('Errore nell\'invio del messaggio: ' + error.message);
     });
 });
 function togglePraticaChat() {

@@ -14,13 +14,13 @@ $out = [];
 
 if ($cliente_id > 0) {
     try {
-        $stmt = $pdo->prepare("SELECT c.*, u.nome as utente FROM pratiche_chat c JOIN utenti u ON c.user_id=u.id WHERE c.cliente_id=? ORDER BY c.data ASC");
+        $stmt = $pdo->prepare("SELECT c.*, u.nome as utente FROM chat_pratiche c JOIN utenti u ON c.utente_id=u.id WHERE c.pratica_id=? ORDER BY c.timestamp ASC");
         $stmt->execute([$cliente_id]);
         while ($row = $stmt->fetch()) {
             $out[] = [
                 'utente' => $row['utente'],
-                'data' => date("d/m H:i", strtotime($row['data'])),
-                'testo' => htmlspecialchars($row['testo'])
+                'data' => date("d/m H:i", strtotime($row['timestamp'])),
+                'testo' => htmlspecialchars($row['messaggio'])
             ];
         }
     } catch (Exception $e) {
