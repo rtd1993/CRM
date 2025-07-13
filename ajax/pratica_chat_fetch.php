@@ -13,6 +13,7 @@ $cliente_id = intval($_GET['cliente_id'] ?? 0);
 $out = [];
 
 if ($cliente_id > 0) {
+    
     try {
         $stmt = $pdo->prepare("SELECT c.*, u.nome as utente FROM chat_pratiche c JOIN utenti u ON c.utente_id=u.id WHERE c.pratica_id=? ORDER BY c.timestamp ASC");
         $stmt->execute([$cliente_id]);

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_login();
 
+
 $cliente_id = intval($_POST['cliente_id'] ?? 0);
 $msg = trim($_POST['msg'] ?? '');
 $user_id = $_SESSION['user_id'] ?? 0;
