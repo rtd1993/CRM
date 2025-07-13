@@ -83,37 +83,61 @@ chromium-browser \
 EOF
 
 chmod +x /home/ubuntu/start_touch_ui.sh
-cd /var/www/CRM
-python3 -m http.server 8080 &
-sleep 3
-chromium-browser --kiosk --disable-features=Translate --no-first-run --fast --fast-start --disable-infobars --disable-session-crashed-bubble --disable-pinch --overscroll-history-navigation=0 --touch-events=enabled --disable-web-security --user-data-dir=/tmp/chrome_data http://localhost/CRM/system_monitor.php
-EOF
-
-chmod +x /home/ubuntu/start_ui.sh
-
-# Configura avvio automatico
-echo "Configurazione avvio automatico..."
+# Configura avvio automatico come servizio systemd
+echo "🔧 Configurazione avvio automatico..."
 sudo tee /etc/systemd/system/touch-ui.service > /dev/null << EOF
 [Unit]
-Description=Touch UI Service
+Description=Touch UI Service per CRM Monitor
 After=graphical-session.target
+Wants=graphical-session.target
 
 [Service]
 Type=simple
 User=ubuntu
+Group=ubuntu
 Environment=DISPLAY=:0
-ExecStart=/home/ubuntu/start_ui.sh
+ExecStart=/home/ubuntu/start_touch_ui.sh
 Restart=always
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=graphical.target
 EOF
 
+# Abilita il servizio
+sudo systemctl daemon-reload
 sudo systemctl enable touch-ui.service
 
-echo "=== Installazione completata! ==="
-echo "Riavvia il sistema per applicare le modifiche:"
-echo "sudo reboot"
+# Configura autologin per ubuntu
+echo "🔓 Configurazione autologin..."
+sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --noissue --autologin ubuntu %I \$TERM
+Type=idle
+EOF
+
+# Aggiunge avvio automatico di X11 al login
+echo "📱 Configurazione avvio X11..."
+sudo -u ubuntu tee -a /home/ubuntu/.profile > /dev/null << EOF
+
+# Avvio automatico X11 e touch UI per tty1
+if [ "\$(tty)" = "/dev/tty1" ]; then
+    startx /home/ubuntu/start_touch_ui.sh
+fi
+EOF
+
+echo "✅ Installazione completata!"
 echo ""
-echo "Dopo il riavvio, l'interfaccia dovrebbe avviarsi automaticamente."
+echo "🔄 Riavvia il sistema per applicare le modifiche:"
+echo "    sudo reboot"
+echo ""
+echo "📱 Dopo il riavvio, l'interfaccia touch si aprirà automaticamente su:"
+echo "    http://localhost/touch_monitor.php"
+echo ""
+echo "🛠️ Per modifiche manuali:"
+echo "    - Script avvio: /home/ubuntu/start_touch_ui.sh"
+echo "    - Servizio: sudo systemctl status touch-ui.service"
+echo "    - Config touchscreen: /etc/X11/xorg.conf.d/99-touchscreen.conf"
