@@ -10,7 +10,7 @@ include __DIR__ . '/includes/header.php';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Query base
-$sql = "SELECT id, `Cognome/Ragione sociale` AS cognome, `Codice ditta`, Mail, PEC, Telefono, `Data di scadenza`, `Scadenza PEC` FROM clienti";
+$sql = "SELECT id, `Cognome/Ragione sociale` AS cognome, `Codice ditta`, Mail, PEC, Telefono, `Data di scadenza`, `Scadenza PEC`, `Codice fiscale` FROM clienti";
 $params = [];
 
 // Ricerca
@@ -584,6 +584,23 @@ foreach ($clienti as $c) {
                                 <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" class="details-btn">
                                     📋 Dettagli
                                 </a>
+                                <?php
+                                // Controlla se esiste la cartella del cliente
+                                if (!empty($c['Codice fiscale'])) {
+                                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $c['Codice fiscale']);
+                                    $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+                                    if (is_dir($cartella_path)) {
+                                ?>
+                                    <a href="drive.php?path=<?= urlencode($codice_fiscale_clean) ?>" 
+                                       class="details-btn" 
+                                       style="margin-left: 0.5rem;"
+                                       title="Apri cartella cliente">
+                                        📁 Cartella
+                                    </a>
+                                <?php
+                                    }
+                                }
+                                ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
