@@ -58,6 +58,9 @@ $campi_db = [
 
 // Gestione dell'inserimento
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Debug: logga tutti i campi POST ricevuti
+    error_log("DEBUG - Campi POST ricevuti: " . print_r(array_keys($_POST), true));
+    
     try {
         $updates = [];
         $values = [];
@@ -107,16 +110,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Validazione obbligatoria per alcuni campi
+        // Validazione obbligatoria per il codice fiscale
         $codice_fiscale = $_POST['Codice fiscale'] ?? '';
-        $cognome = $_POST['Cognome/Ragione sociale'] ?? '';
         
-        if (empty($codice_fiscale)) {
+        // Debug: logga il valore ricevuto
+        error_log("DEBUG - Codice fiscale ricevuto: '" . $codice_fiscale . "' (length: " . strlen($codice_fiscale) . ")");
+        
+        if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
             throw new Exception("Il Codice Fiscale è obbligatorio");
-        }
-        
-        if (empty($cognome)) {
-            throw new Exception("Cognome/Ragione sociale è obbligatorio");
         }
         
         // Creazione cartella e link
@@ -497,9 +498,6 @@ $sezioni = [
     </style>
 
 <div class="crea-header">
-    <a href="clienti.php" class="back-btn">
-        <i class="fas fa-arrow-left"></i> Indietro
-    </a>
     <h2><i class="fas fa-user-plus"></i> Crea Nuovo Cliente</h2>
     <p>Inserisci i dati del nuovo cliente nel sistema</p>
 </div>
@@ -530,7 +528,7 @@ $sezioni = [
                             <?php if (isset($campi_db[$campo])): ?>
                                 <div class="form-group">
                                     <?php
-                                    $is_required = in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale']);
+                                    $is_required = in_array($campo, ['Codice fiscale']);
                                     ?>
                                     <label for="<?php echo htmlspecialchars($campo); ?>" <?php echo $is_required ? 'class="required"' : ''; ?>>
                                         <?php echo htmlspecialchars($campo); ?>
@@ -648,6 +646,18 @@ $sezioni = [
 
         // Gestione submit form
         document.getElementById('clienteForm').addEventListener('submit', function(e) {
+            // Validazione lato client del codice fiscale
+            const codiceFiscale = document.querySelector('input[name="Codice fiscale"]');
+            if (!codiceFiscale || !codiceFiscale.value.trim()) {
+                e.preventDefault();
+                alert('Il Codice Fiscale è obbligatorio!');
+                if (codiceFiscale) {
+                    codiceFiscale.focus();
+                    codiceFiscale.style.borderColor = '#dc3545';
+                }
+                return;
+            }
+            
             const submitBtn = this.querySelector('button[type="submit"]');
             const loader = submitBtn.querySelector('.loader');
             
