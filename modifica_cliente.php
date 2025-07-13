@@ -93,7 +93,7 @@ $gruppi = [
     'Sedi' => ['Sede Legale', 'Sede Operativa', 'Residenza'],
     'Documenti' => ['Numero carta d’identità', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l’espatrio'],
     'Fiscali' => ['Codice ditta', 'Codice ATECO', 'Descrizione attivita', 'Camera di commercio', 'Dipendenti', 'Codice inps', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail', 'Cassa Edile', 'Numero Cassa Professionisti', 'Contabilita', 'Liquidazione IVA', 'SDI'],
-    'Altro' => ['Colore', 'Inserito gestionale', 'Inizio rapporto', 'Fine rapporto', 'Link cartella']
+    'Altro' => ['Colore', 'Inserito gestionale', 'Inizio rapporto', 'Fine rapporto']
 ];
 ?>
 
