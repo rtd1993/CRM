@@ -93,7 +93,7 @@ else
 fi
 
 # Verifica script di avvio
-if [ -f "/home/ubuntu/start_touch_ui.sh" ] && [ -x "/home/ubuntu/start_touch_ui.sh" ]; then
+if [ -f "/home/admin/start_touch_ui.sh" ] && [ -x "/home/admin/start_touch_ui.sh" ]; then
     check_status 0 "Script avvio UI presente ed eseguibile"
 else
     check_status 1 "Script avvio UI mancante o non eseguibile"

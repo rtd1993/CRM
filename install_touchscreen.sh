@@ -48,7 +48,7 @@ EOF
 
 # Crea script di avvio per l'interfaccia touch
 echo "🚀 Creazione script di avvio..."
-sudo tee /home/ubuntu/start_touch_ui.sh > /dev/null << 'EOF'
+sudo tee /home/admin/start_touch_ui.sh > /dev/null << 'EOF'
 #!/bin/bash
 export DISPLAY=:0
 
@@ -82,7 +82,7 @@ chromium-browser \
     --app=http://localhost/touch_monitor.php
 EOF
 
-chmod +x /home/ubuntu/start_touch_ui.sh
+chmod +x /home/admin/start_touch_ui.sh
 # Configura avvio automatico come servizio systemd
 echo "🔧 Configurazione avvio automatico..."
 sudo tee /etc/systemd/system/touch-ui.service > /dev/null << EOF
@@ -93,10 +93,10 @@ Wants=graphical-session.target
 
 [Service]
 Type=simple
-User=ubuntu
-Group=ubuntu
+User=admin
+Group=admin
 Environment=DISPLAY=:0
-ExecStart=/home/ubuntu/start_touch_ui.sh
+ExecStart=/home/admin/start_touch_ui.sh
 Restart=always
 RestartSec=10
 StandardOutput=journal
