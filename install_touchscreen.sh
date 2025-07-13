@@ -110,22 +110,22 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable touch-ui.service
 
-# Configura autologin per ubuntu
+# Configura autologin per admin
 echo "🔓 Configurazione autologin..."
 sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null << EOF
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --noissue --autologin ubuntu %I \$TERM
+ExecStart=-/sbin/agetty --noissue --autologin admin %I \$TERM
 Type=idle
 EOF
 
 # Aggiunge avvio automatico di X11 al login
 echo "📱 Configurazione avvio X11..."
-sudo -u ubuntu tee -a /home/ubuntu/.profile > /dev/null << EOF
+sudo -u admin tee -a /home/admin/.profile > /dev/null << EOF
 
 # Avvio automatico X11 e touch UI per tty1
 if [ "\$(tty)" = "/dev/tty1" ]; then
-    startx /home/ubuntu/start_touch_ui.sh
+    startx /home/admin/start_touch_ui.sh
 fi
 EOF
 
