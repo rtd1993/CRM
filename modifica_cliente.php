@@ -1,7 +1,14 @@
 <?php
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_err    'Documenti' => ['Numero carta d identita', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l espatrio'],rs', 1);
+ini_set('display$gruppi = [
+    'Anagrafica' => ['Cognome/Ragione sociale', 'Nome', 'Data di nascita/costituzione', 'Luogo di nascita', 'Cittadinanza', 'Stato civile', 'Codice fiscale', 'Partita IVA', 'Qualifica', 'Soci Amministratori', 'Titolare'],
+    'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza PEC', 'Rinnovo Pec', 'User Aruba', 'Password'],
+    'Sedi' => ['Sede Legale', 'Sede Operativa', 'Residenza'],
+    'Documenti' => ['Numero carta d identita', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l espatrio'],
+    'Fiscali' => ['Codice ditta', 'Codice ATECO', 'Descrizione attivita', 'Camera di commercio', 'Dipendenti', 'Codice inps', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail', 'Cassa Edile', 'Numero Cassa Professionisti', 'Contabilita', 'Liquidazione IVA', 'SDI'],
+    'Altro' => ['Colore', 'Inserito gestionale', 'Inizio rapporto', 'Fine rapporto', 'Link cartella']
+];'Documenti' => ['Numero carta d identita', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l espatrio'],rs', 1);
 ini_set('memory_limit', '512M'); // Aumenta limite memoria
 
 require_once __DIR__ . '/includes/auth.php';
