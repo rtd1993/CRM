@@ -4,6 +4,76 @@ require_login();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 
+// **NUOVO**: Gestione richieste AJAX
+if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
+    header('Content-Type: application/json');
+    
+    try {
+        $client_id = intval($_GET['client_id'] ?? 0);
+        
+        if ($client_id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'ID cliente non valido']);
+            exit;
+        }
+        
+        // Query per ottenere i task del cliente ordinati per scadenza
+        $stmt = $pdo->prepare("
+            SELECT t.*, 
+                   COALESCE(tc.cliente_id, NULL) as cliente_id,
+                   CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente
+            FROM task t 
+            LEFT JOIN task_clienti tc ON t.id = tc.task_id 
+            LEFT JOIN clienti c ON tc.cliente_id = c.id
+            WHERE tc.cliente_id = ?
+            ORDER BY t.scadenza ASC
+        ");
+        
+        $stmt->execute([$client_id]);
+        $tasks = $stmt->fetchAll();
+        
+        // Formatta i task per la risposta JSON
+        $formatted_tasks = [];
+        foreach ($tasks as $task) {
+            $is_ricorrente = !empty($task['ricorrenza']);
+            $is_scaduto = strtotime($task['scadenza']) < strtotime('today');
+            $scadenza_formatted = date('d/m/Y', strtotime($task['scadenza']));
+            
+            $ricorrenza_text = '';
+            if ($is_ricorrente) {
+                $giorni = $task['ricorrenza'];
+                if ($giorni % 365 == 0) {
+                    $ricorrenza_text = ($giorni / 365) . ' anni';
+                } elseif ($giorni % 30 == 0) {
+                    $ricorrenza_text = ($giorni / 30) . ' mesi';
+                } elseif ($giorni % 7 == 0) {
+                    $ricorrenza_text = ($giorni / 7) . ' settimane';
+                } else {
+                    $ricorrenza_text = $giorni . ' giorni';
+                }
+            }
+            
+            $formatted_tasks[] = [
+                'id' => $task['id'],
+                'descrizione' => $task['descrizione'],
+                'scadenza' => $task['scadenza'],
+                'scadenza_formatted' => $scadenza_formatted,
+                'ricorrenza' => $task['ricorrenza'],
+                'ricorrenza_text' => $ricorrenza_text,
+                'ricorrente' => $is_ricorrente,
+                'scaduto' => $is_scaduto,
+                'nome_cliente' => $task['nome_cliente']
+            ];
+        }
+        
+        echo json_encode(['success' => true, 'tasks' => $formatted_tasks]);
+        exit;
+        
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
+}
+
 include __DIR__ . '/includes/header.php';
 
 $messaggio = "";
@@ -101,7 +171,7 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
         
         // Recupera i dati del task prima di eliminarlo
         $stmt = $pdo->prepare("
-            SELECT t.*, tc.cliente_id, c.`Cognome/Ragione sociale`, c.Nome 
+            SELECT t.*, tc.cliente_id, c.`Cognome/Ragione sociale`, c.Nome, c.`Link cartella`
             FROM task t 
             LEFT JOIN task_clienti tc ON t.id = tc.task_id 
             LEFT JOIN clienti c ON tc.cliente_id = c.id 
@@ -114,6 +184,25 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
             $nome_cliente = trim(($task_data['Nome'] ?? '') . ' ' . ($task_data['Cognome/Ragione sociale'] ?? ''));
             if (empty($nome_cliente)) {
                 $nome_cliente = "Cliente ID " . $task_data['cliente_id'];
+            }
+            
+            // **NUOVO**: Log del task completato nella cartella del cliente
+            if (!empty($task_data['Link cartella']) && isset($_SESSION['user_name'])) {
+                $cartella_cliente = $task_data['Link cartella'];
+                
+                // Assicurati che la cartella esista
+                if (!is_dir($cartella_cliente)) {
+                    mkdir($cartella_cliente, 0755, true);
+                }
+                
+                $log_file = $cartella_cliente . '/task_completati.txt';
+                $data_completamento = date('d/m/Y H:i:s');
+                $utente_completamento = $_SESSION['user_name'];
+                
+                $log_entry = "[{$data_completamento}] Task: {$task_data['descrizione']} | Completato da: {$utente_completamento}" . PHP_EOL;
+                
+                // Aggiungi al file di log (crea se non esiste)
+                file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
             }
             
             // Invia notifica nella chat se l'utente è loggato
@@ -227,6 +316,9 @@ if (!empty($filtro_scadenza)) {
         case 'settimana':
             $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
             break;
+        case '15giorni':
+            $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)";
+            break;
         case 'mese':
             $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
             break;
@@ -257,6 +349,7 @@ $stats = [
     'scaduti' => 0,
     'oggi' => 0,
     'settimana' => 0,
+    'quindici_giorni' => 0,
     'ricorrenti' => 0,
     'oneshot' => 0
 ];
@@ -273,6 +366,8 @@ foreach ($tasks as $task) {
         $stats['oggi']++;
     } elseif ($scadenza->diff($oggi)->days <= 7) {
         $stats['settimana']++;
+    } elseif ($scadenza->diff($oggi)->days <= 15) {
+        $stats['quindici_giorni']++;
     }
     
     if (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) {
@@ -633,6 +728,204 @@ foreach ($tasks as $task) {
         grid-template-columns: 1fr;
     }
 }
+
+/* **NUOVO**: Stili per i filtri */
+.filters-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 2px solid #e9ecef;
+}
+
+.filters-section h4 {
+    margin: 0 0 15px 0;
+    color: #6f42c1;
+    font-weight: bold;
+}
+
+.filters-form {
+    margin-bottom: 20px;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 1.5fr auto;
+    gap: 15px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 0.9em;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.9em;
+    transition: border-color 0.3s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: #6f42c1;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85em;
+    margin: 0;
+}
+
+.stats-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #e9ecef;
+    min-width: 90px;
+    transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+}
+
+.stat-item i {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+    color: #6f42c1;
+}
+
+.stat-item.danger i { color: #dc3545; }
+.stat-item.warning i { color: #ffc107; }
+.stat-item.info i { color: #17a2b8; }
+.stat-item.success i { color: #28a745; }
+
+.stat-number {
+    display: block;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* **NUOVO**: Area visualizzazione cliente */
+.client-view-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 25px;
+    margin-top: 30px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    border: 2px solid #e9ecef;
+}
+
+.client-view-section h3 {
+    color: #6f42c1;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.client-selector {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.client-selector select {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+}
+
+.client-tasks-list {
+    display: none;
+}
+
+.client-tasks-list.show {
+    display: block;
+}
+
+.client-task-item {
+    background: #f8f9fa;
+    border-left: 4px solid #6f42c1;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.client-task-item.scaduto {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.client-task-item.ricorrente {
+    border-left-color: #e83e8c;
+}
+
+.client-task-info h5 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.client-task-meta {
+    font-size: 0.9em;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .filter-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stats-row {
+        justify-content: center;
+    }
+    
+    .stat-item {
+        min-width: 80px;
+    }
+    
+    .client-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
 </style>
 
 <div class="task-header">
@@ -726,6 +1019,93 @@ foreach ($tasks as $task) {
     
     <!-- Pannello Lista Task -->
     <div class="tasks-panel">
+        <!-- **NUOVO**: Sezione Filtri -->
+        <div class="filters-section">
+            <h4><i class="fas fa-filter"></i> Filtri</h4>
+            <form method="GET" class="filters-form">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="filter_search">Cerca</label>
+                        <input type="text" name="search" id="filter_search" 
+                               value="<?= htmlspecialchars($search) ?>" 
+                               placeholder="Cerca in descrizione o cliente...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter_cliente">Cliente</label>
+                        <select name="cliente" id="filter_cliente">
+                            <option value="">Tutti i clienti</option>
+                            <?php foreach ($clienti as $cliente): ?>
+                                <option value="<?= $cliente['id'] ?>" 
+                                        <?= ($filtro_cliente == $cliente['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($cliente['Cognome/Ragione sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter_scadenza">Scadenza</label>
+                        <select name="scadenza" id="filter_scadenza">
+                            <option value="">Tutte</option>
+                            <option value="scaduti" <?= ($filtro_scadenza === 'scaduti') ? 'selected' : '' ?>>Scaduti</option>
+                            <option value="oggi" <?= ($filtro_scadenza === 'oggi') ? 'selected' : '' ?>>Oggi</option>
+                            <option value="settimana" <?= ($filtro_scadenza === 'settimana') ? 'selected' : '' ?>>Entro 7 giorni</option>
+                            <option value="15giorni" <?= ($filtro_scadenza === '15giorni') ? 'selected' : '' ?>>Entro 15 giorni</option>
+                            <option value="mese" <?= ($filtro_scadenza === 'mese') ? 'selected' : '' ?>>Entro 30 giorni</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter_ricorrenza">Tipo</label>
+                        <select name="ricorrenza" id="filter_ricorrenza">
+                            <option value="">Tutti</option>
+                            <option value="ricorrenti" <?= ($filtro_ricorrenza === 'ricorrenti') ? 'selected' : '' ?>>Ricorrenti</option>
+                            <option value="oneshot" <?= ($filtro_ricorrenza === 'oneshot') ? 'selected' : '' ?>>One-shot</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search"></i> Filtra
+                        </button>
+                        <a href="task_clienti.php" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-times"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Statistiche rapide -->
+            <div class="stats-row">
+                <div class="stat-item">
+                    <i class="fas fa-tasks"></i>
+                    <span class="stat-number"><?= $stats['totali'] ?></span>
+                    <span class="stat-label">Totali</span>
+                </div>
+                <div class="stat-item danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="stat-number"><?= $stats['scaduti'] ?></span>
+                    <span class="stat-label">Scaduti</span>
+                </div>
+                <div class="stat-item warning">
+                    <i class="fas fa-calendar-day"></i>
+                    <span class="stat-number"><?= $stats['oggi'] ?></span>
+                    <span class="stat-label">Oggi</span>
+                </div>
+                <div class="stat-item info">
+                    <i class="fas fa-calendar-week"></i>
+                    <span class="stat-number"><?= $stats['settimana'] ?></span>
+                    <span class="stat-label">7 giorni</span>
+                </div>
+                <div class="stat-item success">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="stat-number"><?= $stats['quindici_giorni'] ?></span>
+                    <span class="stat-label">15 giorni</span>
+                </div>
+            </div>
+        </div>
+        
         <h3>
             <i class="fas fa-list"></i>
             Task Attivi (<?= count($tasks) ?>)
@@ -807,7 +1187,110 @@ foreach ($tasks as $task) {
     </div>
 </div>
 
+<!-- **NUOVO**: Area Visualizzazione Task per Cliente -->
+<div class="client-view-section">
+    <h3><i class="fas fa-user-tag"></i> Visualizza Task per Cliente</h3>
+    
+    <div class="client-selector">
+        <label for="client_selector">Seleziona Cliente:</label>
+        <select id="client_selector" onchange="loadClientTasks()">
+            <option value="">-- Scegli un cliente --</option>
+            <?php foreach ($clienti as $cliente): ?>
+                <option value="<?= $cliente['id'] ?>">
+                    <?= htmlspecialchars($cliente['Cognome/Ragione sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="button" onclick="loadClientTasks()" class="btn btn-primary btn-sm">
+            <i class="fas fa-search"></i> Carica
+        </button>
+    </div>
+    
+    <div id="client_tasks_container" class="client-tasks-list">
+        <div class="loading" id="loading_tasks" style="display: none; text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin"></i> Caricamento task...
+        </div>
+        
+        <div id="client_tasks_content"></div>
+        
+        <div id="no_tasks" style="display: none; text-align: center; padding: 40px; color: #666;">
+            <i class="fas fa-inbox"></i>
+            <p>Nessun task trovato per questo cliente</p>
+        </div>
+    </div>
+</div>
+
 <script>
+// **NUOVO**: Funzione per caricare i task di un cliente specifico
+function loadClientTasks() {
+    const clientId = document.getElementById('client_selector').value;
+    const container = document.getElementById('client_tasks_container');
+    const content = document.getElementById('client_tasks_content');
+    const loading = document.getElementById('loading_tasks');
+    const noTasks = document.getElementById('no_tasks');
+    
+    // Reset stato
+    content.innerHTML = '';
+    noTasks.style.display = 'none';
+    
+    if (!clientId) {
+        container.classList.remove('show');
+        return;
+    }
+    
+    // Mostra loading
+    container.classList.add('show');
+    loading.style.display = 'block';
+    
+    // Carica i task del cliente via AJAX
+    fetch(`?action=get_client_tasks&client_id=${clientId}`)
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+            
+            if (data.success && data.tasks && data.tasks.length > 0) {
+                content.innerHTML = data.tasks.map(task => `
+                    <div class="client-task-item ${task.ricorrente ? 'ricorrente' : ''} ${task.scaduto ? 'scaduto' : ''}">
+                        <div class="client-task-info">
+                            <h5>${escapeHtml(task.descrizione)}</h5>
+                            <div class="client-task-meta">
+                                <i class="fas fa-calendar-alt"></i> Scadenza: ${task.scadenza_formatted}
+                                ${task.scaduto ? '<span style="color: #dc3545; font-weight: bold;"> (Scaduto)</span>' : ''}
+                                ${task.ricorrente ? `<br><i class="fas fa-sync-alt"></i> Ricorrente: ogni ${task.ricorrenza_text}` : ''}
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <a href="?modifica=${task.id}" class="btn btn-warning btn-sm" title="Modifica">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="?completa=${task.id}" class="btn btn-success btn-sm" 
+                               onclick="return confirm('Confermi il completamento del task?')" title="Completa">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            <a href="?elimina=${task.id}" class="btn btn-danger btn-sm" 
+                               onclick="return confirm('Sei sicuro di voler eliminare questo task?')" title="Elimina">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                noTasks.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            console.error('Errore nel caricamento dei task:', error);
+            alert('Errore nel caricamento dei task del cliente');
+        });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function toggleRicorrenza() {
     const checkbox = document.getElementById('is_ricorrente');
     const fields = document.getElementById('ricorrenza_fields');
