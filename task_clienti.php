@@ -77,91 +77,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
 include __DIR__ . '/includes/header.php';
 
 $messaggio = "";
-$task = [];
 
-// Gestione inserimento/modifica task
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $cliente_id = intval($_POST['cliente_id'] ?? 0);
-        $descrizione = trim($_POST['descrizione'] ?? '');
-        $scadenza = $_POST['scadenza'] ?? '';
-        $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
-        $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
-        $task_id = intval($_POST['task_id'] ?? 0);
-        
-        // Validazione
-        if ($cliente_id <= 0) {
-            throw new Exception("Seleziona un cliente");
-        }
-        
-        if (empty($descrizione)) {
-            throw new Exception("La descrizione è obbligatoria");
-        }
-        
-        if (empty($scadenza)) {
-            throw new Exception("La data di scadenza è obbligatoria");
-        }
-        
-        // Converti ricorrenza in giorni
-        $ricorrenza_giorni = null;
-        if ($ricorrenza > 0) {
-            switch ($tipo_ricorrenza) {
-                case 'giorni':
-                    $ricorrenza_giorni = $ricorrenza;
-                    break;
-                case 'settimane':
-                    $ricorrenza_giorni = $ricorrenza * 7;
-                    break;
-                case 'mesi':
-                    $ricorrenza_giorni = $ricorrenza * 30;
-                    break;
-                case 'anni':
-                    $ricorrenza_giorni = $ricorrenza * 365;
-                    break;
-            }
-        }
-        
-        if ($task_id > 0) {
-            // Modifica task esistente
-            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ?, cliente_id = ? WHERE id = ?");
-            $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni, $cliente_id, $task_id]);
-            $messaggio = $result ? "Task modificato con successo!" : "Errore nella modifica del task";
-        } else {
-            // Nuovo task - prima verifichiamo se la colonna cliente_id esiste
-            $columns = $pdo->query("SHOW COLUMNS FROM task")->fetchAll(PDO::FETCH_COLUMN);
-            
-            if (in_array('cliente_id', $columns)) {
-                $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza, cliente_id) VALUES (?, ?, ?, ?)");
-                $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni, $cliente_id]);
-            } else {
-                // Se non esiste la colonna cliente_id, usiamo solo i campi esistenti
-                $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-                $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni]);
-                
-                // Salviamo l'associazione cliente in una tabella separata se necessario
-                if ($result) {
-                    $task_id = $pdo->lastInsertId();
-                    // Creiamo una tabella di associazione se non esiste
-                    $pdo->exec("CREATE TABLE IF NOT EXISTS task_clienti (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        task_id INT NOT NULL,
-                        cliente_id INT NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE,
-                        FOREIGN KEY (cliente_id) REFERENCES clienti(id) ON DELETE CASCADE
-                    )");
-                    
-                    $stmt = $pdo->prepare("INSERT INTO task_clienti (task_id, cliente_id) VALUES (?, ?)");
-                    $stmt->execute([$task_id, $cliente_id]);
-                }
-            }
-            
-            $messaggio = $result ? "Task creato con successo!" : "Errore nella creazione del task";
-        }
-        
-    } catch (Exception $e) {
-        $messaggio = "Errore: " . $e->getMessage();
-    }
+// Gestione messaggi di successo dal redirect
+if (isset($_GET['success'])) {
+    $messaggio = "Operazione completata con successo!";
 }
 
 // Gestione completamento task
@@ -258,14 +177,6 @@ if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
     } catch (Exception $e) {
         $messaggio = "Errore nell'eliminazione: " . $e->getMessage();
     }
-}
-
-// Gestione modifica task
-if (isset($_GET['modifica']) && is_numeric($_GET['modifica'])) {
-    $task_id = intval($_GET['modifica']);
-    $stmt = $pdo->prepare("SELECT t.*, tc.cliente_id FROM task t LEFT JOIN task_clienti tc ON t.id = tc.task_id WHERE t.id = ?");
-    $stmt->execute([$task_id]);
-    $task = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 // Carica lista clienti
@@ -459,6 +370,44 @@ foreach ($tasks as $task) {
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     height: fit-content;
+}
+
+.quick-actions {
+    text-align: center;
+}
+
+.quick-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-box {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.info-box p {
+    margin: 0 0 1rem 0;
+    color: #495057;
+    font-weight: 600;
+}
+
+.info-box ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #6c757d;
+}
+
+.info-box li {
+    margin-bottom: 0.5rem;
 }
 
 .tasks-panel {
@@ -944,77 +893,29 @@ foreach ($tasks as $task) {
 <?php endif; ?>
 
 <div class="main-container">
-    <!-- Pannello Form -->
+    <!-- Pannello Azioni Rapide -->
     <div class="form-panel">
         <h3>
             <i class="fas fa-plus-circle"></i>
-            <?= $task ? 'Modifica Task' : 'Nuovo Task' ?>
+            Gestione Task Clienti
         </h3>
         
-        <form method="POST">
-            <?php if ($task): ?>
-                <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-            <?php endif; ?>
+        <div class="quick-actions">
+            <a href="crea_task_clienti.php" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Crea Nuovo Task Cliente
+            </a>
             
-            <div class="form-group">
-                <label for="cliente_id" class="required">Cliente</label>
-                <select name="cliente_id" id="cliente_id" required>
-                    <option value="">Seleziona cliente...</option>
-                    <?php foreach ($clienti as $cliente): ?>
-                        <option value="<?= $cliente['id'] ?>" 
-                                <?= ($task && $task['cliente_id'] == $cliente['id']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($cliente['Cognome/Ragione sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
-                            (<?= htmlspecialchars($cliente['Codice fiscale']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="info-box">
+                <p><strong>💡 Come funziona:</strong></p>
+                <ul>
+                    <li>✅ Crea task specifici per ogni cliente</li>
+                    <li>📅 Imposta scadenze e priorità</li>
+                    <li>🔄 Configura task ricorrenti automatici</li>
+                    <li>📊 Monitora lo stato di avanzamento</li>
+                </ul>
             </div>
-            
-            <div class="form-group">
-                <label for="descrizione" class="required">Descrizione Task</label>
-                <textarea name="descrizione" id="descrizione" placeholder="Descrivi il task da svolgere..." required><?= htmlspecialchars($task['descrizione'] ?? '') ?></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="scadenza" class="required">Data Scadenza</label>
-                <input type="date" name="scadenza" id="scadenza" value="<?= htmlspecialchars($task['scadenza'] ?? '') ?>" required>
-            </div>
-            
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="is_ricorrente" onchange="toggleRicorrenza()">
-                    <label for="is_ricorrente">Task ricorrente</label>
-                </div>
-            </div>
-            
-            <div id="ricorrenza_fields" style="display: none;">
-                <div class="form-group">
-                    <label>Ripeti ogni</label>
-                    <div class="ricorrenza-group">
-                        <input type="number" name="ricorrenza" id="ricorrenza" min="1" placeholder="Ogni...">
-                        <select name="tipo_ricorrenza" id="tipo_ricorrenza">
-                            <option value="giorni">Giorni</option>
-                            <option value="settimane">Settimane</option>
-                            <option value="mesi">Mesi</option>
-                            <option value="anni">Anni</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas <?= $task ? 'fa-save' : 'fa-plus' ?>"></i>
-                    <?= $task ? 'Salva Modifiche' : 'Crea Task' ?>
-                </button>
-                
-                <?php if ($task): ?>
-                    <a href="task_clienti.php" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Annulla
-                    </a>
-                <?php endif; ?>
-            </div>
-        </form>
+        </div>
     </div>
     
     <!-- Pannello Lista Task -->
@@ -1165,7 +1066,7 @@ foreach ($tasks as $task) {
                     </div>
                     
                     <div class="task-actions">
-                        <a href="?modifica=<?= $task_item['id'] ?>" class="btn btn-warning">
+                        <a href="crea_task_clienti.php?edit=<?= $task_item['id'] ?>" class="btn btn-warning">
                             <i class="fas fa-edit"></i> Modifica
                         </a>
                         
@@ -1291,21 +1192,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function toggleRicorrenza() {
-    const checkbox = document.getElementById('is_ricorrente');
-    const fields = document.getElementById('ricorrenza_fields');
-    const ricorrenzaInput = document.getElementById('ricorrenza');
-    
-    if (checkbox.checked) {
-        fields.style.display = 'block';
-        ricorrenzaInput.required = true;
-    } else {
-        fields.style.display = 'none';
-        ricorrenzaInput.required = false;
-        ricorrenzaInput.value = '';
-    }
-}
-
 function completaTask(taskId) {
     if (confirm('Confermi il completamento del task?')) {
         fetch('', {
@@ -1332,41 +1218,10 @@ function completaTask(taskId) {
 
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', function() {
-    // Se stiamo modificando un task ricorrente, mostra i campi
-    const ricorrenza = <?= json_encode($task['ricorrenza'] ?? null) ?>;
-    if (ricorrenza) {
-        document.getElementById('is_ricorrente').checked = true;
-        toggleRicorrenza();
-        
-        // Calcola i valori per i campi ricorrenza
-        let valore = ricorrenza;
-        let tipo = 'giorni';
-        
-        if (ricorrenza % 365 === 0) {
-            valore = ricorrenza / 365;
-            tipo = 'anni';
-        } else if (ricorrenza % 30 === 0) {
-            valore = ricorrenza / 30;
-            tipo = 'mesi';
-        } else if (ricorrenza % 7 === 0) {
-            valore = ricorrenza / 7;
-            tipo = 'settimane';
-        }
-        
-        document.getElementById('ricorrenza').value = valore;
-        document.getElementById('tipo_ricorrenza').value = tipo;
-    }
-    
-    // Auto-focus sul primo campo
-    document.getElementById('cliente_id').focus();
-});
-
-// Shortcuts da tastiera
-document.addEventListener('keydown', function(e) {
-    // Ctrl+Enter per inviare form
-    if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        document.querySelector('form').submit();
+    // Focus sul campo di ricerca se disponibile
+    const searchField = document.getElementById('filter_search');
+    if (searchField) {
+        searchField.focus();
     }
 });
 </script>
