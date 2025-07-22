@@ -455,7 +455,7 @@ foreach ($contents as $c) {
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     min-width: 160px;
-    z-index: 1000;
+    z-index: 9999;
 }
 
 .dropdown-menu a {

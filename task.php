@@ -32,6 +32,24 @@ if (isset($_POST['complete_id'])) {
 
     if ($task) {
         try {
+            // Salva il completamento del task nel file di log
+            $log_dir = '/var/www/CRM/local_drive/ASContabilmente/';
+            if (!is_dir($log_dir)) {
+                mkdir($log_dir, 0755, true);
+            }
+            
+            $log_file = $log_dir . 'task_completati.txt';
+            $log_entry = sprintf(
+                "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrente: %s\n",
+                date('Y-m-d H:i:s'),
+                $task['descrizione'],
+                $user_name,
+                $task['scadenza'],
+                (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) ? "Sì (ogni {$task['ricorrenza']} giorni)" : "No"
+            );
+            
+            file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+
             // Invia notifica chat
             $msg = "$user_name ha completato il task: " . $task['descrizione'];
             $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())")

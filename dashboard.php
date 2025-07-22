@@ -73,7 +73,52 @@ include __DIR__ . '/includes/header.php';
 .quick-actions {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
+}
+
+.action-group {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.group-title {
+    margin: 0 0 0.8rem 0;
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.action-btn-small {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1rem;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #495057;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.action-btn-small:last-child {
+    margin-bottom: 0;
+}
+
+.action-btn-small:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .action-btn {
@@ -264,30 +309,58 @@ include __DIR__ . '/includes/header.php';
     <div class="dashboard-section">
         <h3 class="section-title">🚀 Azioni Rapide</h3>
         <div class="quick-actions">
-            <a href="drive.php" class="action-btn">
-                <span class="icon">📁</span>
-                <span>Accedi al Drive</span>
-            </a>
-            <a href="clienti.php" class="action-btn">
-                <span class="icon">📋</span>
-                <span>Database Clienti</span>
-            </a>
-            <a href="task.php" class="action-btn">
-                <span class="icon">✅</span>
-                <span>Task Mensili</span>
-            </a>
-            <a href="calendario.php" class="action-btn">
-                <span class="icon">📅</span>
-                <span>Calendario Eventi</span>
-            </a>
-            <a href="chat.php" class="action-btn">
-                <span class="icon">💬</span>
-                <span>Chat & Appunti</span>
-            </a>
-            <a href="info.php" class="action-btn">
-                <span class="icon">ℹ️</span>
-                <span>Informazioni Utili</span>
-            </a>
+            <!-- Sezione Calendario -->
+            <div class="action-group">
+                <h4 class="group-title">📅 Calendario</h4>
+                <a href="calendario.php" class="action-btn-small">
+                    <span class="icon">�</span>
+                    <span>Calendario Eventi</span>
+                </a>
+            </div>
+
+            <!-- Sezione Task da Gestire -->
+            <div class="action-group">
+                <h4 class="group-title">✅ Task da Gestire</h4>
+                <a href="task.php" class="action-btn-small">
+                    <span class="icon">✅</span>
+                    <span>Task Mensili</span>
+                </a>
+            </div>
+
+            <!-- Sezione Documenti da Aggiornare -->
+            <div class="action-group">
+                <h4 class="group-title">📄 Documenti da Aggiornare</h4>
+                <a href="clienti.php" class="action-btn-small">
+                    <span class="icon">📋</span>
+                    <span>Database Clienti</span>
+                </a>
+            </div>
+
+            <!-- Sezione Task Clienti -->
+            <div class="action-group">
+                <h4 class="group-title">👥 Task Clienti</h4>
+                <a href="task_clienti.php" class="action-btn-small">
+                    <span class="icon">👥</span>
+                    <span>Task Clienti</span>
+                </a>
+            </div>
+
+            <!-- Altri strumenti -->
+            <div class="action-group">
+                <h4 class="group-title">🛠️ Altri Strumenti</h4>
+                <a href="drive.php" class="action-btn-small">
+                    <span class="icon">�</span>
+                    <span>Drive Documentale</span>
+                </a>
+                <a href="chat.php" class="action-btn-small">
+                    <span class="icon">💬</span>
+                    <span>Chat & Appunti</span>
+                </a>
+                <a href="info.php" class="action-btn-small">
+                    <span class="icon">ℹ️</span>
+                    <span>Informazioni Utili</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -313,41 +386,7 @@ include __DIR__ . '/includes/header.php';
         ");
         $stmt->execute([$da30giorni, $entro30]);
         $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Calcola statistiche
-        $task_scaduti = 0;
-        $task_urgenti = 0;
-        $task_normali = 0;
-        $task_ricorrenti = 0;
-
-        foreach ($tasks as $t) {
-            $diff = (strtotime($t['scadenza']) - strtotime($oggi)) / 86400;
-            if ($diff < 0) $task_scaduti++;
-            elseif ($diff < 5) $task_urgenti++;
-            else $task_normali++;
-            
-            if (!empty($t['ricorrenza']) && $t['ricorrenza'] > 0) $task_ricorrenti++;
-        }
         ?>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" style="color: #dc3545;"><?= $task_scaduti ?></div>
-                <div class="stat-label">Scaduti</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #fd7e14;"><?= $task_urgenti ?></div>
-                <div class="stat-label">Urgenti</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #28a745;"><?= $task_normali ?></div>
-                <div class="stat-label">Normali</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #17a2b8;"><?= $task_ricorrenti ?></div>
-                <div class="stat-label">Ricorrenti</div>
-            </div>
-        </div>
 
         <?php if (empty($tasks)): ?>
             <div class="empty-state">
@@ -401,6 +440,89 @@ include __DIR__ . '/includes/header.php';
                             <?php else: ?>
                                 <span style="color: #6c757d;">Una tantum</span>
                             <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+
+        <!-- Task Clienti in Scadenza -->
+        <h3 class="section-title">👥 Task Clienti in Scadenza (15 giorni)</h3>
+        <?php
+        // Prendiamo task clienti in scadenza nei prossimi 15 giorni
+        $entro15 = date('Y-m-d', strtotime('+15 days'));
+        
+        $stmt = $pdo->prepare("
+            SELECT tc.id, tc.descrizione, tc.scadenza, tc.priorita, tc.completato,
+                   c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
+            FROM task_clienti tc
+            LEFT JOIN clienti c ON tc.cliente_id = c.id
+            WHERE tc.scadenza BETWEEN ? AND ? AND tc.completato = 0
+            ORDER BY tc.scadenza ASC, tc.priorita DESC
+        ");
+        $stmt->execute([$oggi, $entro15]);
+        $task_clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+
+        <?php if (empty($task_clienti)): ?>
+            <div class="empty-state">
+                <p>� Nessun task cliente in scadenza nei prossimi 15 giorni.</p>
+            </div>
+        <?php else: ?>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Descrizione</th>
+                        <th>Scadenza</th>
+                        <th>Priorità</th>
+                        <th>Stato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($task_clienti as $tc): 
+                    $diff = (strtotime($tc['scadenza']) - strtotime($oggi)) / 86400;
+                    
+                    if ($diff < 0) {
+                        $status_class = 'status-overdue';
+                        $status_text = 'Scaduto';
+                    } elseif ($diff < 3) {
+                        $status_class = 'status-urgent';
+                        $status_text = 'Urgente';
+                    } else {
+                        $status_class = 'status-normal';
+                        $status_text = 'Normale';
+                    }
+
+                    $priorita_colors = [
+                        'Alta' => '#dc3545',
+                        'Media' => '#fd7e14', 
+                        'Bassa' => '#28a745'
+                    ];
+                    $priorita_color = $priorita_colors[$tc['priorita']] ?? '#6c757d';
+                ?>
+                    <tr>
+                        <td>
+                            <a href="info_cliente.php?id=<?= urlencode($tc['cliente_id']) ?>">
+                                <?= htmlspecialchars($tc['cliente_nome'] ?? 'Cliente sconosciuto') ?>
+                            </a>
+                        </td>
+                        <td>
+                            <a href="task_clienti.php">
+                                <?= htmlspecialchars($tc['descrizione']) ?>
+                            </a>
+                        </td>
+                        <td><?= date('d/m/Y', strtotime($tc['scadenza'])) ?></td>
+                        <td>
+                            <span style="color: <?= $priorita_color ?>; font-weight: 500;">
+                                <?= htmlspecialchars($tc['priorita']) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge <?= $status_class ?>">
+                                <?= $status_text ?>
+                            </span>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -462,34 +584,7 @@ include __DIR__ . '/includes/header.php';
                 ];
             }
         }
-
-        // Calcola statistiche documenti
-        $doc_scaduti = 0;
-        $doc_urgenti = 0;
-        $doc_normali = 0;
-
-        foreach ($documenti as $doc) {
-            $diff = (strtotime($doc['scadenza']) - strtotime($oggi)) / 86400;
-            if ($diff < 0) $doc_scaduti++;
-            elseif ($diff < 30) $doc_urgenti++;
-            else $doc_normali++;
-        }
         ?>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" style="color: #dc3545;"><?= $doc_scaduti ?></div>
-                <div class="stat-label">Scaduti</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #fd7e14;"><?= $doc_urgenti ?></div>
-                <div class="stat-label">In Scadenza</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?= count($documenti) ?></div>
-                <div class="stat-label">Totali</div>
-            </div>
-        </div>
 
         <?php if (empty($documenti)): ?>
             <div class="empty-state">
@@ -552,16 +647,6 @@ include __DIR__ . '/includes/header.php';
 setTimeout(() => {
     location.reload();
 }, 600000);
-
-// Mostra avviso se ci sono elementi scaduti
-<?php if (($task_scaduti + $doc_scaduti) > 0): ?>
-document.addEventListener('DOMContentLoaded', function() {
-    const totalScaduti = <?= $task_scaduti + $doc_scaduti ?>;
-    if (totalScaduti > 0) {
-        console.log(`⚠️ Attenzione: ${totalScaduti} elementi scaduti richiedono attenzione`);
-    }
-});
-<?php endif; ?>
 </script>
 
 </main>
