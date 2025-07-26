@@ -10,6 +10,15 @@ const DB_PASS = 'Admin123!';
 const SITE_NAME = 'CRM ASContabilmente';
 const BASE_URL = 'http://crm.local';
 
+// Socket.IO Configuration
+// Usa l'IP del server corrente per Socket.IO
+function getSocketIOUrl() {
+    $server_ip = $_SERVER['SERVER_ADDR'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
+    // Rimuovi la porta se presente nell'HTTP_HOST
+    $server_ip = explode(':', $server_ip)[0];
+    return "http://{$server_ip}:3001";
+}
+
 // Telegram bot configuration
 // Sostituire con il token reale fornito da BotFather
 const TELEGRAM_BOT_TOKEN = '7235317891:AAGpr8mOFVVksFV9LbF5Fe8RPWsLqdcOAd4';

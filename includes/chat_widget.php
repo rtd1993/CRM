@@ -1,6 +1,6 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
 <link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">
-<script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
+<script src="<?= getSocketIOUrl() ?>/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 const user_id = <?= json_encode($_SESSION['user_id']) ?>;
 const user_name = <?= json_encode($_SESSION['user_name']) ?>;
-const socket = io('http://192.168.1.29:3001');
+const socket = io('<?= getSocketIOUrl() ?>');
 
 socket.emit("register", user_id);
 

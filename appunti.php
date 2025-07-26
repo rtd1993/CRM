@@ -35,7 +35,7 @@ include __DIR__ . '/includes/header.php';
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
-   const socket = io('http://192.168.1.29:3001');
+   const socket = io('<?= getSocketIOUrl() ?>');
 
 
     function inviaAppunto(e) {

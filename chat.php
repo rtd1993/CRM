@@ -257,9 +257,9 @@ $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<script src="http://192.168.1.29:3001/socket.io/socket.io.js"></script>
+<script src="<?= getSocketIOUrl() ?>/socket.io/socket.io.js"></script>
 <script>
-const socket = io("http://192.168.1.29:3001");
+const socket = io("<?= getSocketIOUrl() ?>");
 socket.emit("register", <?= $user_id ?>);
 
 // === CHAT DI GRUPPO ===
