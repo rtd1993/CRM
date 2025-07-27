@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cliente_id = intval($_POST['cliente_id'] ?? 0);
         $descrizione = trim($_POST['descrizione'] ?? '');
         $scadenza = $_POST['scadenza'] ?? '';
-        $priorita = $_POST['priorita'] ?? 'Media';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
         
@@ -86,10 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiorna la tabella task_clienti direttamente
             $stmt = $pdo->prepare("
                 UPDATE task_clienti 
-                SET descrizione = ?, scadenza = ?, priorita = ?, ricorrenza = ? 
+                SET descrizione = ?, scadenza = ?, ricorrenza = ? 
                 WHERE id = ?
             ");
-            $result = $stmt->execute([$descrizione, $scadenza, $priorita, $ricorrenza_giorni, $task_id]);
+            $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni, $task_id]);
             
             if (!$result) {
                 throw new Exception("Errore nell'aggiornamento del task");
@@ -103,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 cliente_id INT NOT NULL,
                 descrizione TEXT NOT NULL,
                 scadenza DATE NOT NULL,
-                priorita ENUM('Alta', 'Media', 'Bassa') DEFAULT 'Media',
                 completato TINYINT(1) DEFAULT 0,
                 ricorrenza INT NULL,
                 data_completamento DATETIME NULL,
@@ -117,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Nuovo task cliente
             $stmt = $pdo->prepare("
-                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, priorita, ricorrenza) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
+                VALUES (?, ?, ?, ?)
             ");
-            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $priorita, $ricorrenza_giorni]);
+            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni]);
             
             if (!$result) {
                 throw new Exception("Errore nella creazione del task");
@@ -130,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $pdo->commit();
-        
+
         
         // Debug: log dell'operazione
         error_log("Task cliente " . ($edit_mode ? "modificato" : "creato") . " con successo. Cliente ID: $cliente_id, Descrizione: $descrizione");
@@ -425,26 +423,15 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
                       placeholder="Descrivi il task da eseguire..."><?= $edit_mode && $task_data ? htmlspecialchars($task_data['descrizione']) : '' ?></textarea>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label for="scadenza">📅 Data di Scadenza *</label>
-                <input type="date" 
-                       name="scadenza" 
-                       id="scadenza" 
-                       class="form-control" 
-                       required
-                       value="<?= $edit_mode && $task_data ? htmlspecialchars($task_data['scadenza']) : '' ?>">
-                <div class="help-text">Entro quando deve essere completato il task</div>
-            </div>
-
-            <div class="form-group">
-                <label for="priorita">⚡ Priorità</label>
-                <select name="priorita" id="priorita" class="form-control">
-                    <option value="Bassa" <?= ($edit_mode && $task_data && $task_data['priorita'] === 'Bassa') ? 'selected' : '' ?>>🟢 Bassa</option>
-                    <option value="Media" <?= (!$edit_mode || !$task_data || $task_data['priorita'] === 'Media' || empty($task_data['priorita'])) ? 'selected' : '' ?>>🟡 Media</option>
-                    <option value="Alta" <?= ($edit_mode && $task_data && $task_data['priorita'] === 'Alta') ? 'selected' : '' ?>>🔴 Alta</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="scadenza">📅 Data di Scadenza *</label>
+            <input type="date" 
+                   name="scadenza" 
+                   id="scadenza" 
+                   class="form-control" 
+                   required
+                   value="<?= $edit_mode && $task_data ? htmlspecialchars($task_data['scadenza']) : '' ?>">
+            <div class="help-text">Entro quando deve essere completato il task</div>
         </div>
 
         <div class="form-group">
