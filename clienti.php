@@ -405,22 +405,7 @@ foreach ($clienti as $c) {
     <p>Gestione completa dei clienti e monitoraggio documenti</p>
 </div>
 
-<div class="stats-bar">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <div class="stat-number"><?= $total_clienti ?></div>
-            <div class="stat-label">Clienti Totali</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number alert"><?= $clienti_alert ?></div>
-            <div class="stat-label">Documenti in Scadenza</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number"><?= $search ? count($clienti) : $total_clienti ?></div>
-            <div class="stat-label"><?= $search ? 'Risultati Ricerca' : 'Visualizzati' ?></div>
-        </div>
-    </div>
-</div>
+
 
 <div class="clienti-controls">
     <form method="get" class="search-form">

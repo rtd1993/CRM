@@ -862,9 +862,6 @@ foreach ($tasks as $task) {
 </style>
 
 <div class="task-header">
-    <a href="dashboard.php" class="back-btn">
-        <i class="fas fa-arrow-left"></i> Dashboard
-    </a>
     <h2><i class="fas fa-tasks"></i> Task Clienti</h2>
     <p>Gestisci task ricorrenti e one-shot per i tuoi clienti</p>
 </div>
