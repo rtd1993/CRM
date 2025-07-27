@@ -763,26 +763,7 @@ foreach ($contents as $c) {
     <?php endforeach; ?>
 </div>
 
-<div class="stats-bar">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <div class="stat-number"><?= $total_dirs ?></div>
-            <div class="stat-label">Cartelle</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number"><?= $total_files ?></div>
-            <div class="stat-label">File</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number"><?= number_format($total_size / 1024 / 1024, 1) ?></div>
-            <div class="stat-label">MB Totali</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number"><?= count($contents) ?></div>
-            <div class="stat-label">Elementi</div>
-        </div>
-    </div>
-</div>
+
 
 <div class="drive-controls">
     <form method="get" class="search-form">
