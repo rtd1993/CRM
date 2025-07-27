@@ -1602,6 +1602,28 @@ style.textContent = `
             transform: translateY(0) scale(1);
         }
     }
+    
+    @keyframes fadeOutLeft {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-100%);
+        }
+    }
+    
+    @keyframes fadeOutScale {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+    }
 `;
 document.head.appendChild(style);
 
@@ -1914,27 +1936,90 @@ function confirmDelete(fileName, path, isFolder) {
         : `Eliminare definitivamente il file "${fileName}"?`;
     
     if (confirm(`⚠️ ATTENZIONE\n\n${message}\n\nQuesta operazione non può essere annullata!`)) {
-        // Crea form nascosto per eliminazione
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'elimina.php';
-        form.style.display = 'none';
+        // Mostra indicatore di caricamento
+        showNotification('🔄 Eliminazione in corso...', 'info');
         
-        const pathInput = document.createElement('input');
-        pathInput.type = 'hidden';
-        pathInput.name = 'path';
-        pathInput.value = decodeURIComponent(path);
-        form.appendChild(pathInput);
+        // Crea FormData per la richiesta AJAX
+        const formData = new FormData();
+        formData.append('path', decodeURIComponent(path));
         
-        const confirmInput = document.createElement('input');
-        confirmInput.type = 'hidden';
-        confirmInput.name = 'confirm';
-        confirmInput.value = '1';
-        form.appendChild(confirmInput);
-        
-        document.body.appendChild(form);
-        form.submit();
+        // Invia richiesta AJAX
+        fetch('api/elimina_file.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✅ ${data.message}`, 'success');
+                
+                // Rimuovi l'elemento dalla vista senza ricaricare la pagina
+                removeItemFromView(fileName, isFolder);
+                
+                // Ricarica la pagina dopo 2 secondi per aggiornare le statistiche
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showNotification(`❌ ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Errore durante l\'eliminazione:', error);
+            showNotification('❌ Errore di connessione durante l\'eliminazione', 'error');
+        });
     }
+}
+
+// Funzione per rimuovere visivamente un elemento dalla vista
+function removeItemFromView(fileName, isFolder) {
+    // Rimuovi dalla vista tabella
+    const tableRows = document.querySelectorAll('#table-view .file-row');
+    tableRows.forEach(row => {
+        const nameCell = row.querySelector('.file-link');
+        if (nameCell && nameCell.textContent.trim() === fileName) {
+            row.style.animation = 'fadeOutLeft 0.5s ease';
+            setTimeout(() => {
+                row.remove();
+            }, 500);
+        }
+    });
+    
+    // Rimuovi dalla vista griglia
+    const gridItems = document.querySelectorAll('#grid-view .grid-item');
+    gridItems.forEach(item => {
+        const nameDiv = item.querySelector('.grid-item-name');
+        if (nameDiv && nameDiv.textContent.trim() === fileName) {
+            item.style.animation = 'fadeOutScale 0.5s ease';
+            setTimeout(() => {
+                item.remove();
+            }, 500);
+        }
+    });
+    
+    // Mostra messaggio se non ci sono più elementi
+    setTimeout(() => {
+        const remainingTableRows = document.querySelectorAll('#table-view .file-row').length;
+        const remainingGridItems = document.querySelectorAll('#grid-view .grid-item').length;
+        
+        if (remainingTableRows === 0 || remainingGridItems === 0) {
+            const emptyMessage = `
+                <div class="empty-state-dynamic" style="text-align: center; padding: 3rem; color: #6c757d;">
+                    <i style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">📁</i>
+                    <h3>Cartella vuota</h3>
+                    <p>Tutti gli elementi sono stati eliminati</p>
+                </div>
+            `;
+            
+            if (currentView === 'table') {
+                const tableBody = document.querySelector('#table-view tbody');
+                tableBody.innerHTML = `<tr><td colspan="6">${emptyMessage}</td></tr>`;
+            } else {
+                const gridContainer = document.querySelector('#grid-view .grid-container');
+                gridContainer.innerHTML = `<div class="grid-empty-state">${emptyMessage}</div>`;
+            }
+        }
+    }, 600);
 }
 
 // Gestione messaggi dal modal
