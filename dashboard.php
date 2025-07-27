@@ -265,6 +265,59 @@ include __DIR__ . '/includes/header.php';
     margin-top: 1rem;
 }
 
+.scroll-section {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    background: white;
+    margin-bottom: 1.5rem;
+}
+
+.scroll-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scroll-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.scroll-section::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.scroll-section::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.scroll-header {
+    background: #f8f9fa;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #e1e5e9;
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.scroll-content {
+    padding: 0;
+}
+
+.scroll-content .data-table {
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.scroll-content .empty-state {
+    padding: 1.5rem;
+    margin: 0;
+}
+
 @media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
@@ -341,7 +394,11 @@ include __DIR__ . '/includes/header.php';
                 <h4 class="group-title">👥 Task Clienti</h4>
                 <a href="task_clienti.php" class="action-btn-small">
                     <span class="icon">👥</span>
-                    <span>Task Clienti</span>
+                    <span>Gestione Task Clienti</span>
+                </a>
+                <a href="crea_task_clienti.php" class="action-btn-small">
+                    <span class="icon">➕</span>
+                    <span>Crea Nuovo Task Cliente</span>
                 </a>
             </div>
 
@@ -362,283 +419,267 @@ include __DIR__ . '/includes/header.php';
                 </a>
             </div>
         </div>
+
+        <!-- Task in Scadenza -->
+        <div class="scroll-section">
+            <div class="scroll-header">📋 Task in Scadenza (30 giorni)</div>
+            <div class="scroll-content">
+                <?php
+                $oggi = date('Y-m-d');
+                $entro30 = date('Y-m-d', strtotime('+30 days'));
+                $da30giorni = date('Y-m-d', strtotime('-30 days'));
+
+                // Prendiamo task scaduti (ultimi 30 giorni) e in scadenza (prossimi 30 giorni)
+                $stmt = $pdo->prepare("
+                    SELECT id, descrizione, scadenza, ricorrenza
+                    FROM task
+                    WHERE scadenza BETWEEN ? AND ?
+                    ORDER BY scadenza ASC
+                ");
+                $stmt->execute([$da30giorni, $entro30]);
+                $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+
+                <?php if (empty($tasks)): ?>
+                    <div class="empty-state">
+                        <p>📋 Nessun task da gestire nei prossimi 30 giorni.</p>
+                    </div>
+                <?php else: ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Descrizione</th>
+                                <th>Scadenza</th>
+                                <th>Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($tasks as $t): 
+                            $scadenza = $t['scadenza'];
+                            $diff = (strtotime($scadenza) - strtotime($oggi)) / 86400;
+                            
+                            if ($diff < 0) {
+                                $status_class = 'status-overdue';
+                                $status_text = 'Scaduto';
+                            } elseif ($diff < 5) {
+                                $status_class = 'status-urgent';
+                                $status_text = 'Urgente';
+                            } else {
+                                $status_class = 'status-normal';
+                                $status_text = 'Normale';
+                            }
+                            
+                            $is_recurring = !empty($t['ricorrenza']) && $t['ricorrenza'] > 0;
+                        ?>
+                            <tr>
+                                <td>
+                                    <a href="task.php">
+                                        <?= htmlspecialchars($t['descrizione']) ?>
+                                    </a>
+                                    <?php if ($is_recurring): ?>
+                                        <small style="color: #0c5460;"> 🔄</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="font-size: 0.9rem;"><?= date('d/m', strtotime($t['scadenza'])) ?></td>
+                                <td>
+                                    <span class="status-badge <?= $status_class ?>" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                                        <?= $status_text ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Task Clienti in Scadenza -->
+        <div class="scroll-section">
+            <div class="scroll-header">👥 Task Clienti in Scadenza (15 giorni)</div>
+            <div class="scroll-content">
+                <?php
+                // Prendiamo task clienti in scadenza nei prossimi 15 giorni
+                $entro15 = date('Y-m-d', strtotime('+15 days'));
+                
+                $stmt = $pdo->prepare("
+                    SELECT tc.id, tc.descrizione, tc.scadenza, tc.priorita, tc.completato,
+                           c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
+                    FROM task_clienti tc
+                    LEFT JOIN clienti c ON tc.cliente_id = c.id
+                    WHERE tc.scadenza BETWEEN ? AND ? AND tc.completato = 0
+                    ORDER BY tc.scadenza ASC, tc.priorita DESC
+                ");
+                $stmt->execute([$oggi, $entro15]);
+                $task_clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+
+                <?php if (empty($task_clienti)): ?>
+                    <div class="empty-state">
+                        <p>👥 Nessun task cliente in scadenza nei prossimi 15 giorni.</p>
+                    </div>
+                <?php else: ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Descrizione</th>
+                                <th>Scadenza</th>
+                                <th>Priorità</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($task_clienti as $tc): 
+                            $diff = (strtotime($tc['scadenza']) - strtotime($oggi)) / 86400;
+                            
+                            $priorita_colors = [
+                                'Alta' => '#dc3545',
+                                'Media' => '#fd7e14', 
+                                'Bassa' => '#28a745'
+                            ];
+                            $priorita_color = $priorita_colors[$tc['priorita']] ?? '#6c757d';
+                        ?>
+                            <tr>
+                                <td style="font-size: 0.9rem;">
+                                    <a href="info_cliente.php?id=<?= urlencode($tc['cliente_id']) ?>">
+                                        <?= htmlspecialchars(substr($tc['cliente_nome'] ?? 'Sconosciuto', 0, 20)) ?>
+                                    </a>
+                                </td>
+                                <td style="font-size: 0.9rem;">
+                                    <a href="task_clienti.php">
+                                        <?= htmlspecialchars(substr($tc['descrizione'], 0, 30)) ?>...
+                                    </a>
+                                </td>
+                                <td style="font-size: 0.9rem;"><?= date('d/m', strtotime($tc['scadenza'])) ?></td>
+                                <td>
+                                    <span style="color: <?= $priorita_color ?>; font-weight: 500; font-size: 0.8rem;">
+                                        <?= substr($tc['priorita'], 0, 1) ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Documenti da aggiornare -->
+        <div class="scroll-section">
+            <div class="scroll-header">📄 Documenti in Scadenza (30 giorni)</div>
+            <div class="scroll-content">
+                <?php
+                // Cerchiamo documenti scaduti (ultimi 30 giorni) e in scadenza (prossimi 30 giorni)
+                $da30giorni = date('Y-m-d', strtotime('-30 days'));
+                $entro30 = date('Y-m-d', strtotime('+30 days'));
+
+                $sql = "
+                    SELECT 
+                        id,
+                        `Cognome/Ragione sociale` AS cognome,
+                        `Numero carta d'identità` AS carta,
+                        `Data di scadenza` AS carta_scad,
+                        PEC,
+                        `Scadenza PEC` AS pec_scad
+                    FROM clienti
+                    WHERE 
+                        (`Data di scadenza` IS NOT NULL AND `Data di scadenza` BETWEEN ? AND ?)
+                        OR
+                        (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` BETWEEN ? AND ?)
+                    ORDER BY 
+                        LEAST(
+                            IFNULL(`Data di scadenza`, '9999-12-31'), 
+                            IFNULL(`Scadenza PEC`, '9999-12-31')
+                        ) ASC
+                ";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$da30giorni, $entro30, $da30giorni, $entro30]);
+                $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Costruiamo una tabella documenti da aggiornare
+                $documenti = [];
+                foreach ($clienti as $row) {
+                    // Carta d'identità
+                    if (!empty($row['carta']) && !empty($row['carta_scad'])) {
+                        $documenti[] = [
+                            'id' => $row['id'],
+                            'cognome' => $row['cognome'],
+                            'tipo' => "Carta ID",
+                            'dettaglio' => $row['carta'],
+                            'scadenza' => $row['carta_scad'],
+                        ];
+                    }
+                    // PEC
+                    if (!empty($row['PEC']) && !empty($row['pec_scad'])) {
+                        $documenti[] = [
+                            'id' => $row['id'],
+                            'cognome' => $row['cognome'],
+                            'tipo' => "PEC",
+                            'dettaglio' => $row['PEC'],
+                            'scadenza' => $row['pec_scad'],
+                        ];
+                    }
+                }
+                ?>
+
+                <?php if (empty($documenti)): ?>
+                    <div class="empty-state">
+                        <p>📄 Nessun documento da aggiornare nei prossimi 30 giorni.</p>
+                    </div>
+                <?php else: ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Scadenza</th>
+                                <th>Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($documenti as $doc): 
+                            $diff = (strtotime($doc['scadenza']) - strtotime($oggi)) / 86400;
+                            
+                            if ($diff < 0) {
+                                $status_class = 'status-overdue';
+                                $status_text = 'Scaduto';
+                            } elseif ($diff < 30) {
+                                $status_class = 'status-urgent';
+                                $status_text = 'Urgente';
+                            } else {
+                                $status_class = 'status-normal';
+                                $status_text = 'OK';
+                            }
+                        ?>
+                            <tr>
+                                <td style="font-size: 0.9rem;">
+                                    <a href="clienti_scheda.php?id=<?= urlencode($doc['id']) ?>">
+                                        <?= htmlspecialchars(substr($doc['cognome'], 0, 20)) ?>
+                                    </a>
+                                </td>
+                                <td style="font-size: 0.9rem;">
+                                    <strong><?= htmlspecialchars($doc['tipo']) ?></strong>
+                                </td>
+                                <td style="font-size: 0.9rem;"><?= date('d/m', strtotime($doc['scadenza'])) ?></td>
+                                <td>
+                                    <span class="status-badge <?= $status_class ?>" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                                        <?= $status_text ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
-    <!-- Colonna destra: Calendario e dati -->
+    <!-- Colonna destra: Solo Calendario -->
     <div class="dashboard-section">
         <h3 class="section-title">📅 Calendario Google</h3>
         <iframe src="https://calendar.google.com/calendar/embed?src=gestione.ascontabilmente%40gmail.com&ctz=Europe%2FRome"
                 class="calendar-embed" frameborder="0" scrolling="no"></iframe>
-
-        <!-- Task in Scadenza e Scaduti -->
-        <h3 class="section-title">📋 Task da Gestire</h3>
-        <?php
-        $oggi = date('Y-m-d');
-        $entro30 = date('Y-m-d', strtotime('+30 days'));
-        $da30giorni = date('Y-m-d', strtotime('-30 days'));
-
-        // Prendiamo task scaduti (ultimi 30 giorni) e in scadenza (prossimi 30 giorni)
-        $stmt = $pdo->prepare("
-            SELECT id, descrizione, scadenza, ricorrenza
-            FROM task
-            WHERE scadenza BETWEEN ? AND ?
-            ORDER BY scadenza ASC
-        ");
-        $stmt->execute([$da30giorni, $entro30]);
-        $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        ?>
-
-        <?php if (empty($tasks)): ?>
-            <div class="empty-state">
-                <p>📋 Nessun task da gestire nei prossimi 30 giorni.</p>
-            </div>
-        <?php else: ?>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Descrizione</th>
-                        <th>Scadenza</th>
-                        <th>Stato</th>
-                        <th>Tipo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($tasks as $t): 
-                    $scadenza = $t['scadenza'];
-                    $diff = (strtotime($scadenza) - strtotime($oggi)) / 86400;
-                    
-                    if ($diff < 0) {
-                        $status_class = 'status-overdue';
-                        $status_text = 'Scaduto ' . abs(floor($diff)) . ' giorni fa';
-                    } elseif ($diff < 5) {
-                        $status_class = 'status-urgent';
-                        $status_text = 'Scade tra ' . floor($diff) . ' giorni';
-                    } else {
-                        $status_class = 'status-normal';
-                        $status_text = 'Scade tra ' . floor($diff) . ' giorni';
-                    }
-                    
-                    $is_recurring = !empty($t['ricorrenza']) && $t['ricorrenza'] > 0;
-                ?>
-                    <tr>
-                        <td>
-                            <a href="task.php">
-                                <?= htmlspecialchars($t['descrizione']) ?>
-                            </a>
-                        </td>
-                        <td><?= date('d/m/Y', strtotime($t['scadenza'])) ?></td>
-                        <td>
-                            <span class="status-badge <?= $status_class ?>">
-                                <?= $status_text ?>
-                            </span>
-                        </td>
-                        <td>
-                            <?php if ($is_recurring): ?>
-                                <span class="status-badge" style="background: #cce7ff; color: #0c5460;">
-                                    🔄 Ricorrente
-                                </span>
-                            <?php else: ?>
-                                <span style="color: #6c757d;">Una tantum</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
-
-        <!-- Task Clienti in Scadenza -->
-        <h3 class="section-title">👥 Task Clienti in Scadenza (15 giorni)</h3>
-        <?php
-        // Prendiamo task clienti in scadenza nei prossimi 15 giorni
-        $entro15 = date('Y-m-d', strtotime('+15 days'));
-        
-        $stmt = $pdo->prepare("
-            SELECT tc.id, tc.descrizione, tc.scadenza, tc.priorita, tc.completato,
-                   c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
-            FROM task_clienti tc
-            LEFT JOIN clienti c ON tc.cliente_id = c.id
-            WHERE tc.scadenza BETWEEN ? AND ? AND tc.completato = 0
-            ORDER BY tc.scadenza ASC, tc.priorita DESC
-        ");
-        $stmt->execute([$oggi, $entro15]);
-        $task_clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        ?>
-
-        <?php if (empty($task_clienti)): ?>
-            <div class="empty-state">
-                <p>� Nessun task cliente in scadenza nei prossimi 15 giorni.</p>
-            </div>
-        <?php else: ?>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Descrizione</th>
-                        <th>Scadenza</th>
-                        <th>Priorità</th>
-                        <th>Stato</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($task_clienti as $tc): 
-                    $diff = (strtotime($tc['scadenza']) - strtotime($oggi)) / 86400;
-                    
-                    if ($diff < 0) {
-                        $status_class = 'status-overdue';
-                        $status_text = 'Scaduto';
-                    } elseif ($diff < 3) {
-                        $status_class = 'status-urgent';
-                        $status_text = 'Urgente';
-                    } else {
-                        $status_class = 'status-normal';
-                        $status_text = 'Normale';
-                    }
-
-                    $priorita_colors = [
-                        'Alta' => '#dc3545',
-                        'Media' => '#fd7e14', 
-                        'Bassa' => '#28a745'
-                    ];
-                    $priorita_color = $priorita_colors[$tc['priorita']] ?? '#6c757d';
-                ?>
-                    <tr>
-                        <td>
-                            <a href="info_cliente.php?id=<?= urlencode($tc['cliente_id']) ?>">
-                                <?= htmlspecialchars($tc['cliente_nome'] ?? 'Cliente sconosciuto') ?>
-                            </a>
-                        </td>
-                        <td>
-                            <a href="task_clienti.php">
-                                <?= htmlspecialchars($tc['descrizione']) ?>
-                            </a>
-                        </td>
-                        <td><?= date('d/m/Y', strtotime($tc['scadenza'])) ?></td>
-                        <td>
-                            <span style="color: <?= $priorita_color ?>; font-weight: 500;">
-                                <?= htmlspecialchars($tc['priorita']) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="status-badge <?= $status_class ?>">
-                                <?= $status_text ?>
-                            </span>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
-
-        <!-- Documenti da aggiornare -->
-        <h3 class="section-title">📄 Documenti da Aggiornare</h3>
-        <?php
-        // Cerchiamo documenti scaduti (ultimi 30 giorni) e in scadenza (prossimi 30 giorni)
-        $da30giorni = date('Y-m-d', strtotime('-30 days'));
-        $entro30 = date('Y-m-d', strtotime('+30 days'));
-
-        $sql = "
-            SELECT 
-                id,
-                `Cognome/Ragione sociale` AS cognome,
-                `Numero carta d'identità` AS carta,
-                `Data di scadenza` AS carta_scad,
-                PEC,
-                `Scadenza PEC` AS pec_scad
-            FROM clienti
-            WHERE 
-                (`Data di scadenza` IS NOT NULL AND `Data di scadenza` BETWEEN ? AND ?)
-                OR
-                (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` BETWEEN ? AND ?)
-            ORDER BY 
-                LEAST(
-                    IFNULL(`Data di scadenza`, '9999-12-31'), 
-                    IFNULL(`Scadenza PEC`, '9999-12-31')
-                ) ASC
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$da30giorni, $entro30, $da30giorni, $entro30]);
-        $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Costruiamo una tabella documenti da aggiornare
-        $documenti = [];
-        foreach ($clienti as $row) {
-            // Carta d'identità
-            if (!empty($row['carta']) && !empty($row['carta_scad'])) {
-                $documenti[] = [
-                    'id' => $row['id'],
-                    'cognome' => $row['cognome'],
-                    'tipo' => "Carta d'identità",
-                    'dettaglio' => $row['carta'],
-                    'scadenza' => $row['carta_scad'],
-                ];
-            }
-            // PEC
-            if (!empty($row['PEC']) && !empty($row['pec_scad'])) {
-                $documenti[] = [
-                    'id' => $row['id'],
-                    'cognome' => $row['cognome'],
-                    'tipo' => "PEC",
-                    'dettaglio' => $row['PEC'],
-                    'scadenza' => $row['pec_scad'],
-                ];
-            }
-        }
-        ?>
-
-        <?php if (empty($documenti)): ?>
-            <div class="empty-state">
-                <p>📄 Nessun documento da aggiornare nei prossimi 30 giorni.</p>
-            </div>
-        <?php else: ?>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Tipo Documento</th>
-                        <th>Dettaglio</th>
-                        <th>Scadenza</th>
-                        <th>Stato</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($documenti as $doc): 
-                    $diff = (strtotime($doc['scadenza']) - strtotime($oggi)) / 86400;
-                    
-                    if ($diff < 0) {
-                        $status_class = 'status-overdue';
-                        $status_text = 'Scaduto ' . abs(floor($diff)) . ' giorni fa';
-                    } elseif ($diff < 30) {
-                        $status_class = 'status-urgent';
-                        $status_text = 'Scade tra ' . floor($diff) . ' giorni';
-                    } else {
-                        $status_class = 'status-normal';
-                        $status_text = 'Scade tra ' . floor($diff) . ' giorni';
-                    }
-                ?>
-                    <tr>
-                        <td>
-                            <a href="clienti_scheda.php?id=<?= urlencode($doc['id']) ?>">
-                                <?= htmlspecialchars($doc['cognome']) ?>
-                            </a>
-                        </td>
-                        <td>
-                            <strong><?= htmlspecialchars($doc['tipo']) ?></strong>
-                        </td>
-                        <td>
-                            <small style="color: #6c757d;"><?= htmlspecialchars($doc['dettaglio']) ?></small>
-                        </td>
-                        <td><?= date('d/m/Y', strtotime($doc['scadenza'])) ?></td>
-                        <td>
-                            <span class="status-badge <?= $status_class ?>">
-                                <?= $status_text ?>
-                            </span>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
     </div>
 </div>
 
