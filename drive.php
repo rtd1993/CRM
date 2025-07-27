@@ -437,12 +437,20 @@ foreach ($contents as $c) {
     font-size: 1.2rem;
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 4px;
-    transition: background 0.3s ease;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: #6c757d;
+    position: relative;
 }
 
 .menu-trigger:hover {
-    background: #f8f9fa;
+    background: #e9ecef;
+    color: #495057;
+    transform: scale(1.1);
+}
+
+.menu-trigger:active {
+    background: #dee2e6;
 }
 
 .dropdown-menu {
@@ -453,9 +461,10 @@ foreach ($contents as $c) {
     background: white;
     border: 1px solid #e1e5e9;
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     min-width: 160px;
-    z-index: 9999;
+    z-index: 99999;
+    animation: fadeInMenu 0.2s ease;
 }
 
 .dropdown-menu a {
@@ -463,12 +472,15 @@ foreach ($contents as $c) {
     padding: 0.75rem 1rem;
     color: #495057;
     text-decoration: none;
-    transition: background 0.3s ease;
+    transition: all 0.2s ease;
     font-size: 0.9rem;
+    border-left: 3px solid transparent;
 }
 
 .dropdown-menu a:hover {
     background: #f8f9fa;
+    border-left-color: #667eea;
+    padding-left: 1.2rem;
 }
 
 .dropdown-menu a.danger {
@@ -793,26 +805,71 @@ foreach ($contents as $c) {
 let viewMode = 'table'; // 'table' or 'grid'
 
 function toggleMenu(btn) {
-    // Chiudi altri menu aperti
+    // Chiudi altri menu aperti e rimuovi overlay esistenti
     document.querySelectorAll('.dropdown-menu').forEach(menu => {
         if (menu !== btn.nextElementSibling) {
             menu.style.display = 'none';
         }
     });
+    document.querySelectorAll('.menu-overlay').forEach(overlay => overlay.remove());
     
     // Alterna questo menu
     const menu = btn.nextElementSibling;
     const isVisible = menu.style.display === 'block';
-    menu.style.display = isVisible ? 'none' : 'block';
     
-    // Chiudi al click fuori
-    if (!isVisible) {
-        document.addEventListener('click', function handler(e) {
+    if (isVisible) {
+        menu.style.display = 'none';
+    } else {
+        // Crea overlay per catturare click esterni
+        const overlay = document.createElement('div');
+        overlay.className = 'menu-overlay';
+        document.body.appendChild(overlay);
+        
+        // Mostra menu
+        menu.style.display = 'block';
+        
+        // Handler per chiudere il menu
+        const closeMenu = (e) => {
             if (!menu.contains(e.target) && e.target !== btn) {
                 menu.style.display = 'none';
-                document.removeEventListener('click', handler);
+                overlay.remove();
+                document.removeEventListener('click', closeMenu);
+                document.removeEventListener('keydown', escapeHandler);
             }
-        });
+        };
+        
+        // Handler per tasto Escape
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                menu.style.display = 'none';
+                overlay.remove();
+                document.removeEventListener('click', closeMenu);
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        
+        // Aggiungi event listeners
+        overlay.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', escapeHandler);
+        
+        // Posiziona il menu correttamente se va fuori schermo
+        setTimeout(() => {
+            const rect = menu.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // Aggiusta posizione verticale se va sotto lo schermo
+            if (rect.bottom > viewportHeight) {
+                menu.style.top = 'auto';
+                menu.style.bottom = '100%';
+            }
+            
+            // Aggiusta posizione orizzontale se va oltre il bordo destro
+            if (rect.right > viewportWidth) {
+                menu.style.right = 'auto';
+                menu.style.left = '0';
+            }
+        }, 1);
     }
 }
 
@@ -1072,18 +1129,18 @@ document.addEventListener('keydown', function(e) {
         }
     }
     
-    // Escape per chiudere pannelli
+    // Escape per chiudere pannelli (ma non i menu dropdown che hanno gestione propria)
     if (e.key === 'Escape') {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.style.display = 'none';
-        });
-        
-        if (document.getElementById('bulk-actions-panel').style.display === 'block') {
-            toggleBulkActions();
-        }
-        
-        if (document.getElementById('advanced-filters').style.display === 'block') {
-            toggleAdvancedFilters();
+        // Chiudi solo se non ci sono menu dropdown aperti
+        const openMenus = document.querySelectorAll('.dropdown-menu[style*="block"]');
+        if (openMenus.length === 0) {
+            if (document.getElementById('bulk-actions-panel').style.display === 'block') {
+                toggleBulkActions();
+            }
+            
+            if (document.getElementById('advanced-filters').style.display === 'block') {
+                toggleAdvancedFilters();
+            }
         }
     }
 });
@@ -1111,6 +1168,27 @@ style.textContent = `
             transform: translateX(100%);
             opacity: 0;
         }
+    }
+    
+    @keyframes fadeInMenu {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 99998;
+        background: transparent;
     }
 `;
 document.head.appendChild(style);
