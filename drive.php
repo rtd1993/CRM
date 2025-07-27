@@ -715,32 +715,139 @@ foreach ($contents as $c) {
     opacity: 0.5;
 }
 
+.empty-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.empty-action-link {
+    background: none;
+    border: none;
+    color: #667eea;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.empty-action-link:hover {
+    background: #e3f2fd;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.empty-action-link:active {
+    transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    animation: slideInModal 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e1e5e9;
+    background: #f8f9fa;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #e9ecef;
+    color: #495057;
+    transform: scale(1.1);
+}
+
+.modal-body {
+    flex: 1;
+    overflow: hidden;
+    border-radius: 0 0 12px 12px;
+}
+
+.modal-body iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 0 0 12px 12px;
+}
+
+@keyframes slideInModal {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 @media (max-width: 768px) {
-    .drive-header h2 {
-        font-size: 2rem;
+    .modal-container {
+        width: 95%;
+        max-height: 95%;
     }
     
-    .drive-controls {
-        flex-direction: column;
-        align-items: stretch;
+    .modal-header {
+        padding: 1rem;
     }
     
-    .search-form {
-        flex-direction: column;
-    }
-    
-    .form-control {
-        width: 100%;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .drive-table th,
-    .drive-table td {
-        padding: 0.8rem 0.5rem;
-        font-size: 0.9rem;
+    .modal-body iframe {
+        height: 500px;
     }
 }
 </style>
@@ -825,10 +932,6 @@ foreach ($contents as $c) {
                 ☑️ Selezione Multipla
             </button>
         </div>
-        <div class="btn-group">
-            <a href="crea_cartella.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">📁 Nuova Cartella</a>
-            <a href="upload.php?path=<?= urlencode($relative_path) ?>" class="btn btn-success">⬆️ Upload File</a>
-        </div>
     </div>
 </div>
 
@@ -890,9 +993,19 @@ foreach ($contents as $c) {
                         <i>📁</i>
                         <h3>Cartella vuota</h3>
                         <p><?= $search ? 'Nessun file corrisponde alla ricerca' : 'Questa cartella non contiene file o sottocartelle' ?></p>
-                        <div style="margin-top: 1rem;">
-                            <a href="crea_cartella.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">📁 Crea Cartella</a>
-                            <a href="upload.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">⬆️ Upload File</a>
+                        <div style="margin-top: 1.5rem;">
+                            <p style="color: #6c757d; margin-bottom: 1rem;">Per iniziare, puoi:</p>
+                            <div class="empty-actions">
+                                <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path) ?>')" 
+                                        class="empty-action-link">
+                                    📁 Creare una cartella
+                                </button>
+                                <span style="color: #6c757d; margin: 0 0.5rem;">oppure</span>
+                                <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path) ?>')" 
+                                        class="empty-action-link">
+                                    ⬆️ Caricare un file
+                                </button>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -971,54 +1084,52 @@ foreach ($contents as $c) {
                                         📂
                                         <span class="tooltip">Apri cartella</span>
                                     </a>
-                                    <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn success">
+                                    <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn success">
                                         ➕
                                         <span class="tooltip">Crea cartella</span>
-                                    </a>
-                                    <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn success">
+                                    </button>
+                                    <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn success">
                                         ⬆️
                                         <span class="tooltip">Upload file</span>
-                                    </a>
-                                    <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn warning">
+                                    </button>
+                                    <button onclick="openModal('Rinomina', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn warning">
                                         ✏️
                                         <span class="tooltip">Rinomina</span>
-                                    </a>
-                                    <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn">
+                                    </button>
+                                    <button onclick="openModal('Sposta', 'sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn">
                                         📂
                                         <span class="tooltip">Sposta</span>
-                                    </a>
-                                    <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn danger" 
-                                       onclick="return confirm('Eliminare la cartella e tutto il suo contenuto?')">
+                                    </button>
+                                    <button onclick="confirmDelete('<?= addslashes($c['name']) ?>', '<?= urlencode($relative_path . '/' . $c['name']) ?>', true)" 
+                                            class="action-btn danger">
                                         🗑️
                                         <span class="tooltip">Elimina cartella</span>
-                                    </a>
+                                    </button>
                                 <?php else: ?>
-                                    <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn primary">
+                                    <button onclick="downloadFile('<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn primary">
                                         ⬇️
                                         <span class="tooltip">Download file</span>
-                                    </a>
-                                    <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn warning">
+                                    </button>
+                                    <button onclick="openModal('Rinomina File', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn warning">
                                         ✏️
                                         <span class="tooltip">Rinomina file</span>
-                                    </a>
-                                    <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn">
+                                    </button>
+                                    <button onclick="openModal('Sposta File', 'sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                            class="action-btn">
                                         📂
                                         <span class="tooltip">Sposta file</span>
-                                    </a>
-                                    <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                       class="action-btn danger" 
-                                       onclick="return confirm('Eliminare definitivamente questo file?')">
+                                    </button>
+                                    <button onclick="confirmDelete('<?= addslashes($c['name']) ?>', '<?= urlencode($relative_path . '/' . $c['name']) ?>', false)" 
+                                            class="action-btn danger">
                                         🗑️
                                         <span class="tooltip">Elimina file</span>
-                                    </a>
+                                    </button>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -1037,9 +1148,19 @@ foreach ($contents as $c) {
                 <i>📁</i>
                 <h3>Cartella vuota</h3>
                 <p><?= $search ? 'Nessun file corrisponde alla ricerca' : 'Questa cartella non contiene file o sottocartelle' ?></p>
-                <div style="margin-top: 1rem;">
-                    <a href="crea_cartella.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">📁 Crea Cartella</a>
-                    <a href="upload.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">⬆️ Upload File</a>
+                <div style="margin-top: 1.5rem;">
+                    <p style="color: #6c757d; margin-bottom: 1rem;">Per iniziare, puoi:</p>
+                    <div class="empty-actions">
+                        <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path) ?>')" 
+                                class="empty-action-link">
+                            📁 Creare una cartella
+                        </button>
+                        <span style="color: #6c757d; margin: 0 0.5rem;">oppure</span>
+                        <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path) ?>')" 
+                                class="empty-action-link">
+                            ⬆️ Caricare un file
+                        </button>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
@@ -1108,59 +1229,70 @@ foreach ($contents as $c) {
                                 📂
                                 <span class="tooltip">Apri cartella</span>
                             </a>
-                            <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn success">
+                            <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn success">
                                 ➕
                                 <span class="tooltip">Crea cartella</span>
-                            </a>
-                            <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn success">
+                            </button>
+                            <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn success">
                                 ⬆️
                                 <span class="tooltip">Upload file</span>
-                            </a>
-                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn warning">
+                            </button>
+                            <button onclick="openModal('Rinomina', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn warning">
                                 ✏️
                                 <span class="tooltip">Rinomina</span>
-                            </a>
-                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn">
+                            </button>
+                            <button onclick="openModal('Sposta', 'sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn">
                                 📂
                                 <span class="tooltip">Sposta</span>
-                            </a>
-                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn danger" 
-                               onclick="return confirm('Eliminare la cartella e tutto il suo contenuto?')">
+                            </button>
+                            <button onclick="confirmDelete('<?= addslashes($c['name']) ?>', '<?= urlencode($relative_path . '/' . $c['name']) ?>', true)" 
+                                    class="action-btn danger">
                                 🗑️
                                 <span class="tooltip">Elimina cartella</span>
-                            </a>
+                            </button>
                         <?php else: ?>
-                            <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn primary">
+                            <button onclick="downloadFile('<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn primary">
                                 ⬇️
                                 <span class="tooltip">Download file</span>
-                            </a>
-                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn warning">
+                            </button>
+                            <button onclick="openModal('Rinomina File', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn warning">
                                 ✏️
                                 <span class="tooltip">Rinomina file</span>
-                            </a>
-                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn">
+                            </button>
+                            <button onclick="openModal('Sposta File', 'sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
+                                    class="action-btn">
                                 📂
                                 <span class="tooltip">Sposta file</span>
-                            </a>
-                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                               class="action-btn danger" 
-                               onclick="return confirm('Eliminare definitivamente questo file?')">
+                            </button>
+                            <button onclick="confirmDelete('<?= addslashes($c['name']) ?>', '<?= urlencode($relative_path . '/' . $c['name']) ?>', false)" 
+                                    class="action-btn danger">
                                 🗑️
                                 <span class="tooltip">Elimina file</span>
-                            </a>
+                            </button>
                         <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- Modal Container -->
+<div id="modal-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="modal-title">Azione</h3>
+            <button class="modal-close" onclick="closeModal()">✖️</button>
+        </div>
+        <div class="modal-body">
+            <iframe id="modal-iframe" src="" frameborder="0"></iframe>
+        </div>
     </div>
 </div>
 
@@ -1728,6 +1860,104 @@ function handleBulkMove() {
     
     window.location.href = 'sposta.php?' + params.toString();
 }
+
+// Funzioni per il modal
+function openModal(title, url) {
+    const modal = document.getElementById('modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalIframe = document.getElementById('modal-iframe');
+    
+    modalTitle.textContent = title;
+    modalIframe.src = url + (url.includes('?') ? '&modal=1' : '?modal=1');
+    modal.style.display = 'flex';
+    
+    // Aggiungi listener per chiudere con ESC
+    document.addEventListener('keydown', handleModalKeydown);
+}
+
+function closeModal() {
+    const modal = document.getElementById('modal-overlay');
+    const modalIframe = document.getElementById('modal-iframe');
+    
+    modal.style.display = 'none';
+    modalIframe.src = '';
+    
+    // Rimuovi listener ESC
+    document.removeEventListener('keydown', handleModalKeydown);
+    
+    // Ricarica la pagina per aggiornare il contenuto
+    window.location.reload();
+}
+
+function handleModalKeydown(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+}
+
+// Funzione per download diretto
+function downloadFile(path) {
+    const link = document.createElement('a');
+    link.href = 'download.php?path=' + encodeURIComponent(path);
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('📥 Download avviato!', 'success');
+}
+
+// Funzione per conferma eliminazione
+function confirmDelete(fileName, path, isFolder) {
+    const message = isFolder 
+        ? `Eliminare la cartella "${fileName}" e tutto il suo contenuto?`
+        : `Eliminare definitivamente il file "${fileName}"?`;
+    
+    if (confirm(`⚠️ ATTENZIONE\n\n${message}\n\nQuesta operazione non può essere annullata!`)) {
+        // Crea form nascosto per eliminazione
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'elimina.php';
+        form.style.display = 'none';
+        
+        const pathInput = document.createElement('input');
+        pathInput.type = 'hidden';
+        pathInput.name = 'path';
+        pathInput.value = decodeURIComponent(path);
+        form.appendChild(pathInput);
+        
+        const confirmInput = document.createElement('input');
+        confirmInput.type = 'hidden';
+        confirmInput.name = 'confirm';
+        confirmInput.value = '1';
+        form.appendChild(confirmInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Gestione messaggi dal modal
+window.addEventListener('message', function(event) {
+    // Verifica che il messaggio provenga dal modal iframe
+    if (event.source === document.getElementById('modal-iframe').contentWindow) {
+        if (event.data === 'closeModal') {
+            closeModal();
+        } else if (event.data.type === 'notification') {
+            showNotification(event.data.message, event.data.level);
+        }
+    }
+});
+
+// Chiudi modal cliccando sull'overlay
+document.addEventListener('DOMContentLoaded', function() {
+    const modalOverlay = document.getElementById('modal-overlay');
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+});
 </script>
 
 </main>
