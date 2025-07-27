@@ -131,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $pdo->commit();
         
+        
         // Debug: log dell'operazione
         error_log("Task cliente " . ($edit_mode ? "modificato" : "creato") . " con successo. Cliente ID: $cliente_id, Descrizione: $descrizione");
         
