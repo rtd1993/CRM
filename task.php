@@ -522,24 +522,6 @@ foreach ($task_list as $task) {
 }
 ?>
 
-<div class="task-stats">
-    <div class="stat-card">
-        <div class="stat-number"><?= $total_tasks ?></div>
-        <div class="stat-label">Task Totali</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" style="color: #dc3545;"><?= $overdue_tasks ?></div>
-        <div class="stat-label">In Scadenza</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" style="color: #fd7e14;"><?= $urgent_tasks ?></div>
-        <div class="stat-label">Urgenti</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" style="color: #17a2b8;"><?= $recurring_tasks ?></div>
-        <div class="stat-label">Ricorrenti</div>
-    </div>
-</div>
 
 <div class="task-controls">
     <a href="crea_task.php" class="btn btn-primary">➕ Crea nuovo task</a>
