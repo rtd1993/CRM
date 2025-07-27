@@ -503,6 +503,7 @@ include __DIR__ . '/includes/header.php';
             usort($documenti, function($a, $b) {
                 return strtotime($a['scadenza']) - strtotime($b['scadenza']);
             });
+        
             ?>
 
             <?php if (empty($documenti)): ?>
