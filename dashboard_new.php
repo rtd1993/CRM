@@ -1,0 +1,510 @@
+<?php
+require_once __DIR__ . '/includes/auth.php';
+require_login();
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/db.php';
+
+include __DIR__ . '/includes/header.php';
+?>
+
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dashboard-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.calendar-section {
+    grid-column: 1 / -1;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e1e5e9;
+}
+
+.data-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e1e5e9;
+}
+
+.section-title {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #ecf0f1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.calendar-embed {
+    width: 100%;
+    height: 500px;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+}
+
+.scroll-content {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.scroll-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scroll-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.scroll-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.scroll-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e1e5e9;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.data-table tr:hover {
+    background: #f8f9fa;
+}
+
+.data-table a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.data-table a:hover {
+    text-decoration: underline;
+}
+
+.status-badge {
+    padding: 0.25rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+    display: inline-block;
+    min-width: 70px;
+}
+
+.status-overdue {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-urgent {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-normal {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.task-description {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.client-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .calendar-embed {
+        height: 350px;
+    }
+    
+    .scroll-content {
+        max-height: 300px;
+    }
+    
+    .data-table {
+        font-size: 0.9rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<div class="dashboard-header">
+    <h2>🏠 Dashboard CRM</h2>
+    <p>Panoramica generale degli appuntamenti, task e documenti in scadenza</p>
+</div>
+
+<div class="dashboard-container">
+    <!-- Calendario Google -->
+    <div class="calendar-section">
+        <h3 class="section-title">📅 Calendario Appuntamenti</h3>
+        <iframe src="https://calendar.google.com/calendar/embed?src=gestione.ascontabilmente%40gmail.com&ctz=Europe%2FRome"
+                class="calendar-embed" frameborder="0" scrolling="no"></iframe>
+    </div>
+
+    <!-- Task in Scadenza -->
+    <div class="data-section">
+        <h3 class="section-title">📋 Task in Scadenza (30 giorni)</h3>
+        <div class="scroll-content">
+            <?php
+            $oggi = date('Y-m-d');
+            $entro30 = date('Y-m-d', strtotime('+30 days'));
+            $da30giorni = date('Y-m-d', strtotime('-30 days'));
+
+            $stmt = $pdo->prepare("
+                SELECT id, descrizione, scadenza, ricorrenza
+                FROM task
+                WHERE scadenza BETWEEN ? AND ?
+                ORDER BY scadenza ASC
+            ");
+            $stmt->execute([$da30giorni, $entro30]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            ?>
+
+            <?php if (empty($tasks)): ?>
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>Nessun task da gestire nei prossimi 30 giorni</p>
+                </div>
+            <?php else: ?>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Descrizione Task</th>
+                            <th>Scadenza</th>
+                            <th>Stato</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($tasks as $t): 
+                        $scadenza = $t['scadenza'];
+                        $diff = (strtotime($scadenza) - strtotime($oggi)) / 86400;
+                        
+                        if ($diff < 0) {
+                            $status_class = 'status-overdue';
+                            $status_text = 'Scaduto';
+                        } elseif ($diff < 7) {
+                            $status_class = 'status-urgent';
+                            $status_text = 'Urgente';
+                        } else {
+                            $status_class = 'status-normal';
+                            $status_text = 'Normale';
+                        }
+                        
+                        $is_recurring = !empty($t['ricorrenza']) && $t['ricorrenza'] > 0;
+                    ?>
+                        <tr>
+                            <td>
+                                <div class="task-description">
+                                    <a href="task.php"><?= htmlspecialchars($t['descrizione']) ?></a>
+                                </div>
+                            </td>
+                            <td><?= date('d/m/Y', strtotime($t['scadenza'])) ?></td>
+                            <td>
+                                <span class="status-badge <?= $status_class ?>">
+                                    <?= $status_text ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($is_recurring): ?>
+                                    <span style="color: #0c5460;">🔄 Ricorrente</span>
+                                <?php else: ?>
+                                    <span style="color: #6c757d;">Una tantum</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Task Clienti in Scadenza -->
+    <div class="data-section">
+        <h3 class="section-title">👥 Task Clienti in Scadenza (30 giorni)</h3>
+        <div class="scroll-content">
+            <?php
+            $stmt = $pdo->prepare("
+                SELECT tc.id, tc.descrizione, tc.scadenza, tc.priorita, tc.completato,
+                       c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
+                FROM task_clienti tc
+                LEFT JOIN clienti c ON tc.cliente_id = c.id
+                WHERE tc.scadenza BETWEEN ? AND ? AND tc.completato = 0
+                ORDER BY tc.scadenza ASC, tc.priorita DESC
+            ");
+            $stmt->execute([$da30giorni, $entro30]);
+            $task_clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            ?>
+
+            <?php if (empty($task_clienti)): ?>
+                <div class="empty-state">
+                    <div class="icon">👥</div>
+                    <p>Nessun task cliente in scadenza nei prossimi 30 giorni</p>
+                </div>
+            <?php else: ?>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nome Cliente</th>
+                            <th>Nome Task</th>
+                            <th>Scadenza</th>
+                            <th>Stato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($task_clienti as $tc): 
+                        $diff = (strtotime($tc['scadenza']) - strtotime($oggi)) / 86400;
+                        
+                        if ($diff < 0) {
+                            $status_class = 'status-overdue';
+                            $status_text = 'Scaduto';
+                        } elseif ($diff < 7) {
+                            $status_class = 'status-urgent';
+                            $status_text = 'Urgente';
+                        } else {
+                            $status_class = 'status-normal';
+                            $status_text = 'Normale';
+                        }
+                    ?>
+                        <tr>
+                            <td>
+                                <div class="client-name">
+                                    <a href="info_cliente.php?id=<?= urlencode($tc['cliente_id']) ?>">
+                                        <?= htmlspecialchars($tc['cliente_nome'] ?? 'Cliente Sconosciuto') ?>
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="task-description">
+                                    <a href="task_clienti.php"><?= htmlspecialchars($tc['descrizione']) ?></a>
+                                </div>
+                            </td>
+                            <td><?= date('d/m/Y', strtotime($tc['scadenza'])) ?></td>
+                            <td>
+                                <span class="status-badge <?= $status_class ?>">
+                                    <?= $status_text ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Documenti in Scadenza -->
+    <div class="data-section">
+        <h3 class="section-title">📄 Documenti in Scadenza (30 giorni)</h3>
+        <div class="scroll-content">
+            <?php
+            $sql = "
+                SELECT 
+                    id,
+                    `Cognome/Ragione sociale` AS cognome,
+                    `Numero carta d'identità` AS carta,
+                    `Data di scadenza` AS carta_scad,
+                    PEC,
+                    `Scadenza PEC` AS pec_scad
+                FROM clienti
+                WHERE 
+                    (`Data di scadenza` IS NOT NULL AND `Data di scadenza` BETWEEN ? AND ?)
+                    OR
+                    (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` BETWEEN ? AND ?)
+                ORDER BY 
+                    LEAST(
+                        IFNULL(`Data di scadenza`, '9999-12-31'), 
+                        IFNULL(`Scadenza PEC`, '9999-12-31')
+                    ) ASC
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$da30giorni, $entro30, $da30giorni, $entro30]);
+            $clienti_docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Costruiamo array documenti
+            $documenti = [];
+            foreach ($clienti_docs as $row) {
+                // Carta d'identità
+                if (!empty($row['carta']) && !empty($row['carta_scad'])) {
+                    $documenti[] = [
+                        'id' => $row['id'],
+                        'cognome' => $row['cognome'],
+                        'tipo' => "Carta d'Identità",
+                        'dettaglio' => $row['carta'],
+                        'scadenza' => $row['carta_scad'],
+                    ];
+                }
+                // PEC
+                if (!empty($row['PEC']) && !empty($row['pec_scad'])) {
+                    $documenti[] = [
+                        'id' => $row['id'],
+                        'cognome' => $row['cognome'],
+                        'tipo' => "PEC",
+                        'dettaglio' => $row['PEC'],
+                        'scadenza' => $row['pec_scad'],
+                    ];
+                }
+            }
+            ?>
+
+            <?php if (empty($documenti)): ?>
+                <div class="empty-state">
+                    <div class="icon">📄</div>
+                    <p>Nessun documento in scadenza nei prossimi 30 giorni</p>
+                </div>
+            <?php else: ?>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nome Cliente</th>
+                            <th>Tipo Documento</th>
+                            <th>Scadenza</th>
+                            <th>Stato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($documenti as $doc): 
+                        $diff = (strtotime($doc['scadenza']) - strtotime($oggi)) / 86400;
+                        
+                        if ($diff < 0) {
+                            $status_class = 'status-overdue';
+                            $status_text = 'Scaduto';
+                        } elseif ($diff < 30) {
+                            $status_class = 'status-urgent';
+                            $status_text = 'In Scadenza';
+                        } else {
+                            $status_class = 'status-normal';
+                            $status_text = 'Normale';
+                        }
+                    ?>
+                        <tr>
+                            <td>
+                                <div class="client-name">
+                                    <a href="info_cliente.php?id=<?= urlencode($doc['id']) ?>">
+                                        <?= htmlspecialchars($doc['cognome']) ?>
+                                    </a>
+                                </div>
+                            </td>
+                            <td><?= htmlspecialchars($doc['tipo']) ?></td>
+                            <td><?= date('d/m/Y', strtotime($doc['scadenza'])) ?></td>
+                            <td>
+                                <span class="status-badge <?= $status_class ?>">
+                                    <?= $status_text ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh della dashboard ogni 15 minuti
+setTimeout(() => {
+    location.reload();
+}, 900000);
+</script>
+
+</main>
+</body>
+</html>
