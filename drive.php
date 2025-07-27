@@ -402,6 +402,153 @@ foreach ($contents as $c) {
     background: #f8f9fa;
 }
 
+/* Grid View Styles */
+.drive-grid {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e1e5e9;
+    padding: 2rem;
+    display: none;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.grid-item {
+    background: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.grid-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.grid-item.selected {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    border-width: 2px;
+}
+
+.grid-item-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.grid-item-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+    line-height: 1.3;
+    font-size: 0.9rem;
+}
+
+.grid-item-info {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.grid-item-cliente {
+    color: #28a745;
+    font-weight: 500;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.grid-item-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.grid-item:hover .grid-item-actions {
+    opacity: 1;
+}
+
+.grid-item-checkbox {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    transform: scale(1.2);
+    z-index: 10;
+}
+
+.grid-item-checkbox-label {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.grid-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.grid-empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.view-toggle {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.25rem;
+    border: 1px solid #e1e5e9;
+}
+
+.view-toggle button {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.view-toggle button.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.view-toggle button:hover:not(.active) {
+    background: #e9ecef;
+}
+
 .file-icon {
     font-size: 1.5rem;
     margin-right: 0.5rem;
@@ -685,9 +832,14 @@ foreach ($contents as $c) {
             🔧 Filtri Avanzati
         </button>
         <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary" onclick="toggleViewMode()">
-                <span id="view-mode-icon">📋</span> Vista
-            </button>
+            <div class="view-toggle">
+                <button type="button" id="table-view-btn" class="active" onclick="setViewMode('table')">
+                    📋 Tabella
+                </button>
+                <button type="button" id="grid-view-btn" onclick="setViewMode('grid')">
+                    🔳 Griglia
+                </button>
+            </div>
             <button type="button" class="btn btn-outline-warning" onclick="toggleBulkActions()">
                 ☑️ Selezione Multipla
             </button>
@@ -733,7 +885,7 @@ foreach ($contents as $c) {
     </div>
 </div>
 
-<div class="drive-table">
+<div class="drive-table" id="table-view">
     <table>
         <thead>
             <tr>
@@ -894,6 +1046,141 @@ foreach ($contents as $c) {
             <?php endif; ?>
         </tbody>
     </table>
+</div>
+
+<!-- Grid View -->
+<div class="drive-grid" id="grid-view">
+    <div class="grid-container">
+        <?php if (empty($contents)): ?>
+            <div class="grid-empty-state">
+                <i>📁</i>
+                <h3>Cartella vuota</h3>
+                <p><?= $search ? 'Nessun file corrisponde alla ricerca' : 'Questa cartella non contiene file o sottocartelle' ?></p>
+                <div style="margin-top: 1rem;">
+                    <a href="crea_cartella.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">📁 Crea Cartella</a>
+                    <a href="upload.php?path=<?= urlencode($relative_path) ?>" class="btn btn-primary">⬆️ Upload File</a>
+                </div>
+            </div>
+        <?php else: ?>
+            <?php foreach ($contents as $c):
+                $icon = $c['is_dir'] ? '📁' : '📄';
+                $size_str = $c['is_dir'] ? '-' : number_format($c['size']/1024, 1) . ' KB';
+                $modified_str = date('d/m/Y H:i', $c['modified']);
+                
+                // Determina l'icona del file in base all'estensione
+                if (!$c['is_dir']) {
+                    $ext = strtolower(pathinfo($c['name'], PATHINFO_EXTENSION));
+                    switch ($ext) {
+                        case 'pdf': $icon = '📄'; break;
+                        case 'doc':
+                        case 'docx': $icon = '📝'; break;
+                        case 'xls':
+                        case 'xlsx': $icon = '📊'; break;
+                        case 'jpg':
+                        case 'jpeg':
+                        case 'png':
+                        case 'gif': $icon = '🖼️'; break;
+                        case 'zip':
+                        case 'rar':
+                        case '7z': $icon = '📦'; break;
+                        case 'txt': $icon = '📃'; break;
+                        default: $icon = '📄';
+                    }
+                }
+            ?>
+                <div class="grid-item" 
+                     data-name="<?= htmlspecialchars($c['name']) ?>"
+                     data-type="<?= $c['is_dir'] ? 'folder' : 'file' ?>"
+                     <?php if ($c['is_dir']): ?>
+                         onclick="window.location.href='drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>'"
+                     <?php endif; ?>>
+                    
+                    <input type="checkbox" 
+                           class="bulk-checkbox item-checkbox grid-item-checkbox" 
+                           value="<?= htmlspecialchars($c['name']) ?>" 
+                           data-type="<?= $c['is_dir'] ? 'folder' : 'file' ?>"
+                           style="display: none;"
+                           onclick="event.stopPropagation();">
+                    <label class="item-checkbox-label grid-item-checkbox-label" 
+                           style="display: none; cursor: pointer;"
+                           onclick="event.stopPropagation();">
+                        ☑️
+                    </label>
+                    
+                    <div class="grid-item-icon"><?= $icon ?></div>
+                    
+                    <div class="grid-item-name"><?= htmlspecialchars($c['name']) ?></div>
+                    
+                    <?php if ($c['cliente']): ?>
+                        <div class="grid-item-cliente"><?= htmlspecialchars($c['cliente']) ?></div>
+                    <?php endif; ?>
+                    
+                    <div class="grid-item-info">
+                        <div><?= $size_str ?></div>
+                        <div><?= $modified_str ?></div>
+                    </div>
+                    
+                    <div class="grid-item-actions" onclick="event.stopPropagation();">
+                        <?php if ($c['is_dir']): ?>
+                            <a href="drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>" 
+                               class="action-btn primary">
+                                📂
+                                <span class="tooltip">Apri cartella</span>
+                            </a>
+                            <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn success">
+                                ➕
+                                <span class="tooltip">Crea cartella</span>
+                            </a>
+                            <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn success">
+                                ⬆️
+                                <span class="tooltip">Upload file</span>
+                            </a>
+                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn warning">
+                                ✏️
+                                <span class="tooltip">Rinomina</span>
+                            </a>
+                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn">
+                                📂
+                                <span class="tooltip">Sposta</span>
+                            </a>
+                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn danger" 
+                               onclick="return confirm('Eliminare la cartella e tutto il suo contenuto?')">
+                                🗑️
+                                <span class="tooltip">Elimina cartella</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn primary">
+                                ⬇️
+                                <span class="tooltip">Download file</span>
+                            </a>
+                            <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn warning">
+                                ✏️
+                                <span class="tooltip">Rinomina file</span>
+                            </a>
+                            <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn">
+                                📂
+                                <span class="tooltip">Sposta file</span>
+                            </a>
+                            <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                               class="action-btn danger" 
+                               onclick="return confirm('Eliminare definitivamente questo file?')">
+                                🗑️
+                                <span class="tooltip">Elimina file</span>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
 </div>
 
 <script>
@@ -1207,12 +1494,259 @@ document.head.appendChild(style);
 
 // Inizializza lo stato
 document.addEventListener('DOMContentLoaded', function() {
+    // Inizializza la vista di default
+    initializeViewMode();
+    
+    // Event listeners per i bottoni di cambio vista
+    document.getElementById('table-view-btn').addEventListener('click', function() {
+        showTableView();
+    });
+    
+    document.getElementById('grid-view-btn').addEventListener('click', function() {
+        showGridView();
+    });
+    
+    // Event listener per il bottone di selezione multipla
+    document.getElementById('select-btn').addEventListener('click', function() {
+        toggleSelectionMode();
+    });
+    
+    // Event listener per seleziona tutto
+    document.getElementById('select-all').addEventListener('change', function() {
+        toggleSelectAll(this.checked);
+    });
+    
+    // Event listeners per checkbox individuali
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateBulkActions();
+        });
+    });
+    
+    // Event listeners per le azioni di bulk
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const bulkMoveBtn = document.getElementById('bulk-move-btn');
+    
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function() {
+            handleBulkDelete();
+        });
+    }
+    
+    if (bulkMoveBtn) {
+        bulkMoveBtn.addEventListener('click', function() {
+            handleBulkMove();
+        });
+    }
+    
     // Mostra notifica di benvenuto se è la prima volta
     if (localStorage.getItem('driveWelcome') !== 'shown') {
         showNotification('💡 Usa il drag & drop per caricare file velocemente!', 'info');
         localStorage.setItem('driveWelcome', 'shown');
     }
 });
+
+// Variabili globali per la vista
+let currentView = 'table';
+let isSelectionMode = false;
+
+// Funzioni per la gestione della vista
+function initializeViewMode() {
+    const savedView = localStorage.getItem('drive-view-preference');
+    if (savedView === 'grid') {
+        showGridView();
+    } else {
+        showTableView();
+    }
+}
+
+function showTableView() {
+    currentView = 'table';
+    document.getElementById('table-view').style.display = 'block';
+    document.getElementById('grid-view').style.display = 'none';
+    
+    // Aggiorna lo stato dei bottoni
+    document.getElementById('table-view-btn').classList.add('active');
+    document.getElementById('grid-view-btn').classList.remove('active');
+    
+    // Salva la preferenza nel localStorage
+    localStorage.setItem('drive-view-preference', 'table');
+}
+
+function showGridView() {
+    currentView = 'grid';
+    document.getElementById('table-view').style.display = 'none';
+    document.getElementById('grid-view').style.display = 'block';
+    
+    // Aggiorna lo stato dei bottoni
+    document.getElementById('table-view-btn').classList.remove('active');
+    document.getElementById('grid-view-btn').classList.add('active');
+    
+    // Salva la preferenza nel localStorage
+    localStorage.setItem('drive-view-preference', 'grid');
+}
+
+// Funzioni per la selezione multipla
+function toggleSelectionMode() {
+    isSelectionMode = !isSelectionMode;
+    
+    const selectBtn = document.getElementById('select-btn');
+    const bulkActions = document.getElementById('bulk-actions');
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    const checkboxLabels = document.querySelectorAll('.item-checkbox-label');
+    
+    if (isSelectionMode) {
+        // Attiva modalità selezione
+        selectBtn.classList.add('active');
+        selectBtn.innerHTML = '❌ <span class="tooltip">Annulla selezione</span>';
+        if (bulkActions) bulkActions.style.display = 'flex';
+        
+        // Mostra le checkbox
+        checkboxes.forEach(cb => cb.style.display = 'block');
+        checkboxLabels.forEach(label => label.style.display = 'block');
+        
+    } else {
+        // Disattiva modalità selezione
+        selectBtn.classList.remove('active');
+        selectBtn.innerHTML = '☑️ <span class="tooltip">Selezione multipla</span>';
+        if (bulkActions) bulkActions.style.display = 'none';
+        
+        // Nascondi le checkbox e resetta le selezioni
+        checkboxes.forEach(cb => {
+            cb.style.display = 'none';
+            cb.checked = false;
+        });
+        checkboxLabels.forEach(label => label.style.display = 'none');
+        
+        // Rimuovi selezioni visive
+        document.querySelectorAll('.file-row, .grid-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+    }
+}
+
+function toggleSelectAll(checked) {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = checked;
+        
+        // Aggiorna l'aspetto visivo
+        const row = checkbox.closest('.file-row') || checkbox.closest('.grid-item');
+        if (row) {
+            if (checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        }
+    });
+    
+    updateBulkActions();
+}
+
+function updateSelectAllState() {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const selectAllCheckbox = document.getElementById('select-all');
+    
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedBoxes.length === itemCheckboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+    
+    // Aggiorna l'aspetto visivo degli elementi selezionati
+    itemCheckboxes.forEach(checkbox => {
+        const row = checkbox.closest('.file-row') || checkbox.closest('.grid-item');
+        if (row) {
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        }
+    });
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const bulkMoveBtn = document.getElementById('bulk-move-btn');
+    
+    if (bulkDeleteBtn && bulkMoveBtn) {
+        if (checkedBoxes.length > 0) {
+            bulkDeleteBtn.disabled = false;
+            bulkMoveBtn.disabled = false;
+            
+            // Aggiorna il testo dei bottoni con il numero di elementi selezionati
+            bulkDeleteBtn.innerHTML = `🗑️ Elimina (${checkedBoxes.length})`;
+            bulkMoveBtn.innerHTML = `📂 Sposta (${checkedBoxes.length})`;
+        } else {
+            bulkDeleteBtn.disabled = true;
+            bulkMoveBtn.disabled = true;
+            bulkDeleteBtn.innerHTML = '🗑️ Elimina';
+            bulkMoveBtn.innerHTML = '📂 Sposta';
+        }
+    }
+}
+
+// Funzioni per azioni di bulk
+function handleBulkDelete() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedBoxes.length === 0) return;
+    
+    const items = Array.from(checkedBoxes).map(cb => cb.value);
+    const itemsText = items.join(', ');
+    
+    if (confirm(`Eliminare definitivamente i seguenti elementi?\n\n${itemsText}`)) {
+        // Crea un form e invia i dati
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'elimina.php';
+        
+        // Aggiungi path corrente
+        const pathInput = document.createElement('input');
+        pathInput.type = 'hidden';
+        pathInput.name = 'current_path';
+        pathInput.value = '<?= $relative_path ?>';
+        form.appendChild(pathInput);
+        
+        // Aggiungi elementi da eliminare
+        items.forEach(item => {
+            const itemInput = document.createElement('input');
+            itemInput.type = 'hidden';
+            itemInput.name = 'items[]';
+            itemInput.value = item;
+            form.appendChild(itemInput);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function handleBulkMove() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedBoxes.length === 0) return;
+    
+    const items = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    // Reindirizza alla pagina di spostamento con gli elementi selezionati
+    const params = new URLSearchParams();
+    params.append('current_path', '<?= $relative_path ?>');
+    items.forEach(item => {
+        params.append('items[]', item);
+    });
+    
+    window.location.href = 'sposta.php?' + params.toString();
+}
 </script>
 
 </main>
