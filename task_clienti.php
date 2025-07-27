@@ -18,14 +18,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
         
         // Query per ottenere i task del cliente ordinati per scadenza
         $stmt = $pdo->prepare("
-            SELECT t.*, 
-                   COALESCE(tc.cliente_id, NULL) as cliente_id,
+            SELECT tc.*, 
                    CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente
-            FROM task t 
-            LEFT JOIN task_clienti tc ON t.id = tc.task_id 
+            FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id
             WHERE tc.cliente_id = ?
-            ORDER BY t.scadenza ASC
+            ORDER BY tc.scadenza ASC
         ");
         
         $stmt->execute([$client_id]);
@@ -61,7 +59,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
                 'ricorrenza_text' => $ricorrenza_text,
                 'ricorrente' => $is_ricorrente,
                 'scaduto' => $is_scaduto,
-                'nome_cliente' => $task['nome_cliente']
+                'nome_cliente' => $task['nome_cliente'],
+                'cliente_id' => $task['cliente_id']
             ];
         }
         
@@ -90,11 +89,10 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
         
         // Recupera i dati del task prima di eliminarlo
         $stmt = $pdo->prepare("
-            SELECT t.*, tc.cliente_id, c.`Cognome/Ragione sociale`, c.Nome, c.`Link cartella`
-            FROM task t 
-            LEFT JOIN task_clienti tc ON t.id = tc.task_id 
+            SELECT tc.*, c.`Cognome/Ragione sociale`, c.Nome, c.`Link cartella`
+            FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id 
-            WHERE t.id = ?
+            WHERE tc.id = ?
         ");
         $stmt->execute([$task_id]);
         $task_data = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -136,24 +134,14 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 // Task ricorrente: calcola nuova scadenza
                 $nuova_scadenza = date('Y-m-d', strtotime($task_data['scadenza'] . ' + ' . $task_data['ricorrenza'] . ' days'));
                 
-                // Elimina il task attuale
-                $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$task_id]);
+                // Aggiorna il task esistente con nuova scadenza
+                $stmt_aggiorna = $pdo->prepare("UPDATE task_clienti SET scadenza = ? WHERE id = ?");
+                $stmt_aggiorna->execute([$nuova_scadenza, $task_id]);
                 
-                // Crea nuovo task con nuova scadenza
-                $stmt_nuovo = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-                $stmt_nuovo->execute([$task_data['descrizione'], $nuova_scadenza, $task_data['ricorrenza']]);
-                $nuovo_task_id = $pdo->lastInsertId();
-                
-                // Riassocia il task al cliente se necessario
-                if ($task_data['cliente_id']) {
-                    $stmt_assoc = $pdo->prepare("INSERT INTO task_clienti (task_id, cliente_id) VALUES (?, ?)");
-                    $stmt_assoc->execute([$nuovo_task_id, $task_data['cliente_id']]);
-                }
-                
-                $messaggio = "Task ricorrente completato! È stato ricreato con scadenza: " . date('d/m/Y', strtotime($nuova_scadenza));
+                $messaggio = "Task ricorrente completato! È stato aggiornato con scadenza: " . date('d/m/Y', strtotime($nuova_scadenza));
             } else {
                 // Task one-shot: elimina definitivamente
-                $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$task_id]);
+                $pdo->prepare("DELETE FROM task_clienti WHERE id = ?")->execute([$task_id]);
                 $messaggio = "Task completato ed eliminato!";
             }
         } else {
@@ -168,10 +156,8 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
 if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
     try {
         $task_id = intval($_GET['elimina']);
-        $stmt = $pdo->prepare("DELETE FROM task WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM task_clienti WHERE id = ?");
         if ($stmt->execute([$task_id])) {
-            // Elimina anche l'associazione se esiste
-            $pdo->prepare("DELETE FROM task_clienti WHERE task_id = ?")->execute([$task_id]);
             $messaggio = "Task eliminato con successo!";
         }
     } catch (Exception $e) {
@@ -192,19 +178,17 @@ $filtro_scadenza = $_GET['scadenza'] ?? '';
 $filtro_ricorrenza = $_GET['ricorrenza'] ?? '';
 $search = $_GET['search'] ?? '';
 
-$sql = "SELECT t.*, 
-        COALESCE(tc.cliente_id, NULL) as cliente_id,
+$sql = "SELECT tc.*, 
         CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
         c.`Codice fiscale` as codice_fiscale
-        FROM task t 
-        LEFT JOIN task_clienti tc ON t.id = tc.task_id 
+        FROM task_clienti tc 
         LEFT JOIN clienti c ON tc.cliente_id = c.id";
 
-// Applica filtri solo ai task con clienti associati
-$where_conditions[] = "tc.cliente_id IS NOT NULL";
+// I task sono già associati ai clienti nella tabella task_clienti
+$where_conditions = [];
 
 if (!empty($search)) {
-    $where_conditions[] = "(t.descrizione LIKE ? OR c.`Cognome/Ragione sociale` LIKE ? OR c.Nome LIKE ?)";
+    $where_conditions[] = "(tc.descrizione LIKE ? OR c.`Cognome/Ragione sociale` LIKE ? OR c.Nome LIKE ?)";
     $search_param = "%$search%";
     $params[] = $search_param;
     $params[] = $search_param;
@@ -219,28 +203,28 @@ if (!empty($filtro_cliente)) {
 if (!empty($filtro_scadenza)) {
     switch ($filtro_scadenza) {
         case 'scaduti':
-            $where_conditions[] = "t.scadenza < CURDATE()";
+            $where_conditions[] = "tc.scadenza < CURDATE()";
             break;
         case 'oggi':
-            $where_conditions[] = "t.scadenza = CURDATE()";
+            $where_conditions[] = "tc.scadenza = CURDATE()";
             break;
         case 'settimana':
-            $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+            $where_conditions[] = "tc.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
             break;
         case '15giorni':
-            $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)";
+            $where_conditions[] = "tc.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)";
             break;
         case 'mese':
-            $where_conditions[] = "t.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
+            $where_conditions[] = "tc.scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
             break;
     }
 }
 
 if (!empty($filtro_ricorrenza)) {
     if ($filtro_ricorrenza === 'ricorrenti') {
-        $where_conditions[] = "t.ricorrenza IS NOT NULL AND t.ricorrenza > 0";
+        $where_conditions[] = "tc.ricorrenza IS NOT NULL AND tc.ricorrenza > 0";
     } elseif ($filtro_ricorrenza === 'oneshot') {
-        $where_conditions[] = "(t.ricorrenza IS NULL OR t.ricorrenza = 0)";
+        $where_conditions[] = "(tc.ricorrenza IS NULL OR tc.ricorrenza = 0)";
     }
 }
 
@@ -248,7 +232,7 @@ if (!empty($where_conditions)) {
     $sql .= " WHERE " . implode(" AND ", $where_conditions);
 }
 
-$sql .= " ORDER BY t.scadenza ASC, c.`Cognome/Ragione sociale` ASC";
+$sql .= " ORDER BY tc.scadenza ASC, c.`Cognome/Ragione sociale` ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -1072,7 +1056,7 @@ foreach ($tasks as $task) {
                         
                         <a href="?completa=<?= $task_item['id'] ?>" 
                            class="btn btn-success" 
-                           onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà ricreato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')">
+                           onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')">
                             <i class="fas fa-check"></i> Completa
                         </a>
                         
@@ -1161,7 +1145,7 @@ function loadClientTasks() {
                             </div>
                         </div>
                         <div class="task-actions">
-                            <a href="?modifica=${task.id}" class="btn btn-warning btn-sm" title="Modifica">
+                            <a href="crea_task_clienti.php?edit=${task.id}" class="btn btn-warning btn-sm" title="Modifica">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="?completa=${task.id}" class="btn btn-success btn-sm" 

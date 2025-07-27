@@ -321,14 +321,14 @@ include __DIR__ . '/includes/header.php';
         <h3 class="section-title">👥 Task Clienti Scaduti e in Scadenza (30 giorni)</h3>
         <div class="scroll-content">
             <?php
-            // Prendiamo tutti i task non completati: scaduti negli ultimi 30 giorni E in scadenza nei prossimi 30 giorni
+            // Prendiamo tutti i task: scaduti negli ultimi 30 giorni E in scadenza nei prossimi 30 giorni
             $stmt = $pdo->prepare("
-                SELECT tc.id, tc.descrizione, tc.scadenza, tc.priorita, tc.completato,
+                SELECT tc.id, tc.descrizione, tc.scadenza, tc.ricorrenza,
                        c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
                 FROM task_clienti tc
                 LEFT JOIN clienti c ON tc.cliente_id = c.id
-                WHERE tc.scadenza BETWEEN ? AND ? AND tc.completato = 0
-                ORDER BY tc.scadenza ASC, tc.priorita DESC
+                WHERE tc.scadenza BETWEEN ? AND ?
+                ORDER BY tc.scadenza ASC
             ");
             $stmt->execute([$da30giorni, $entro30]);
             $task_clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
