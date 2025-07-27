@@ -453,42 +453,107 @@ foreach ($contents as $c) {
     background: #dee2e6;
 }
 
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: white;
-    border: 1px solid #e1e5e9;
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    min-width: 160px;
-    z-index: 99999;
-    animation: fadeInMenu 0.2s ease;
+.action-buttons-group {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.dropdown-menu a {
-    display: block;
-    padding: 0.75rem 1rem;
-    color: #495057;
-    text-decoration: none;
+.action-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 6px;
     transition: all 0.2s ease;
-    font-size: 0.9rem;
-    border-left: 3px solid transparent;
+    color: #6c757d;
+    position: relative;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
 }
 
-.dropdown-menu a:hover {
-    background: #f8f9fa;
-    border-left-color: #667eea;
-    padding-left: 1.2rem;
+.action-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+    transform: scale(1.1);
+    text-decoration: none;
 }
 
-.dropdown-menu a.danger {
+.action-btn.danger {
     color: #dc3545;
 }
 
-.dropdown-menu a.danger:hover {
+.action-btn.danger:hover {
     background: #f8d7da;
+    color: #721c24;
+}
+
+.action-btn.primary {
+    color: #007bff;
+}
+
+.action-btn.primary:hover {
+    background: #e3f2fd;
+    color: #0056b3;
+}
+
+.action-btn.warning {
+    color: #ffc107;
+}
+
+.action-btn.warning:hover {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.action-btn.success {
+    color: #28a745;
+}
+
+.action-btn.success:hover {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Tooltip styles */
+.tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    margin-bottom: 5px;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #333;
+}
+
+.action-btn:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
 }
 
 .empty-state {
@@ -501,11 +566,6 @@ foreach ($contents as $c) {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
-}
-
-.actions-menu {
-    position: relative;
-    display: inline-block;
 }
 
 @media (max-width: 768px) {
@@ -771,27 +831,62 @@ foreach ($contents as $c) {
                             <span style="color: #6c757d; font-size: 0.9rem;"><?= $modified_str ?></span>
                         </td>
                         <td>
-                            <div class="actions-menu">
-                                <button type="button" class="menu-trigger" onclick="toggleMenu(this)">⋮</button>
-                                <div class="dropdown-menu">
-                                    <?php if ($c['is_dir']): ?>
-                                        <a href="drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>">📂 Apri</a>
-                                        <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">➕ Crea Cartella</a>
-                                        <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">⬆️ Upload</a>
-                                        <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">✏️ Rinomina</a>
-                                        <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">📂 Sposta</a>
-                                        <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                           class="danger" 
-                                           onclick="return confirm('Eliminare la cartella e tutto il suo contenuto?')">�️ Elimina</a>
-                                    <?php else: ?>
-                                        <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">⬇️ Download</a>
-                                        <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">✏️ Rinomina</a>
-                                        <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>">📂 Sposta</a>
-                                        <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
-                                           class="danger" 
-                                           onclick="return confirm('Eliminare definitivamente questo file?')">�️ Elimina</a>
-                                    <?php endif; ?>
-                                </div>
+                            <div class="action-buttons-group">
+                                <?php if ($c['is_dir']): ?>
+                                    <a href="drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>" 
+                                       class="action-btn primary">
+                                        📂
+                                        <span class="tooltip">Apri cartella</span>
+                                    </a>
+                                    <a href="crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn success">
+                                        ➕
+                                        <span class="tooltip">Crea cartella</span>
+                                    </a>
+                                    <a href="upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn success">
+                                        ⬆️
+                                        <span class="tooltip">Upload file</span>
+                                    </a>
+                                    <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn warning">
+                                        ✏️
+                                        <span class="tooltip">Rinomina</span>
+                                    </a>
+                                    <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn">
+                                        📂
+                                        <span class="tooltip">Sposta</span>
+                                    </a>
+                                    <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn danger" 
+                                       onclick="return confirm('Eliminare la cartella e tutto il suo contenuto?')">
+                                        🗑️
+                                        <span class="tooltip">Elimina cartella</span>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="download.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn primary">
+                                        ⬇️
+                                        <span class="tooltip">Download file</span>
+                                    </a>
+                                    <a href="rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn warning">
+                                        ✏️
+                                        <span class="tooltip">Rinomina file</span>
+                                    </a>
+                                    <a href="sposta.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn">
+                                        📂
+                                        <span class="tooltip">Sposta file</span>
+                                    </a>
+                                    <a href="elimina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>" 
+                                       class="action-btn danger" 
+                                       onclick="return confirm('Eliminare definitivamente questo file?')">
+                                        🗑️
+                                        <span class="tooltip">Elimina file</span>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -803,75 +898,6 @@ foreach ($contents as $c) {
 
 <script>
 let viewMode = 'table'; // 'table' or 'grid'
-
-function toggleMenu(btn) {
-    // Chiudi altri menu aperti e rimuovi overlay esistenti
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        if (menu !== btn.nextElementSibling) {
-            menu.style.display = 'none';
-        }
-    });
-    document.querySelectorAll('.menu-overlay').forEach(overlay => overlay.remove());
-    
-    // Alterna questo menu
-    const menu = btn.nextElementSibling;
-    const isVisible = menu.style.display === 'block';
-    
-    if (isVisible) {
-        menu.style.display = 'none';
-    } else {
-        // Crea overlay per catturare click esterni
-        const overlay = document.createElement('div');
-        overlay.className = 'menu-overlay';
-        document.body.appendChild(overlay);
-        
-        // Mostra menu
-        menu.style.display = 'block';
-        
-        // Handler per chiudere il menu
-        const closeMenu = (e) => {
-            if (!menu.contains(e.target) && e.target !== btn) {
-                menu.style.display = 'none';
-                overlay.remove();
-                document.removeEventListener('click', closeMenu);
-                document.removeEventListener('keydown', escapeHandler);
-            }
-        };
-        
-        // Handler per tasto Escape
-        const escapeHandler = (e) => {
-            if (e.key === 'Escape') {
-                menu.style.display = 'none';
-                overlay.remove();
-                document.removeEventListener('click', closeMenu);
-                document.removeEventListener('keydown', escapeHandler);
-            }
-        };
-        
-        // Aggiungi event listeners
-        overlay.addEventListener('click', closeMenu);
-        document.addEventListener('keydown', escapeHandler);
-        
-        // Posiziona il menu correttamente se va fuori schermo
-        setTimeout(() => {
-            const rect = menu.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const viewportWidth = window.innerWidth;
-            
-            // Aggiusta posizione verticale se va sotto lo schermo
-            if (rect.bottom > viewportHeight) {
-                menu.style.top = 'auto';
-                menu.style.bottom = '100%';
-            }
-            
-            // Aggiusta posizione orizzontale se va oltre il bordo destro
-            if (rect.right > viewportWidth) {
-                menu.style.right = 'auto';
-                menu.style.left = '0';
-            }
-        }, 1);
-    }
-}
 
 // Toggle filtri avanzati
 function toggleAdvancedFilters() {
@@ -1129,18 +1155,14 @@ document.addEventListener('keydown', function(e) {
         }
     }
     
-    // Escape per chiudere pannelli (ma non i menu dropdown che hanno gestione propria)
+    // Escape per chiudere pannelli
     if (e.key === 'Escape') {
-        // Chiudi solo se non ci sono menu dropdown aperti
-        const openMenus = document.querySelectorAll('.dropdown-menu[style*="block"]');
-        if (openMenus.length === 0) {
-            if (document.getElementById('bulk-actions-panel').style.display === 'block') {
-                toggleBulkActions();
-            }
-            
-            if (document.getElementById('advanced-filters').style.display === 'block') {
-                toggleAdvancedFilters();
-            }
+        if (document.getElementById('bulk-actions-panel').style.display === 'block') {
+            toggleBulkActions();
+        }
+        
+        if (document.getElementById('advanced-filters').style.display === 'block') {
+            toggleAdvancedFilters();
         }
     }
 });
@@ -1179,16 +1201,6 @@ style.textContent = `
             opacity: 1;
             transform: translateY(0) scale(1);
         }
-    }
-    
-    .menu-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 99998;
-        background: transparent;
     }
 `;
 document.head.appendChild(style);
