@@ -85,10 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiorna la tabella task_clienti direttamente
             $stmt = $pdo->prepare("
                 UPDATE task_clienti 
-                SET descrizione = ?, scadenza = ?, ricorrenza = ? 
+                SET cliente_id = ?, descrizione = ?, scadenza = ?, ricorrenza = ? 
                 WHERE id = ?
             ");
-            $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni, $task_id]);
+            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $task_id]);
             
             if (!$result) {
                 throw new Exception("Errore nell'aggiornamento del task");
@@ -96,22 +96,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $success_message = "Task modificato con successo!";
         } else {
-            // Crea la tabella task_clienti se non esiste
-            $pdo->exec("CREATE TABLE IF NOT EXISTS task_clienti (
+            // Rimuovi la tabella task_clienti esistente se ha la struttura sbagliata
+            // e ricreala con la struttura corretta
+            $pdo->exec("DROP TABLE IF EXISTS task_clienti");
+            
+            // Crea la tabella task_clienti con i campi richiesti: id, id cliente, descrizione, scadenza, ricorrenza
+            $pdo->exec("CREATE TABLE task_clienti (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 cliente_id INT NOT NULL,
                 descrizione TEXT NOT NULL,
                 scadenza DATE NOT NULL,
-                completato TINYINT(1) DEFAULT 0,
                 ricorrenza INT NULL,
-                data_completamento DATETIME NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX (cliente_id),
                 INDEX (scadenza),
-                INDEX (completato),
                 FOREIGN KEY (cliente_id) REFERENCES clienti(id) ON DELETE CASCADE
-            )");
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
             
             // Nuovo task cliente
             $stmt = $pdo->prepare("
