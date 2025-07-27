@@ -397,7 +397,7 @@ include __DIR__ . '/includes/header.php';
 
     <!-- Documenti in Scadenza -->
     <div class="data-section">
-        <h3 class="section-title">📄 Documenti in Scadenza (30 giorni)</h3>
+        <h3 class="section-title">📄 Documenti Scaduti e in Scadenza (30 giorni)</h3>
         <div class="scroll-content">
             <?php
             $sql = "
@@ -407,20 +407,41 @@ include __DIR__ . '/includes/header.php';
                     `Numero carta d'identità` AS carta,
                     `Data di scadenza` AS carta_scad,
                     PEC,
-                    `Scadenza PEC` AS pec_scad
+                    `Scadenza PEC` AS pec_scad,
+                    `Numero patente` AS patente,
+                    `Scadenza patente` AS patente_scad,
+                    `Numero passaporto` AS passaporto,
+                    `Scadenza passaporto` AS passaporto_scad,
+                    `Certificato firma digitale` AS firma_digitale,
+                    `Scadenza firma digitale` AS firma_digitale_scad
                 FROM clienti
                 WHERE 
                     (`Data di scadenza` IS NOT NULL AND `Data di scadenza` BETWEEN ? AND ?)
                     OR
                     (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` BETWEEN ? AND ?)
+                    OR
+                    (`Scadenza patente` IS NOT NULL AND `Scadenza patente` BETWEEN ? AND ?)
+                    OR
+                    (`Scadenza passaporto` IS NOT NULL AND `Scadenza passaporto` BETWEEN ? AND ?)
+                    OR
+                    (`Scadenza firma digitale` IS NOT NULL AND `Scadenza firma digitale` BETWEEN ? AND ?)
                 ORDER BY 
                     LEAST(
                         IFNULL(`Data di scadenza`, '9999-12-31'), 
-                        IFNULL(`Scadenza PEC`, '9999-12-31')
+                        IFNULL(`Scadenza PEC`, '9999-12-31'),
+                        IFNULL(`Scadenza patente`, '9999-12-31'),
+                        IFNULL(`Scadenza passaporto`, '9999-12-31'),
+                        IFNULL(`Scadenza firma digitale`, '9999-12-31')
                     ) ASC
             ";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$da30giorni, $entro30, $da30giorni, $entro30]);
+            $stmt->execute([
+                $da30giorni, $entro30, // Carta d'identità
+                $da30giorni, $entro30, // PEC
+                $da30giorni, $entro30, // Patente
+                $da30giorni, $entro30, // Passaporto
+                $da30giorni, $entro30  // Firma digitale
+            ]);
             $clienti_docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Costruiamo array documenti
@@ -432,7 +453,7 @@ include __DIR__ . '/includes/header.php';
                         'id' => $row['id'],
                         'cognome' => $row['cognome'],
                         'tipo' => "Carta d'Identità",
-                        'dettaglio' => $row['carta'],
+                        'numero' => $row['carta'],
                         'scadenza' => $row['carta_scad'],
                     ];
                 }
@@ -442,17 +463,56 @@ include __DIR__ . '/includes/header.php';
                         'id' => $row['id'],
                         'cognome' => $row['cognome'],
                         'tipo' => "PEC",
-                        'dettaglio' => $row['PEC'],
+                        'numero' => $row['PEC'],
                         'scadenza' => $row['pec_scad'],
                     ];
                 }
+                // Patente
+                if (!empty($row['patente']) && !empty($row['patente_scad'])) {
+                    $documenti[] = [
+                        'id' => $row['id'],
+                        'cognome' => $row['cognome'],
+                        'tipo' => "Patente",
+                        'numero' => $row['patente'],
+                        'scadenza' => $row['patente_scad'],
+                    ];
+                }
+                // Passaporto
+                if (!empty($row['passaporto']) && !empty($row['passaporto_scad'])) {
+                    $documenti[] = [
+                        'id' => $row['id'],
+                        'cognome' => $row['cognome'],
+                        'tipo' => "Passaporto",
+                        'numero' => $row['passaporto'],
+                        'scadenza' => $row['passaporto_scad'],
+                    ];
+                }
+                // Firma digitale
+                if (!empty($row['firma_digitale']) && !empty($row['firma_digitale_scad'])) {
+                    $documenti[] = [
+                        'id' => $row['id'],
+                        'cognome' => $row['cognome'],
+                        'tipo' => "Firma Digitale",
+                        'numero' => $row['firma_digitale'],
+                        'scadenza' => $row['firma_digitale_scad'],
+                    ];
+                }
             }
+
+            // Ordiniamo i documenti per scadenza
+            usort($documenti, function($a, $b) {
+                return strtotime($a['scadenza']) - strtotime($b['scadenza']);
+            });
             ?>
 
             <?php if (empty($documenti)): ?>
                 <div class="empty-state">
                     <div class="icon">📄</div>
-                    <p>Nessun documento in scadenza nei prossimi 30 giorni</p>
+                    <p>Nessun documento scaduto o in scadenza nei 30 giorni</p>
+                    <!-- Debug info -->
+                    <small style="color: #999; font-size: 0.8rem;">
+                        Periodo ricerca: <?= $da30giorni ?> - <?= $entro30 ?>
+                    </small>
                 </div>
             <?php else: ?>
                 <table class="data-table">
@@ -460,6 +520,7 @@ include __DIR__ . '/includes/header.php';
                         <tr>
                             <th>Nome Cliente</th>
                             <th>Tipo Documento</th>
+                            <th>Numero/Codice</th>
                             <th>Scadenza</th>
                             <th>Stato</th>
                         </tr>
@@ -471,12 +532,19 @@ include __DIR__ . '/includes/header.php';
                         if ($diff < 0) {
                             $status_class = 'status-overdue';
                             $status_text = 'Scaduto';
+                            $giorni_info = abs(floor($diff)) . ' giorni fa';
+                        } elseif ($diff < 7) {
+                            $status_class = 'status-urgent';
+                            $status_text = 'Urgente';
+                            $giorni_info = floor($diff) . ' giorni';
                         } elseif ($diff < 30) {
                             $status_class = 'status-urgent';
                             $status_text = 'In Scadenza';
+                            $giorni_info = floor($diff) . ' giorni';
                         } else {
                             $status_class = 'status-normal';
                             $status_text = 'Normale';
+                            $giorni_info = floor($diff) . ' giorni';
                         }
                     ?>
                         <tr>
@@ -487,8 +555,19 @@ include __DIR__ . '/includes/header.php';
                                     </a>
                                 </div>
                             </td>
-                            <td><?= htmlspecialchars($doc['tipo']) ?></td>
-                            <td><?= date('d/m/Y', strtotime($doc['scadenza'])) ?></td>
+                            <td>
+                                <strong style="color: #495057;"><?= htmlspecialchars($doc['tipo']) ?></strong>
+                            </td>
+                            <td style="font-family: monospace; font-size: 0.9rem;">
+                                <?= htmlspecialchars(substr($doc['numero'], 0, 20)) ?>
+                                <?php if (strlen($doc['numero']) > 20): ?>...<?php endif; ?>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                    <span><?= date('d/m/Y', strtotime($doc['scadenza'])) ?></span>
+                                    <small style="color: #6c757d; font-size: 0.7rem;"><?= $giorni_info ?></small>
+                                </div>
+                            </td>
                             <td>
                                 <span class="status-badge <?= $status_class ?>">
                                     <?= $status_text ?>
