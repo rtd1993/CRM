@@ -14,13 +14,13 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     $edit_mode = true;
     $task_id = intval($_GET['edit']);
     
-    // Recupera i dati del task esistente
+    // Recupera i dati del task esistente dalla tabella task_clienti
     try {
         $stmt = $pdo->prepare("
-            SELECT t.*, tc.cliente_id
-            FROM task t 
-            LEFT JOIN task_clienti tc ON t.id = tc.task_id 
-            WHERE t.id = ?
+            SELECT tc.*, c.`Cognome/Ragione sociale`, c.`Nome`
+            FROM task_clienti tc
+            LEFT JOIN clienti c ON tc.cliente_id = c.id
+            WHERE tc.id = ?
         ");
         $stmt->execute([$task_id]);
         $task_data = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $priorita = $_POST['priorita'] ?? 'Media';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
-        $task_id = intval($_POST['task_id'] ?? 0);
         
         // Validazione
         if ($cliente_id <= 0) {
@@ -80,48 +79,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->beginTransaction();
 
-        if ($task_id > 0) {
+        if ($edit_mode && isset($_POST['task_id'])) {
             // Modifica task esistente
-            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ? WHERE id = ?");
-            $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni, $task_id]);
+            $task_id = intval($_POST['task_id']);
             
-            if ($result) {
-                // Aggiorna l'associazione cliente
-                $stmt = $pdo->prepare("
-                    INSERT INTO task_clienti (task_id, cliente_id, priorita) 
-                    VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE cliente_id = VALUES(cliente_id), priorita = VALUES(priorita)
-                ");
-                $stmt->execute([$task_id, $cliente_id, $priorita]);
+            // Aggiorna la tabella task_clienti direttamente
+            $stmt = $pdo->prepare("
+                UPDATE task_clienti 
+                SET descrizione = ?, scadenza = ?, priorita = ?, ricorrenza = ? 
+                WHERE id = ?
+            ");
+            $result = $stmt->execute([$descrizione, $scadenza, $priorita, $ricorrenza_giorni, $task_id]);
+            
+            if (!$result) {
+                throw new Exception("Errore nell'aggiornamento del task");
             }
             
             $success_message = "Task modificato con successo!";
         } else {
-            // Nuovo task
-            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-            $result = $stmt->execute([$descrizione, $scadenza, $ricorrenza_giorni]);
+            // Crea la tabella task_clienti se non esiste
+            $pdo->exec("CREATE TABLE IF NOT EXISTS task_clienti (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NOT NULL,
+                descrizione TEXT NOT NULL,
+                scadenza DATE NOT NULL,
+                priorita ENUM('Alta', 'Media', 'Bassa') DEFAULT 'Media',
+                completato TINYINT(1) DEFAULT 0,
+                ricorrenza INT NULL,
+                data_completamento DATETIME NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX (cliente_id),
+                INDEX (scadenza),
+                INDEX (completato),
+                FOREIGN KEY (cliente_id) REFERENCES clienti(id) ON DELETE CASCADE
+            )");
             
-            if ($result) {
-                $new_task_id = $pdo->lastInsertId();
-                
-                // Assicurati che la tabella task_clienti esista
-                $pdo->exec("CREATE TABLE IF NOT EXISTS task_clienti (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    task_id INT NOT NULL,
-                    cliente_id INT NOT NULL,
-                    priorita ENUM('Alta', 'Media', 'Bassa') DEFAULT 'Media',
-                    completato TINYINT(1) DEFAULT 0,
-                    data_completamento DATETIME NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_task_client (task_id, cliente_id),
-                    FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE,
-                    FOREIGN KEY (cliente_id) REFERENCES clienti(id) ON DELETE CASCADE
-                )");
-                
-                // Crea l'associazione task-cliente
-                $stmt = $pdo->prepare("INSERT INTO task_clienti (task_id, cliente_id, priorita) VALUES (?, ?, ?)");
-                $stmt->execute([$new_task_id, $cliente_id, $priorita]);
+            // Nuovo task cliente
+            $stmt = $pdo->prepare("
+                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, priorita, ricorrenza) 
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $priorita, $ricorrenza_giorni]);
+            
+            if (!$result) {
+                throw new Exception("Errore nella creazione del task");
             }
             
             $success_message = "Task creato con successo!";
@@ -129,13 +131,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $pdo->commit();
         
-        // Reindirizza alla pagina task_clienti
-        header("Location: task_clienti.php?success=1");
+        // Debug: log dell'operazione
+        error_log("Task cliente " . ($edit_mode ? "modificato" : "creato") . " con successo. Cliente ID: $cliente_id, Descrizione: $descrizione");
+        
+        // Reindirizza alla pagina task_clienti con messaggio di successo
+        $redirect_url = "task_clienti.php?success=" . urlencode($success_message);
+        header("Location: " . $redirect_url);
         exit;
         
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         $error_message = "Errore: " . $e->getMessage();
+        error_log("Errore creazione task cliente: " . $e->getMessage() . " - File: " . $e->getFile() . " - Linea: " . $e->getLine());
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $error_message = "Errore database: " . $e->getMessage();
+        error_log("Errore PDO task cliente: " . $e->getMessage() . " - Codice: " . $e->getCode());
     }
 }
 
@@ -152,7 +167,7 @@ try {
 // Determina ricorrenza per la modalità modifica
 $ricorrenza_value = '';
 $tipo_ricorrenza_value = 'giorni';
-if ($edit_mode && $task_data && $task_data['ricorrenza']) {
+if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
     $giorni = $task_data['ricorrenza'];
     if ($giorni % 365 == 0) {
         $ricorrenza_value = $giorni / 365;
@@ -424,9 +439,9 @@ if ($edit_mode && $task_data && $task_data['ricorrenza']) {
             <div class="form-group">
                 <label for="priorita">⚡ Priorità</label>
                 <select name="priorita" id="priorita" class="form-control">
-                    <option value="Bassa">🟢 Bassa</option>
-                    <option value="Media" selected>🟡 Media</option>
-                    <option value="Alta">🔴 Alta</option>
+                    <option value="Bassa" <?= ($edit_mode && $task_data && $task_data['priorita'] === 'Bassa') ? 'selected' : '' ?>>🟢 Bassa</option>
+                    <option value="Media" <?= (!$edit_mode || !$task_data || $task_data['priorita'] === 'Media' || empty($task_data['priorita'])) ? 'selected' : '' ?>>🟡 Media</option>
+                    <option value="Alta" <?= ($edit_mode && $task_data && $task_data['priorita'] === 'Alta') ? 'selected' : '' ?>>🔴 Alta</option>
                 </select>
             </div>
         </div>
