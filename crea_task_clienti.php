@@ -137,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: " . $redirect_url);
         exit;
         
+        
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
