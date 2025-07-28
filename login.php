@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/tunnel_bypass.php';
 
 session_start();
 
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Login - <?= SITE_NAME ?></title>
+    <?= getTunnelBypassMeta() ?>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         body {
@@ -81,8 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 10px;
         }
     </style>
+    <?= getTunnelBypassScript() ?>
 </head>
 <body>
+<?php setupTunnelBypass(); ?>
     <div class="login-box">
         <h2>Login</h2>
         <?php if ($error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
