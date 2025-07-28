@@ -7,6 +7,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/tunnel_bypass.php';
 require_once __DIR__ . '/includes/config.php';
 
+
 // Se siamo su LocalTunnel e non abbiamo l'header di bypass, mostra pagina di bypass
 if (isLocalTunnel()) {
     $headers = getallheaders();
