@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/tunnel_bypass.php';
 
 $nome_utente = 'Sconosciuto';
 $ruolo_utente = 'guest';
@@ -24,6 +25,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <title><?= SITE_NAME ?></title>
+    <?= getTunnelBypassMeta() ?>
     <link rel="stylesheet" href="/assets/css/style.css">
     <!-- Bootstrap CDN for modern style -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -91,6 +93,7 @@ if (isset($_SESSION['user_id'])) {
             }
         }
     </style>
+    <?= getTunnelBypassScript() ?>
 </head>
 <body>
 <header class="crm-header mb-4">
@@ -132,6 +135,8 @@ if (isset($_SESSION['user_id'])) {
         </ul>
     </nav>
 </header>
+
+<?php setupTunnelBypass(); ?>
 
 <div id="crm-chat-container">
     <?php include __DIR__ . '/chat_pratiche_widget.php'; ?>

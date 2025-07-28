@@ -54,12 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
     $cmd = '';
     switch ($_POST['service_action']) {
         case 'apache_restart': $cmd = "sudo systemctl restart apache2 2>&1"; break;
-        case 'node_start':    $cmd = "sudo systemctl start node-socket 2>&1"; break;
-        case 'node_stop':     $cmd = "sudo systemctl stop node-socket 2>&1"; break;
-        case 'node_restart':  $cmd = "sudo systemctl restart node-socket 2>&1"; break;
-        case 'wg_start':      $cmd = "sudo wg-quick up wg0 2>&1"; break;
-        case 'wg_stop':       $cmd = "sudo wg-quick down wg0 2>&1"; break;
-        case 'wg_restart':    $cmd = "sudo wg-quick down wg0 2>&1 && sudo wg-quick up wg0 2>&1"; break;
+        case 'apache_start':   $cmd = "sudo systemctl start apache2 2>&1"; break;
+        case 'apache_stop':    $cmd = "sudo systemctl stop apache2 2>&1"; break;
+        case 'apache_status':  $cmd = "sudo systemctl status apache2 --no-pager 2>&1"; break;
+        
+        case 'mysql_restart':  $cmd = "sudo systemctl restart mysql 2>&1"; break;
+        case 'mysql_start':    $cmd = "sudo systemctl start mysql 2>&1"; break;
+        case 'mysql_stop':     $cmd = "sudo systemctl stop mysql 2>&1"; break;
+        case 'mysql_status':   $cmd = "sudo systemctl status mysql --no-pager 2>&1"; break;
+        
+        case 'node_start':     $cmd = "sudo systemctl start node-socket 2>&1"; break;
+        case 'node_stop':      $cmd = "sudo systemctl stop node-socket 2>&1"; break;
+        case 'node_restart':   $cmd = "sudo systemctl restart node-socket 2>&1"; break;
+        case 'node_status':    $cmd = "sudo systemctl status node-socket --no-pager 2>&1"; break;
+        
+        case 'lt_start':       $cmd = "sudo systemctl start localtunnel 2>&1"; break;
+        case 'lt_stop':        $cmd = "sudo systemctl stop localtunnel 2>&1"; break;
+        case 'lt_restart':     $cmd = "sudo systemctl restart localtunnel 2>&1"; break;
+        case 'lt_status':      $cmd = "sudo systemctl status localtunnel --no-pager 2>&1"; break;
+        case 'lt_logs':        $cmd = "sudo journalctl -u localtunnel --no-pager -n 20 2>&1"; break;
+        
+        case 'wg_start':       $cmd = "sudo wg-quick up wg0 2>&1"; break;
+        case 'wg_stop':        $cmd = "sudo wg-quick down wg0 2>&1"; break;
+        case 'wg_restart':     $cmd = "sudo wg-quick down wg0 2>&1 && sudo wg-quick up wg0 2>&1"; break;
+        case 'wg_status':      $cmd = "sudo wg show 2>&1"; break;
     }
     if ($cmd) {
         $service_output = shell_exec($cmd);
@@ -123,12 +141,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
 .btn-danger { background: #dc3545; color: white; }
 .btn-warning { background: #ffc107; color: black; }
 .btn-info { background: #17a2b8; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
 
 .service-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.service-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.service-card h4 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .service-status {
@@ -136,9 +171,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background: white;
+    background: #f8f9fa;
     border-radius: 4px;
+    margin-bottom: 15px;
     border: 1px solid #dee2e6;
+}
+
+.service-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.service-controls .btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 6px 12px;
+    font-size: 12px;
 }
 
 .status-active { color: #28a745; }
@@ -298,59 +347,187 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
     <!-- Sezione Gestione Servizi -->
     <div class="section">
         <h3>🖥️ Gestione Servizi Sistema</h3>
-        <p>Controlla e gestisci i servizi del sistema.</p>
+        <p>Controlla e gestisci tutti i servizi del sistema in modo organizzato.</p>
         
-        <h4>Stato Servizi</h4>
         <div class="service-grid">
-            <?php
-            $services = [
-                "apache2" => "Apache2 Web Server",
-                "mysql" => "MySQL/MariaDB Database",
-                "node-socket" => "Node.js Socket Service",
-                "wg-quick@wg0" => "WireGuard VPN"
-            ];
-            foreach ($services as $sysname => $friendly) {
-                $status = trim(shell_exec("systemctl is-active $sysname 2>&1"));
+            <!-- Apache2 Web Server -->
+            <div class="service-card">
+                <h4>🌐 Apache2 Web Server</h4>
+                <?php
+                $status = trim(shell_exec("systemctl is-active apache2 2>&1"));
                 $status_class = ($status === "active") ? "status-active" : "status-inactive";
-                $status_text = ($status === "active") ? "Attivo" : "Inattivo";
-                echo "<div class='service-status'>";
-                echo "<span class='$status_class'>●</span>";
-                echo "<div><strong>$friendly</strong><br><small>$sysname</small><br><span class='$status_class'>$status_text</span></div>";
-                echo "</div>";
-            }
-            ?>
+                $status_text = ($status === "active") ? "🟢 Attivo" : "🔴 Inattivo";
+                ?>
+                <div class="service-status">
+                    <span><?= $status_text ?></span>
+                    <small>systemctl apache2</small>
+                </div>
+                <div class="service-controls">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="apache_start">
+                        <button type="submit" class="btn btn-success">▶️ Start</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="apache_stop">
+                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="apache_restart">
+                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="apache_status">
+                        <button type="submit" class="btn btn-info">📊 Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- MySQL Database -->
+            <div class="service-card">
+                <h4>🗄️ MySQL Database</h4>
+                <?php
+                $status = trim(shell_exec("systemctl is-active mysql 2>&1"));
+                $status_class = ($status === "active") ? "status-active" : "status-inactive";
+                $status_text = ($status === "active") ? "🟢 Attivo" : "🔴 Inattivo";
+                ?>
+                <div class="service-status">
+                    <span><?= $status_text ?></span>
+                    <small>systemctl mysql</small>
+                </div>
+                <div class="service-controls">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="mysql_start">
+                        <button type="submit" class="btn btn-success">▶️ Start</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="mysql_stop">
+                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="mysql_restart">
+                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="mysql_status">
+                        <button type="submit" class="btn btn-info">📊 Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Node.js Socket Service -->
+            <div class="service-card">
+                <h4>⚡ Node.js Socket</h4>
+                <?php
+                $status = trim(shell_exec("systemctl is-active node-socket 2>&1"));
+                $status_class = ($status === "active") ? "status-active" : "status-inactive";
+                $status_text = ($status === "active") ? "🟢 Attivo" : "🔴 Inattivo";
+                ?>
+                <div class="service-status">
+                    <span><?= $status_text ?></span>
+                    <small>systemctl node-socket</small>
+                </div>
+                <div class="service-controls">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="node_start">
+                        <button type="submit" class="btn btn-success">▶️ Start</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="node_stop">
+                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="node_restart">
+                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="node_status">
+                        <button type="submit" class="btn btn-info">📊 Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LocalTunnel Service -->
+            <div class="service-card">
+                <h4>🚀 LocalTunnel</h4>
+                <?php
+                $status = trim(shell_exec("systemctl is-active localtunnel 2>&1"));
+                $status_class = ($status === "active") ? "status-active" : "status-inactive";
+                $status_text = ($status === "active") ? "🟢 Attivo" : "🔴 Inattivo";
+                ?>
+                <div class="service-status">
+                    <span><?= $status_text ?></span>
+                    <small>systemctl localtunnel</small>
+                </div>
+                <div class="service-controls">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="lt_start">
+                        <button type="submit" class="btn btn-success">▶️ Start</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="lt_stop">
+                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="lt_restart">
+                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="lt_status">
+                        <button type="submit" class="btn btn-info">📊 Status</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="lt_logs">
+                        <button type="submit" class="btn btn-secondary">📋 Logs</button>
+                    </form>
+                </div>
+                <?php if ($status === "active"): ?>
+                    <div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; font-size: 12px;">
+                        <strong>🌐 URL:</strong> <a href="https://ascontabilemente.loca.lt" target="_blank">https://ascontabilemente.loca.lt</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- WireGuard VPN -->
+            <div class="service-card">
+                <h4>🔒 WireGuard VPN</h4>
+                <?php
+                $wg_status = trim(shell_exec("sudo wg show 2>&1"));
+                $is_active = !empty($wg_status) && !strpos($wg_status, 'Unable to access interface');
+                $status_text = $is_active ? "🟢 Attivo" : "🔴 Inattivo";
+                ?>
+                <div class="service-status">
+                    <span><?= $status_text ?></span>
+                    <small>wg-quick wg0</small>
+                </div>
+                <div class="service-controls">
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="wg_start">
+                        <button type="submit" class="btn btn-success">▶️ Start</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="wg_stop">
+                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="wg_restart">
+                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
+                    </form>
+                    <form method="post" style="display: inline;">
+                        <input type="hidden" name="service_action" value="wg_status">
+                        <button type="submit" class="btn btn-info">� Status</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
-        <h4>Controlli Servizi</h4>
-        <div class="service-grid">
-            <form method="post">
-                <input type="hidden" name="service_action" value="apache_restart">
-                <button type="submit" class="btn btn-warning">🔄 Riavvia Apache2</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="node_start">
-                <button type="submit" class="btn btn-success">▶️ Avvia Node.js</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="node_stop">
-                <button type="submit" class="btn btn-danger">⏹️ Ferma Node.js</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="node_restart">
-                <button type="submit" class="btn btn-info">🔄 Riavvia Node.js</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="wg_start">
-                <button type="submit" class="btn btn-success">▶️ Avvia WireGuard</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="wg_stop">
-                <button type="submit" class="btn btn-danger">⏹️ Ferma WireGuard</button>
-            </form>
-            <form method="post">
-                <input type="hidden" name="service_action" value="wg_restart">
-                <button type="submit" class="btn btn-info">🔄 Riavvia WireGuard</button>
-            </form>
+        <h4>🛠️ Installazione LocalTunnel Service</h4>
+        <div class="info-box">
+            <p><strong>Prima installazione:</strong> Se LocalTunnel non è ancora configurato come servizio, esegui:</p>
+            <div class="code-block">
+                chmod +x install_localtunnel.sh<br>
+                sudo ./install_localtunnel.sh
+            </div>
+            <p>Questo script installerà Node.js, LocalTunnel e configurerà il servizio per l'avvio automatico.</p>
         </div>
 
         <h4>Output Operazioni</h4>

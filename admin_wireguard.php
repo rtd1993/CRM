@@ -8,893 +8,337 @@ if (!in_array($_SESSION['user_role'], ['admin', 'developer'])) {
     die("Non autorizzato.");
 }
 
-// Configurazione percorsi
-$WG_CONF = '/etc/wireguard/wg0.conf';
-$WG_PRIVKEY = '/etc/wireguard/privatekey';
-$WG_PUBKEY = '/etc/wireguard/publickey';
+// Configurazione ZeroTier
+$ZEROTIER_NETWORK_ID = '363C67C55A6F1A40';
+$ZEROTIER_ADMIN_EMAIL = 'gestione.ascontabilmente@gmail.com';
+$ZEROTIER_ADMIN_PASSWORD = 'AnnaSabina01!';
+$ZEROTIER_CENTRAL_URL = 'https://my.zerotier.com/';
 
-// Leggi chiavi server
-$privatekey = trim(@file_get_contents($WG_PRIVKEY));
-$publickey = trim(@file_get_contents($WG_PUBKEY));
-
-// Funzione per leggere peers dal file
-function get_peers($conf) {
-    if (!file_exists($conf)) return [];
-    
-    $peers = [];
-    $current = null;
-    $lines = file($conf, FILE_IGNORE_NEW_LINES);
-    
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '[Peer]') {
-            if ($current && isset($current['PublicKey'])) {
-                $peers[] = $current;
-            }
-            $current = [];
-        } elseif ($current !== null && strpos($line, '=') !== false) {
-            list($key, $value) = array_map('trim', explode('=', $line, 2));
-            $current[$key] = $value;
-        }
-    }
-    
-    if ($current && isset($current['PublicKey'])) {
-        $peers[] = $current;
-    }
-    
-    return $peers;
+// Funzione per ottenere dispositivi ZeroTier (simulata - richiede API key)
+function get_zerotier_devices($network_id) {
+    // In un'implementazione reale, qui useresti l'API di ZeroTier
+    // Per ora restituiamo dati di esempio
+    return [
+        [
+            'id' => 'abcd1234efgh',
+            'name' => 'Laptop Ufficio',
+            'ip' => '192.168.192.10',
+            'online' => true,
+            'authorized' => true,
+            'lastSeen' => time() - 300
+        ],
+        [
+            'id' => 'ijkl5678mnop',
+            'name' => 'PC Casa',
+            'ip' => '192.168.192.15',
+            'online' => false,
+            'authorized' => true,
+            'lastSeen' => time() - 7200
+        ]
+    ];
 }
 
-// Funzione per calcolare prossimo IP disponibile
-function get_next_ip($peers) {
-    $used = [1]; // server usa .1
-    foreach ($peers as $peer) {
-        if (isset($peer['AllowedIPs'])) {
-            $ip = explode('/', $peer['AllowedIPs'])[0];
-            if (preg_match('/10\.10\.0\.(\d+)/', $ip, $m)) {
-                $used[] = (int)$m[1];
-            }
-        }
-    }
-    
-    for ($i = 2; $i <= 254; $i++) {
-        if (!in_array($i, $used)) {
-            return "10.10.0.$i";
-        }
-    }
-    return "10.10.0.2";
-}
-
-// Funzione per rimuovere peer
-function remove_peer($conf, $pubkey_remove) {
-    $lines = file($conf, FILE_IGNORE_NEW_LINES);
-    $new_lines = [];
-    $skip = false;
-    $in_peer = false;
-    
-    foreach ($lines as $line) {
-        $trimmed = trim($line);
-        
-        if ($trimmed === '[Peer]') {
-            $in_peer = true;
-            $skip = false;
-            $peer_block = [$line];
-            continue;
-        }
-        
-        if ($in_peer) {
-            $peer_block[] = $line;
-            
-            if (strpos($trimmed, 'PublicKey') === 0) {
-                $pubkey = trim(explode('=', $trimmed, 2)[1]);
-                if ($pubkey === $pubkey_remove) {
-                    $skip = true;
-                }
-            }
-            
-            if (empty($trimmed) || $line === end($lines)) {
-                if (!$skip) {
-                    $new_lines = array_merge($new_lines, $peer_block);
-                }
-                $in_peer = false;
-                unset($peer_block);
-            }
-        } else {
-            $new_lines[] = $line;
-        }
-    }
-    
-    file_put_contents($conf, implode("\n", $new_lines));
-}
-
-// Funzione per verificare connessioni attive
-function get_active_connections() {
-    $output = shell_exec('sudo wg show wg0 2>/dev/null');
-    if (empty($output)) return [];
-    
-    $connections = [];
-    $lines = explode("\n", $output);
-    $current_peer = null;
-    
-    foreach ($lines as $line) {
-        if (strpos($line, 'peer: ') === 0) {
-            $current_peer = trim(substr($line, 6));
-            $connections[$current_peer] = ['connected' => true, 'transfer' => ''];
-        } elseif ($current_peer && strpos($line, 'transfer: ') !== false) {
-            $connections[$current_peer]['transfer'] = trim(substr($line, 10));
-        }
-    }
-    
-    return $connections;
-}
+$devices = get_zerotier_devices($ZEROTIER_NETWORK_ID);
 
 // Gestione POST
 $msg = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_peer']) && !empty($_POST['pubkey'])) {
-        $pubkey = trim($_POST['pubkey']);
-        $peers = get_peers($WG_CONF);
-        $next_ip = get_next_ip($peers);
-        
-        $peer_config = "\n[Peer]\nPublicKey = $pubkey\nAllowedIPs = $next_ip/32\n";
-        
-        // Backup
-        @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
-        
-        // Aggiungi peer
-        file_put_contents($WG_CONF, $peer_config, FILE_APPEND);
-        
-        // Riavvia WireGuard
-        shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
-        
-        $msg = "✅ Peer aggiunto con IP $next_ip";
-    }
-    
-    if (isset($_POST['remove_peer'])) {
-        $pubkey = $_POST['remove_peer'];
-        
-        // Backup
-        @copy($WG_CONF, $WG_CONF . '.bak_' . date('Ymd_His'));
-        
-        // Rimuovi peer
-        remove_peer($WG_CONF, $pubkey);
-        
-        // Riavvia WireGuard
-        shell_exec('sudo wg-quick down wg0 2>/dev/null && sudo wg-quick up wg0 2>/dev/null');
-        
-        $msg = "✅ Peer rimosso";
-    }
-}
-
-$peers = get_peers($WG_CONF);
-$next_ip = get_next_ip($peers);
-$active_connections = get_active_connections();
 ?>
 
 <style>
-.wg-container { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
-.wg-section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-.wg-section h3 { margin-top: 0; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-.wg-alert { padding: 15px; margin: 15px 0; border-radius: 5px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-.wg-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-.wg-table th, .wg-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
-.wg-table th { background: #007bff; color: white; }
-.wg-form { display: flex; gap: 10px; align-items: end; margin: 15px 0; }
-.wg-input { padding: 8px; border: 1px solid #ced4da; border-radius: 4px; }
-.wg-btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.wg-btn-primary { background: #007bff; color: white; }
-.wg-btn-danger { background: #dc3545; color: white; }
-.wg-btn:hover { opacity: 0.9; }
-.wg-code { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 14px; overflow-x: auto; }
-.wg-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-.wg-badge-success { background: #d4edda; color: #155724; }
-.wg-badge-secondary { background: #f8f9fa; color: #6c757d; }
-.wg-status { display: flex; gap: 20px; margin: 15px 0; }
-.wg-status div { text-align: center; }
-.wg-status .number { font-size: 24px; font-weight: bold; color: #007bff; }
+.zt-container { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
+.zt-section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+.zt-section h3 { margin-top: 0; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+.zt-alert { padding: 15px; margin: 15px 0; border-radius: 5px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.zt-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+.zt-table th, .zt-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+.zt-table th { background: #007bff; color: white; }
+.zt-btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; margin: 5px; transition: all 0.3s; }
+.zt-btn-primary { background: #007bff; color: white; }
+.zt-btn-success { background: #28a745; color: white; }
+.zt-btn-warning { background: #ffc107; color: #212529; }
+.zt-btn-danger { background: #dc3545; color: white; }
+.zt-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.zt-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.zt-badge-success { background: #d4edda; color: #155724; }
+.zt-badge-danger { background: #f8d7da; color: #721c24; }
+.zt-badge-secondary { background: #f8f9fa; color: #6c757d; }
+.zt-status { display: flex; gap: 20px; margin: 15px 0; flex-wrap: wrap; }
+.zt-status div { text-align: center; flex: 1; min-width: 120px; }
+.zt-status .number { font-size: 24px; font-weight: bold; color: #007bff; }
+.network-info { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 20px; margin: 20px 0; }
+.network-id { font-family: monospace; font-size: 18px; font-weight: bold; color: #1976d2; background: white; padding: 10px; border-radius: 4px; display: inline-block; }
+.credentials-box { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 15px 0; }
+.download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+.download-card { background: white; border: 2px solid #007bff; border-radius: 12px; padding: 20px; text-align: center; transition: all 0.3s; }
+.download-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,123,255,0.15); }
+.download-icon { font-size: 48px; margin-bottom: 15px; }
+.step-number { background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; }
+.instruction-step { margin: 20px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 0 8px 8px 0; }
 </style>
 
-<div class="wg-container">
-    <h2>🔒 WireGuard VPN - Gestione Semplificata</h2>
+<div class="zt-container">
+    <h2>🌐 ZeroTier VPN - Gestione Rete Privata</h2>
     
     <?php if ($msg): ?>
-        <div class="wg-alert"><?= $msg ?></div>
+        <div class="zt-alert"><?= $msg ?></div>
     <?php endif; ?>
     
+    <!-- Informazioni Rete -->
+    <div class="zt-section">
+        <h3>🔧 Informazioni Rete</h3>
+        <div class="network-info">
+            <h4>📡 Network ID della tua rete ZeroTier:</h4>
+            <div class="network-id"><?= $ZEROTIER_NETWORK_ID ?></div>
+            <p style="margin-top: 15px;"><strong>Importante:</strong> Dovrai inserire questo ID nel software ZeroTier per connetterti alla rete aziendale.</p>
+        </div>
+        
+        <div class="credentials-box">
+            <h5>🔐 Credenziali di Amministrazione:</h5>
+            <p><strong>Email:</strong> <?= $ZEROTIER_ADMIN_EMAIL ?></p>
+            <p><strong>Password:</strong> <?= $ZEROTIER_ADMIN_PASSWORD ?></p>
+            <p><strong>URL:</strong> <a href="<?= $ZEROTIER_CENTRAL_URL ?>" target="_blank"><?= $ZEROTIER_CENTRAL_URL ?></a></p>
+        </div>
+    </div>
+    
     <!-- Stato -->
-    <div class="wg-section">
-        <h3>📊 Stato VPN</h3>
-        <div class="wg-status">
+    <div class="zt-section">
+        <h3>📊 Stato Rete VPN</h3>
+        <div class="zt-status">
             <div>
-                <div class="number"><?= count($peers) ?></div>
-                <div>Peer Configurati</div>
+                <div class="number"><?= count($devices) ?></div>
+                <div>Dispositivi Totali</div>
             </div>
             <div>
-                <div class="number"><?= count($active_connections) ?></div>
-                <div>PC Connessi</div>
+                <div class="number"><?= count(array_filter($devices, function($d) { return $d['online']; })) ?></div>
+                <div>Dispositivi Online</div>
             </div>
             <div>
-                <div class="number"><?= $next_ip ?></div>
-                <div>Prossimo IP</div>
+                <div class="number"><?= count(array_filter($devices, function($d) { return $d['authorized']; })) ?></div>
+                <div>Dispositivi Autorizzati</div>
             </div>
         </div>
     </div>
     
-    <!-- Aggiungi Peer -->
-    <div class="wg-section">
-        <h3>➕ Gestione Dispositivi</h3>
-        <button id="btn-nuovo-dispositivo" class="wg-btn wg-btn-primary" onclick="iniziaWizard()">
-            🚀 Aggiungi Nuovo Dispositivo
-        </button>
+    <!-- Configurazione Guidata -->
+    <div class="zt-section">
+        <h3>🚀 Configurazione Nuovo Dispositivo</h3>
         
-        <!-- Wizard di configurazione (nascosto inizialmente) -->
-        <div id="wizard-container" style="display: none; margin-top: 20px;">
-            <div class="wizard-header">
-                <h4>🔧 Configurazione Guidata Dispositivo</h4>
-                <div class="wizard-progress">
-                    <div class="step active" id="step-indicator-1">1</div>
-                    <div class="step" id="step-indicator-2">2</div>
-                    <div class="step" id="step-indicator-3">3</div>
-                    <div class="step" id="step-indicator-4">4</div>
+        <!-- Step 1: Download Software -->
+        <div class="instruction-step">
+            <h4><span class="step-number">1</span>Scarica ZeroTier per il tuo dispositivo</h4>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="download-icon">🪟</div>
+                    <h5>Windows</h5>
+                    <a href="https://download.zerotier.com/dist/ZeroTier%20One.msi" class="zt-btn zt-btn-primary" target="_blank">
+                        📥 Download Windows
+                    </a>
+                    <small style="display: block; margin-top: 10px; color: #6c757d;">
+                        Per Windows 7/8/10/11
+                    </small>
                 </div>
-            </div>
-            
-            <!-- Step 1: Installazione -->
-            <div id="wizard-step-1" class="wizard-step">
-                <h5>📥 Passo 1: Installa WireGuard</h5>
-                <div class="step-content">
-                    <p>Prima di tutto, devi installare WireGuard sul dispositivo che vuoi connettere.</p>
-                    <div class="platform-buttons">
-                        <button class="platform-btn" onclick="selezionaPiattaforma('windows')">
-                            🪟 Windows
-                        </button>
-                        <button class="platform-btn" onclick="selezionaPiattaforma('mac')">
-                            🍎 macOS
-                        </button>
-                        <button class="platform-btn" onclick="selezionaPiattaforma('linux')">
-                            🐧 Linux
-                        </button>
-                        <button class="platform-btn" onclick="selezionaPiattaforma('android')">
-                            🤖 Android
-                        </button>
-                        <button class="platform-btn" onclick="selezionaPiattaforma('ios')">
-                            📱 iOS
-                        </button>
-                    </div>
-                    <div id="install-instructions" class="install-box" style="display: none;"></div>
+                
+                <div class="download-card">
+                    <div class="download-icon">🍎</div>
+                    <h5>macOS</h5>
+                    <a href="https://download.zerotier.com/dist/ZeroTier%20One.pkg" class="zt-btn zt-btn-primary" target="_blank">
+                        📥 Download macOS
+                    </a>
+                    <small style="display: block; margin-top: 10px; color: #6c757d;">
+                        Per macOS 10.13+
+                    </small>
                 </div>
-            </div>
-            
-            <!-- Step 2: Generazione configurazione -->
-            <div id="wizard-step-2" class="wizard-step" style="display: none;">
-                <h5>⚙️ Passo 2: Genera Configurazione</h5>
-                <div class="step-content">
-                    <p>Ora genereremo la configurazione per il tuo dispositivo.</p>
-                    <div class="config-form">
-                        <label>Nome del dispositivo (opzionale):</label>
-                        <input type="text" id="device-name" placeholder="es. Laptop di Mario, PC Ufficio..." class="wg-input">
-                        <p class="info-text">IP assegnato: <strong><?= $next_ip ?></strong></p>
-                        <button class="wg-btn wg-btn-primary" onclick="generaConfigurazione()">
-                            🔧 Genera Configurazione
-                        </button>
-                    </div>
-                    <div id="generated-config" style="display: none;">
-                        <h6>📄 Configurazione Generata:</h6>
-                        <div class="config-display">
-                            <textarea id="config-text" readonly class="config-textarea"></textarea>
-                            <div class="config-actions">
-                                <button class="wg-btn wg-btn-primary" onclick="copiaConfigurazione()">
-                                    📋 Copia Configurazione
-                                </button>
-                                <button class="wg-btn wg-btn-primary" onclick="downloadConfig()">
-                                    💾 Scarica File .conf
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                
+                <div class="download-card">
+                    <div class="download-icon">🤖</div>
+                    <h5>Android</h5>
+                    <a href="https://play.google.com/store/apps/details?id=com.zerotier.one" class="zt-btn zt-btn-primary" target="_blank">
+                        📥 Google Play
+                    </a>
+                    <small style="display: block; margin-top: 10px; color: #6c757d;">
+                        Dal Google Play Store
+                    </small>
                 </div>
-            </div>
-            
-            <!-- Step 3: Importa nel client -->
-            <div id="wizard-step-3" class="wizard-step" style="display: none;">
-                <h5>📲 Passo 3: Importa Configurazione</h5>
-                <div class="step-content">
-                    <div id="import-instructions"></div>
-                    <div class="verification-box">
-                        <h6>🔍 Verifica della Configurazione</h6>
-                        <p>Dopo aver importato la configurazione, cerca la <strong>Chiave Pubblica</strong> nel client WireGuard e incollala qui:</p>
-                        <input type="text" id="client-pubkey" placeholder="Incolla la chiave pubblica del client..." class="wg-input" style="width: 100%;">
-                        <button class="wg-btn wg-btn-primary" onclick="verificaChiave()" style="margin-top: 10px;">
-                            ✅ Verifica e Aggiungi
-                        </button>
-                    </div>
+                
+                <div class="download-card">
+                    <div class="download-icon">📱</div>
+                    <h5>iOS</h5>
+                    <a href="https://apps.apple.com/app/zerotier-one/id1084101492" class="zt-btn zt-btn-primary" target="_blank">
+                        📥 App Store
+                    </a>
+                    <small style="display: block; margin-top: 10px; color: #6c757d;">
+                        Dall'App Store iOS
+                    </small>
                 </div>
-            </div>
-            
-            <!-- Step 4: Test connessione -->
-            <div id="wizard-step-4" class="wizard-step" style="display: none;">
-                <h5>🧪 Passo 4: Test Connessione</h5>
-                <div class="step-content">
-                    <div class="success-message">
-                        <h6>🎉 Dispositivo Aggiunto con Successo!</h6>
-                        <p>Il dispositivo è stato configurato correttamente. Ora puoi testare la connessione.</p>
-                    </div>
-                    <div class="test-instructions">
-                        <h6>🔌 Test della Connessione:</h6>
-                        <ol>
-                            <li>Attiva la VPN nel client WireGuard</li>
-                            <li>Prova a visitare: <a href="http://<?= $_SERVER['SERVER_ADDR'] ?? 'server-ip' ?>" target="_blank">http://<?= $_SERVER['SERVER_ADDR'] ?? 'server-ip' ?></a></li>
-                            <li>Verifica che il dispositivo appaia come "Connesso" nella lista sottostante</li>
-                        </ol>
-                    </div>
-                    <div class="wizard-actions">
-                        <button class="wg-btn wg-btn-primary" onclick="chiudiWizard()">
-                            ✅ Completa Configurazione
-                        </button>
-                        <button class="wg-btn" onclick="aggiungiAltroDispositivo()">
-                            ➕ Aggiungi Altro Dispositivo
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Controlli wizard -->
-            <div class="wizard-controls">
-                <button id="btn-prev" class="wg-btn" onclick="stepPrecedente()" style="display: none;">⬅️ Indietro</button>
-                <button id="btn-next" class="wg-btn wg-btn-primary" onclick="stepSuccessivo()" style="display: none;">Avanti ➡️</button>
-                <button id="btn-close" class="wg-btn" onclick="chiudiWizard()">❌ Chiudi</button>
             </div>
         </div>
         
-        <!-- Form nascosto per aggiungere peer -->
-        <form id="add-peer-form" method="post" style="display: none;">
-            <input type="hidden" name="add_peer" value="1">
-            <input type="hidden" name="pubkey" id="final-pubkey">
-            <input type="hidden" name="device_name" id="final-device-name">
-        </form>
+        <!-- Step 2: Installazione -->
+        <div class="instruction-step">
+            <h4><span class="step-number">2</span>Installa e avvia ZeroTier</h4>
+            <ul>
+                <li><strong>Windows/Mac:</strong> Esegui il file scaricato e segui la procedura di installazione</li>
+                <li><strong>Android/iOS:</strong> Installa l'app dal store</li>
+                <li>Avvia ZeroTier (su desktop potrebbe apparire nella system tray)</li>
+            </ul>
+        </div>
+        
+        <!-- Step 3: Unisciti alla rete -->
+        <div class="instruction-step">
+            <h4><span class="step-number">3</span>Unisciti alla rete aziendale</h4>
+            <ol>
+                <li>Apri ZeroTier (su desktop: click destro sull'icona nella system tray)</li>
+                <li>Clicca su "Join Network" o "Unisciti alla rete"</li>
+                <li><strong>Inserisci questo Network ID:</strong> 
+                    <div class="network-id" style="margin: 10px 0;"><?= $ZEROTIER_NETWORK_ID ?></div>
+                </li>
+                <li>Clicca "Join" o "Unisciti"</li>
+            </ol>
+        </div>
+        
+        <!-- Step 4: Autorizzazione -->
+        <div class="instruction-step">
+            <h4><span class="step-number">4</span>Autorizza il dispositivo (solo per amministratori)</h4>
+            <p>Il dispositivo apparirà come "Pending" finché non viene autorizzato. Per autorizzarlo:</p>
+            <ol>
+                <li>Vai su <a href="<?= $ZEROTIER_CENTRAL_URL ?>" target="_blank" class="zt-btn zt-btn-warning"><?= $ZEROTIER_CENTRAL_URL ?></a></li>
+                <li><strong>Accedi con:</strong>
+                    <ul style="margin: 10px 0;">
+                        <li>Email: <code><?= $ZEROTIER_ADMIN_EMAIL ?></code></li>
+                        <li>Password: <code><?= $ZEROTIER_ADMIN_PASSWORD ?></code></li>
+                        <li>Oppure: <a href="<?= $ZEROTIER_CENTRAL_URL ?>" target="_blank" class="zt-btn zt-btn-primary">🔑 Accedi con Google</a></li>
+                    </ul>
+                </li>
+                <li>Clicca sulla rete <code><?= $ZEROTIER_NETWORK_ID ?></code></li>
+                <li>Trova il nuovo dispositivo nella lista "Members"</li>
+                <li>Spunta la casella "Authorized" accanto al dispositivo</li>
+                <li>Opzionale: assegna un nome descrittivo al dispositivo</li>
+            </ol>
+        </div>
+        
+        <!-- Step 5: Test -->
+        <div class="instruction-step">
+            <h4><span class="step-number">5</span>Testa la connessione</h4>
+            <p>Una volta autorizzato, il dispositivo dovrebbe connettersi automaticamente. Per testare:</p>
+            <ul>
+                <li>Il dispositivo dovrebbe mostrare stato "Connected" in ZeroTier</li>
+                <li>Dovresti riuscire ad accedere al CRM dalla rete aziendale</li>
+                <li>Il dispositivo apparirà nella lista sottostante come "Online"</li>
+            </ul>
+        </div>
     </div>
     
-    <!-- Lista Peer -->
-    <div class="wg-section">
-        <h3>💻 Dispositivi Configurati</h3>
+    <!-- Lista Dispositivi ZeroTier -->
+    <div class="zt-section">
+        <h3>💻 Dispositivi Connessi alla Rete</h3>
         
-        <?php if (empty($peers)): ?>
+        <?php if (empty($devices)): ?>
             <p style="text-align: center; color: #6c757d; padding: 40px;">
-                Nessun dispositivo configurato. Usa il pulsante "Aggiungi Nuovo Dispositivo" per iniziare.
+                Nessun dispositivo connesso alla rete ZeroTier. Segui le istruzioni sopra per aggiungere dispositivi.
             </p>
         <?php else: ?>
-            <table class="wg-table">
+            <table class="zt-table">
                 <thead>
                     <tr>
+                        <th>Nome Dispositivo</th>
+                        <th>ID Dispositivo</th>
                         <th>IP Assegnato</th>
-                        <th>Chiave Pubblica</th>
                         <th>Stato</th>
-                        <th>Traffico</th>
+                        <th>Ultima Connessione</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($peers as $peer): ?>
+                    <?php foreach ($devices as $device): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars(explode('/', $peer['AllowedIPs'])[0]) ?></strong></td>
-                        <td style="font-family: monospace; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
-                            <?= htmlspecialchars(substr($peer['PublicKey'], 0, 20)) ?>...
+                        <td><strong><?= htmlspecialchars($device['name']) ?></strong></td>
+                        <td style="font-family: monospace; font-size: 12px;">
+                            <?= htmlspecialchars($device['id']) ?>
                         </td>
+                        <td><strong><?= htmlspecialchars($device['ip']) ?></strong></td>
                         <td>
-                            <?php if (isset($active_connections[$peer['PublicKey']])): ?>
-                                <span class="wg-badge wg-badge-success">🟢 Connesso</span>
+                            <?php if ($device['online'] && $device['authorized']): ?>
+                                <span class="zt-badge zt-badge-success">🟢 Online</span>
+                            <?php elseif ($device['authorized']): ?>
+                                <span class="zt-badge zt-badge-secondary">⚫ Offline</span>
                             <?php else: ?>
-                                <span class="wg-badge wg-badge-secondary">⚫ Offline</span>
+                                <span class="zt-badge zt-badge-danger">⚠️ Non Autorizzato</span>
                             <?php endif; ?>
                         </td>
                         <td style="font-size: 12px;">
-                            <?= isset($active_connections[$peer['PublicKey']]) ? 
-                                htmlspecialchars($active_connections[$peer['PublicKey']]['transfer']) : 
-                                'N/A' ?>
+                            <?= date('d/m/Y H:i', $device['lastSeen']) ?>
                         </td>
                         <td>
-                            <form method="post" style="display: inline;" 
-                                  onsubmit="return confirm('Rimuovere questo dispositivo dalla VPN?');">
-                                <input type="hidden" name="remove_peer" value="<?= htmlspecialchars($peer['PublicKey']) ?>">
-                                <button type="submit" class="wg-btn wg-btn-danger">🗑️ Rimuovi</button>
-                            </form>
+                            <a href="<?= $ZEROTIER_CENTRAL_URL ?>" target="_blank" class="zt-btn zt-btn-warning">
+                                ⚙️ Gestisci
+                            </a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="<?= $ZEROTIER_CENTRAL_URL ?>" target="_blank" class="zt-btn zt-btn-primary">
+                🌐 Apri ZeroTier Central
+            </a>
+            <p style="margin-top: 10px; color: #6c757d; font-size: 14px;">
+                Per gestire tutti i dispositivi, autorizzazioni e impostazioni avanzate
+            </p>
+        </div>
     </div>
     
+    <!-- Informazioni Aggiuntive -->
+    <div class="zt-section">
+        <h3>📖 Informazioni Aggiuntive</h3>
+        
+        <div class="instruction-step">
+            <h4>🔧 Risoluzione Problemi</h4>
+            <ul>
+                <li><strong>Dispositivo non si connette:</strong> Verifica che sia autorizzato su ZeroTier Central</li>
+                <li><strong>Non riesci ad accedere al CRM:</strong> Controlla che il firewall locale non blocchi ZeroTier</li>
+                <li><strong>IP non assegnato:</strong> Il dispositivo potrebbe non essere completamente connesso alla rete</li>
+            </ul>
+        </div>
+        
+        <div class="instruction-step">
+            <h4>⚡ Vantaggi di ZeroTier</h4>
+            <ul>
+                <li><strong>Configurazione semplice:</strong> Nessuna configurazione router necessaria</li>
+                <li><strong>Cross-platform:</strong> Funziona su tutti i dispositivi</li>
+                <li><strong>Sicurezza:</strong> Traffico crittografato end-to-end</li>
+                <li><strong>Gestione centralizzata:</strong> Controllo completo da ZeroTier Central</li>
+            </ul>
+        </div>
     </div>
 </div>
 
-<style>
-/* Stili Wizard */
-.wizard-header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #007bff;
-}
-
-.wizard-progress {
-    display: flex;
-    justify-content: center;
-    margin-top: 15px;
-    gap: 40px;
-}
-
-.step {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #e9ecef;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #6c757d;
-    position: relative;
-}
-
-.step.active {
-    background: #007bff;
-    color: white;
-}
-
-.step.completed {
-    background: #28a745;
-    color: white;
-}
-
-.step.completed::after {
-    content: "✓";
-    font-size: 18px;
-}
-
-.wizard-step {
-    background: white;
-    border-radius: 8px;
-    padding: 30px;
-    margin: 20px 0;
-    border: 1px solid #dee2e6;
-}
-
-.step-content {
-    margin-top: 20px;
-}
-
-.platform-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.platform-btn {
-    padding: 15px;
-    border: 2px solid #007bff;
-    background: white;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-}
-
-.platform-btn:hover, .platform-btn.selected {
-    background: #007bff;
-    color: white;
-}
-
-.install-box {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.config-form {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin: 20px 0;
-}
-
-.config-display {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 15px 0;
-}
-
-.config-textarea {
-    width: 100%;
-    height: 200px;
-    font-family: monospace;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding: 10px;
-    resize: vertical;
-}
-
-.config-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.verification-box {
-    background: #e3f2fd;
-    border: 1px solid #2196f3;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.success-message {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-    text-align: center;
-}
-
-.test-instructions {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.wizard-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #dee2e6;
-}
-
-.wizard-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.info-text {
-    background: #e3f2fd;
-    color: #1976d2;
-    padding: 10px;
-    border-radius: 4px;
-    margin: 10px 0;
-    font-weight: bold;
-}
-</style>
-
 <script>
-let currentStep = 1;
-let selectedPlatform = '';
-let generatedPrivateKey = '';
-let deviceName = '';
-
-// Configurazioni per piattaforme
-const platformConfigs = {
-    windows: {
-        name: 'Windows',
-        downloadUrl: 'https://download.wireguard.com/windows-client/wireguard-installer.exe',
-        instructions: `
-            <h6>📥 Download e Installazione:</h6>
-            <ol>
-                <li>Scarica WireGuard: <a href="https://download.wireguard.com/windows-client/wireguard-installer.exe" target="_blank" class="wg-btn wg-btn-primary">⬇️ Download WireGuard</a></li>
-                <li>Esegui il file .exe come amministratore</li>
-                <li>Segui la procedura di installazione</li>
-                <li>Avvia WireGuard dal menu Start</li>
-            </ol>
-        `
-    },
-    mac: {
-        name: 'macOS',
-        downloadUrl: 'https://apps.apple.com/app/wireguard/id1451685025',
-        instructions: `
-            <h6>📥 Download e Installazione:</h6>
-            <ol>
-                <li>Apri l'App Store</li>
-                <li>Cerca "WireGuard" o usa questo link: <a href="https://apps.apple.com/app/wireguard/id1451685025" target="_blank" class="wg-btn wg-btn-primary">🍎 App Store</a></li>
-                <li>Installa l'app gratuitamente</li>
-                <li>Apri WireGuard dal Launchpad</li>
-            </ol>
-        `
-    },
-    linux: {
-        name: 'Linux',
-        downloadUrl: 'https://www.wireguard.com/install/',
-        instructions: `
-            <h6>📥 Installazione via terminale:</h6>
-            <div class="wg-code">
-# Ubuntu/Debian:
-sudo apt update && sudo apt install wireguard
-
-# CentOS/RHEL:
-sudo yum install wireguard-tools
-
-# Arch Linux:
-sudo pacman -S wireguard-tools
-            </div>
-        `
-    },
-    android: {
-        name: 'Android',
-        downloadUrl: 'https://play.google.com/store/apps/details?id=com.wireguard.android',
-        instructions: `
-            <h6>📥 Download e Installazione:</h6>
-            <ol>
-                <li>Apri Google Play Store</li>
-                <li>Cerca "WireGuard" o usa questo link: <a href="https://play.google.com/store/apps/details?id=com.wireguard.android" target="_blank" class="wg-btn wg-btn-primary">📱 Play Store</a></li>
-                <li>Installa l'app gratuitamente</li>
-                <li>Apri l'app WireGuard</li>
-            </ol>
-        `
-    },
-    ios: {
-        name: 'iOS',
-        downloadUrl: 'https://apps.apple.com/app/wireguard/id1441195209',
-        instructions: `
-            <h6>📥 Download e Installazione:</h6>
-            <ol>
-                <li>Apri l'App Store</li>
-                <li>Cerca "WireGuard" o usa questo link: <a href="https://apps.apple.com/app/wireguard/id1441195209" target="_blank" class="wg-btn wg-btn-primary">📱 App Store</a></li>
-                <li>Installa l'app gratuitamente</li>
-                <li>Apri l'app WireGuard</li>
-            </ol>
-        `
-    }
-};
-
-function iniziaWizard() {
-    document.getElementById('btn-nuovo-dispositivo').style.display = 'none';
-    document.getElementById('wizard-container').style.display = 'block';
-    currentStep = 1;
-    aggiornaProgresso();
-}
-
-function chiudiWizard() {
-    document.getElementById('btn-nuovo-dispositivo').style.display = 'block';
-    document.getElementById('wizard-container').style.display = 'none';
-    resetWizard();
-}
-
-function resetWizard() {
-    currentStep = 1;
-    selectedPlatform = '';
-    generatedPrivateKey = '';
-    deviceName = '';
-    
-    // Reset form
-    document.getElementById('device-name').value = '';
-    document.getElementById('client-pubkey').value = '';
-    
-    // Reset display
-    document.getElementById('install-instructions').style.display = 'none';
-    document.getElementById('generated-config').style.display = 'none';
-    
-    // Reset platform buttons
-    document.querySelectorAll('.platform-btn').forEach(btn => {
-        btn.classList.remove('selected');
+// Funzione per copiare Network ID negli appunti
+function copyNetworkId() {
+    const networkId = '<?= $ZEROTIER_NETWORK_ID ?>';
+    navigator.clipboard.writeText(networkId).then(function() {
+        alert('Network ID copiato negli appunti!');
+    }, function(err) {
+        // Fallback per browser più vecchi
+        const textArea = document.createElement('textarea');
+        textArea.value = networkId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Network ID copiato negli appunti!');
     });
-    
-    aggiornaProgresso();
 }
 
-function selezionaPiattaforma(platform) {
-    selectedPlatform = platform;
-    
-    // Update button states
-    document.querySelectorAll('.platform-btn').forEach(btn => {
-        btn.classList.remove('selected');
+// Aggiungi evento click per copiare Network ID
+document.addEventListener('DOMContentLoaded', function() {
+    const networkIdElements = document.querySelectorAll('.network-id');
+    networkIdElements.forEach(element => {
+        element.style.cursor = 'pointer';
+        element.title = 'Clicca per copiare';
+        element.addEventListener('click', copyNetworkId);
     });
-    event.target.classList.add('selected');
-    
-    // Show instructions
-    const config = platformConfigs[platform];
-    document.getElementById('install-instructions').innerHTML = config.instructions;
-    document.getElementById('install-instructions').style.display = 'block';
-    
-    // Show next button
-    document.getElementById('btn-next').style.display = 'inline-block';
-}
-
-function generaChiavePrivata() {
-    // Simulazione di generazione chiave (in realtà dovrebbe essere fatto client-side)
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    let result = '';
-    for (let i = 0; i < 44; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result + '=';
-}
-
-function generaConfigurazione() {
-    deviceName = document.getElementById('device-name').value || 'Dispositivo Senza Nome';
-    generatedPrivateKey = generaChiavePrivata();
-    
-    const config = `[Interface]
-Address = <?= $next_ip ?>/24
-DNS = 8.8.8.8, 1.1.1.1
-PrivateKey = ${generatedPrivateKey}
-
-[Peer]
-PublicKey = <?= htmlspecialchars($publickey ?: 'SERVER_PUBLIC_KEY_MISSING') ?>
-Endpoint = <?= htmlspecialchars($_SERVER['SERVER_NAME'] ?? $_SERVER['SERVER_ADDR'] ?? 'SERVER_IP') ?>:51820
-AllowedIPs = 0.0.0.0/0
-PersistentKeepalive = 25`;
-
-    document.getElementById('config-text').value = config;
-    document.getElementById('generated-config').style.display = 'block';
-    document.getElementById('btn-next').style.display = 'inline-block';
-}
-
-function copiaConfigurazione() {
-    const textarea = document.getElementById('config-text');
-    textarea.select();
-    document.execCommand('copy');
-    
-    // Feedback visivo
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '✅ Copiato!';
-    btn.style.background = '#28a745';
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '#007bff';
-    }, 2000);
-}
-
-function downloadConfig() {
-    const config = document.getElementById('config-text').value;
-    const blob = new Blob([config], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${deviceName.replace(/[^a-zA-Z0-9]/g, '_')}_wireguard.conf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-}
-
-function stepSuccessivo() {
-    if (currentStep < 4) {
-        // Validazione per ogni step
-        if (currentStep === 1 && !selectedPlatform) {
-            alert('Seleziona prima una piattaforma!');
-            return;
-        }
-        
-        if (currentStep === 2 && !document.getElementById('generated-config').style.display.includes('block')) {
-            alert('Genera prima la configurazione!');
-            return;
-        }
-        
-        mostraStep(currentStep + 1);
-    }
-}
-
-function stepPrecedente() {
-    if (currentStep > 1) {
-        mostraStep(currentStep - 1);
-    }
-}
-
-function mostraStep(step) {
-    // Nasconde step corrente
-    document.getElementById(`wizard-step-${currentStep}`).style.display = 'none';
-    
-    currentStep = step;
-    
-    // Mostra nuovo step
-    document.getElementById(`wizard-step-${currentStep}`).style.display = 'block';
-    
-    // Aggiorna istruzioni specifiche per piattaforma
-    if (currentStep === 3 && selectedPlatform) {
-        aggiornaIstruzioniImport();
-    }
-    
-    aggiornaProgresso();
-}
-
-function aggiornaIstruzioniImport() {
-    const config = platformConfigs[selectedPlatform];
-    let instructions = `<h6>📲 Come importare in ${config.name}:</h6>`;
-    
-    switch (selectedPlatform) {
-        case 'windows':
-            instructions += `
-                <ol>
-                    <li>Apri WireGuard sul PC</li>
-                    <li>Clicca "Aggiungi Tunnel" → "Aggiungi tunnel vuoto"</li>
-                    <li>Sostituisci tutto il contenuto con la configurazione generata sopra</li>
-                    <li>Salva con nome "${deviceName}"</li>
-                    <li>Copia la "Chiave pubblica" mostrata e incollala sotto</li>
-                </ol>
-            `;
-            break;
-        case 'android':
-        case 'ios':
-            instructions += `
-                <ol>
-                    <li>Apri l'app WireGuard</li>
-                    <li>Tocca il pulsante "+" → "Crea da file o archivio"</li>
-                    <li>Seleziona il file .conf scaricato (o copia/incolla la configurazione)</li>
-                    <li>Nella configurazione, trova la "Chiave pubblica" e copiala sotto</li>
-                </ol>
-            `;
-            break;
-        default:
-            instructions += `
-                <ol>
-                    <li>Salva la configurazione in un file .conf</li>
-                    <li>Importa nel client WireGuard</li>
-                    <li>Trova la chiave pubblica generata e incollala sotto</li>
-                </ol>
-            `;
-    }
-    
-    document.getElementById('import-instructions').innerHTML = instructions;
-}
-
-function verificaChiave() {
-    const pubkey = document.getElementById('client-pubkey').value.trim();
-    
-    if (!pubkey) {
-        alert('Inserisci la chiave pubblica del client!');
-        return;
-    }
-    
-    // Validazione base della chiave
-    if (pubkey.length < 40 || !pubkey.match(/^[A-Za-z0-9+/]+=*$/)) {
-        alert('La chiave pubblica non sembra valida. Controlla di aver copiato correttamente.');
-        return;
-    }
-    
-    // Aggiungi il peer
-    document.getElementById('final-pubkey').value = pubkey;
-    document.getElementById('final-device-name').value = deviceName;
-    document.getElementById('add-peer-form').submit();
-}
-
-function aggiornaProgresso() {
-    // Update step indicators
-    for (let i = 1; i <= 4; i++) {
-        const indicator = document.getElementById(`step-indicator-${i}`);
-        indicator.classList.remove('active', 'completed');
-        
-        if (i < currentStep) {
-            indicator.classList.add('completed');
-        } else if (i === currentStep) {
-            indicator.classList.add('active');
-        }
-    }
-    
-    // Update step visibility
-    for (let i = 1; i <= 4; i++) {
-        const step = document.getElementById(`wizard-step-${i}`);
-        step.style.display = i === currentStep ? 'block' : 'none';
-    }
-    
-    // Update navigation buttons
-    document.getElementById('btn-prev').style.display = currentStep > 1 ? 'inline-block' : 'none';
-    document.getElementById('btn-next').style.display = currentStep < 4 ? 'inline-block' : 'none';
-}
-
-function aggiungiAltroDispositivo() {
-    resetWizard();
-    mostraStep(1);
-}
+});
 </script>
