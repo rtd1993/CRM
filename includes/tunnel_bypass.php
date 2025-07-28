@@ -62,7 +62,7 @@ function getTunnelBypassScript() {
     if (isLocalTunnel()) {
         return '
         <script>
-        // Auto-bypass per localtunnel
+        // Auto-bypass per localtunnel con doppio metodo
         (function() {
             // Imposta cookie per future richieste
             document.cookie = "bypass-tunnel-reminder=crm-access; path=/";
@@ -72,6 +72,7 @@ function getTunnelBypassScript() {
             window.fetch = function(url, options = {}) {
                 options.headers = options.headers || {};
                 options.headers["bypass-tunnel-reminder"] = "crm-access";
+                options.headers["User-Agent"] = "CRM-Access-Bot";
                 return originalFetch(url, options);
             };
             
@@ -80,7 +81,42 @@ function getTunnelBypassScript() {
             XMLHttpRequest.prototype.open = function() {
                 originalOpen.apply(this, arguments);
                 this.setRequestHeader("bypass-tunnel-reminder", "crm-access");
+                this.setRequestHeader("User-Agent", "CRM-Access-Bot");
             };
+            
+            // Auto-bypass se rileva pagina LocalTunnel
+            if (document.body && (document.body.innerText.includes("bypass-tunnel-reminder") || 
+                document.body.innerText.includes("Set a bypass-tunnel-reminder"))) {
+                console.log("🚀 Rilevata pagina LocalTunnel, eseguo bypass automatico...");
+                
+                // Metodo 1: Header bypass
+                fetch(window.location.href, {
+                    headers: {
+                        "bypass-tunnel-reminder": "crm-access",
+                        "Cache-Control": "no-cache"
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        console.log("✅ Bypass Header completato");
+                        window.location.reload();
+                    } else {
+                        // Metodo 2: User-Agent bypass
+                        return fetch(window.location.href, {
+                            headers: {
+                                "User-Agent": "CRM-Access-Bot",
+                                "Cache-Control": "no-cache"
+                            }
+                        });
+                    }
+                }).then(response => {
+                    if (response && response.ok) {
+                        console.log("✅ Bypass User-Agent completato");
+                        window.location.reload();
+                    }
+                }).catch(error => {
+                    console.log("⚠️ Auto-bypass fallito:", error);
+                });
+            }
         })();
         </script>';
     }
