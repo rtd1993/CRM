@@ -3,11 +3,7 @@
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/tunnel_bypass.php';
-
-<?php
-// File: index.php
-
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/tunnel_bypass.php';
 require_once __DIR__ . '/includes/config.php';
 
