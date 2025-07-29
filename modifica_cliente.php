@@ -683,7 +683,7 @@ $sezioni = [
                         <label>Cartella Local Drive</label>
                         <?php
                         $codice_fiscale = $cliente['Codice fiscale'] ?? '';
-                        $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale;
+                        $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale;
                         $cartella_esiste = !empty($codice_fiscale) && is_dir($cartella_path);
                         ?>
                         
@@ -717,7 +717,7 @@ $sezioni = [
                         
                         <?php if (!empty($codice_fiscale)): ?>
                             <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                                <strong>Percorso:</strong> /var/www/CRM/local_drive/<?php echo htmlspecialchars($codice_fiscale); ?>
+                                <strong>Percorso:</strong> <?php echo htmlspecialchars(__DIR__ . '/local_drive/' . $codice_fiscale); ?>
                             </div>
                         <?php endif; ?>
                     </div>

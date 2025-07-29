@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Creazione cartella e link
         $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
-        $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+        $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
         $link_cartella = 'drive.php?path=' . urlencode($codice_fiscale_clean);
         
         // Crea la cartella se non esiste

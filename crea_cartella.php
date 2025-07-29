@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 
-$base_dir = '/var/www/CRM/local_drive/';
+$base_dir = __DIR__ . '/local_drive/';
 $relative_path = $_GET['path'] ?? '';
 $current_dir = realpath($base_dir . $relative_path);
 

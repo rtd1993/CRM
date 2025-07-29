@@ -33,7 +33,7 @@ if (isset($_POST['complete_id'])) {
     if ($task) {
         try {
             // Salva il completamento del task nel file di log
-            $log_dir = '/var/www/CRM/local_drive/ASContabilmente/';
+            $log_dir = __DIR__ . '/local_drive/ASContabilmente/';
             if (!is_dir($log_dir)) {
                 mkdir($log_dir, 0755, true);
             }
