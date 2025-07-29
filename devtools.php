@@ -8,14 +8,9 @@ if ($_SESSION['user_role'] !== 'developer') {
     die("Accesso riservato ai developer.");
 }
 
-echo "<h2>🔧 DevTools – Console di Sviluppo</h2>";
-echo "<p>Versione temporanea - In fase di ricostruzione...</p>";
-echo "<p>Servizi disponibili tramite systemctl su server.</p>";
-?>
-
-</main>
-</body>
-</html>
+$messaggio = "";
+$risultati = [];
+$campi = [];
 
 // Esegui query SQL manuale
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql'])) {
@@ -85,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
     }
 }
 ?>
-
 
 <style>
 .devtools-container {
@@ -487,47 +481,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
                 </div>
                 <?php if ($status === "active"): ?>
                     <div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; font-size: 12px;">
-                                                <strong>🌐 URL:</strong> <a href="https://ascontabilemente.loca.lt" target="_blank">https://ascontabilemente.loca.lt</a>
+                        <strong>🌐 URL:</strong> <a href="https://ascontabilemente.loca.lt" target="_blank">https://ascontabilemente.loca.lt</a>
                     </div>
                 <?php endif; ?>
-            </div>
-        </div>
-
-        <h4>🛠️ Installazione LocalTunnel Service</h4>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- WireGuard VPN -->
-            <div class="service-card">
-                <h4>🔒 WireGuard VPN</h4>
-                <?php
-                $wg_status = trim(shell_exec("sudo wg show 2>&1"));
-                $is_active = !empty($wg_status) && !strpos($wg_status, 'Unable to access interface');
-                $status_text = $is_active ? "🟢 Attivo" : "🔴 Inattivo";
-                ?>
-                <div class="service-status">
-                    <span><?= $status_text ?></span>
-                    <small>wg-quick wg0</small>
-                </div>
-                <div class="service-controls">
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="service_action" value="wg_start">
-                        <button type="submit" class="btn btn-success">▶️ Start</button>
-                    </form>
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="service_action" value="wg_stop">
-                        <button type="submit" class="btn btn-danger">⏹️ Stop</button>
-                    </form>
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="service_action" value="wg_restart">
-                        <button type="submit" class="btn btn-warning">🔄 Restart</button>
-                    </form>
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="service_action" value="wg_status">
-                        <button type="submit" class="btn btn-info">� Status</button>
-                    </form>
-                </div>
             </div>
         </div>
 
