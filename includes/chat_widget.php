@@ -120,8 +120,11 @@ function initializeSocketIO() {
     }
     
     console.log('✅ Socket.IO caricato, inizializzo connessione...');
+    const socketUrl = '<?= getSocketIOUrl() ?>';
+    console.log('🔗 URL Socket.IO:', socketUrl);
+    console.log('🔗 Tipo di URL:', socketUrl.startsWith('https') ? 'HTTPS (sicuro)' : 'HTTP (non sicuro)');
     try {
-        const socket = io('<?= getSocketIOUrl() ?>');
+        const socket = io(socketUrl);
         console.log('Socket creato:', socket);
 
         socket.emit("register", user_id);

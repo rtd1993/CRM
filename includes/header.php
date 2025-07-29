@@ -28,8 +28,8 @@ if (isset($_SESSION['user_id'])) {
     <!-- Bootstrap CDN for modern style -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php'])): ?>
-    <!-- Socket.IO Library via CDN -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- Socket.IO Library via CDN with cache busting -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js?v=<?= time() ?>"></script>
     <?php endif; ?>
     <style>
         body {
