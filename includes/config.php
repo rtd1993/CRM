@@ -11,10 +11,15 @@ const SITE_NAME = 'CRM ASContabilmente';
 const BASE_URL = 'http://crm.local';
 
 // Socket.IO Configuration
-// Usa l'IP del server corrente per Socket.IO
+// Usa l'URL del tunnel Cloudflare per Socket.IO
 function getSocketIOUrl() {
+    // Se siamo in un tunnel Cloudflare, usa il sottodominio socket
+    if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'ascontabilmente.homes') !== false) {
+        return "https://socket.ascontabilmente.homes";
+    }
+    
+    // Fallback per accesso locale
     $server_ip = $_SERVER['SERVER_ADDR'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
-    // Rimuovi la porta se presente nell'HTTP_HOST
     $server_ip = explode(':', $server_ip)[0];
     return "http://{$server_ip}:3001";
 }
