@@ -4,7 +4,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_login();
-// Rimuovi il caricamento immediato di tutti i clienti - usa lazy loading invece
+// Carica i clienti direttamente in PHP per affidabilità
+$clienti = $pdo->query("SELECT id, `cognome/ragione sociale` as cognome_ragione_sociale, nome FROM clienti ORDER BY `cognome/ragione sociale`, nome")->fetchAll();
 ?>
 <div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
@@ -14,7 +15,12 @@ require_login();
     <div class="crm-chat-body">
         <form id="praticaChatForm" autocomplete="off">
             <select class="form-select crm-chat-select" id="clienteSelect" required>
-                <option value="" selected disabled>Caricamento clienti...</option>
+                <option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>
+                <?php foreach ($clienti as $cli): ?>
+                    <option value="<?= $cli['id'] ?>">
+                        <?= htmlspecialchars($cli['cognome_ragione_sociale']) . " " . htmlspecialchars($cli['nome']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
             <div class="crm-chat-messages" id="praticaChatBox">
                 <small class="text-muted">Seleziona una pratica per caricare la chat...</small>
@@ -29,16 +35,10 @@ require_login();
 <script>
 function toggleChatWidget(id) {
     document.getElementById(id).classList.toggle('open');
-    
-    // Lazy load clienti solo quando il widget viene aperto per la prima volta
-    if (id === 'chat-pratiche-widget' && document.getElementById(id).classList.contains('open')) {
-        loadClientiList();
-    }
 }
 </script>
 
 <script>
-let clientiLoaded = false;
 let currentClienteId = null;
 let praticheSocket = null;
 
@@ -64,32 +64,6 @@ function initializePraticheSocket() {
             addMessageToChat(data.utente_nome, data.testo, data.data_inserimento);
         }
     });
-}
-
-// Lazy loading dei clienti
-function loadClientiList() {
-    if (clientiLoaded) return;
-    
-    const select = document.getElementById('clienteSelect');
-    select.innerHTML = '<option value="" disabled>Caricamento...</option>';
-    
-    const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
-    fetch(baseUrl + '/ajax/clienti_list.php')
-        .then(r => r.json())
-        .then(clienti => {
-            select.innerHTML = '<option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>';
-            clienti.forEach(cli => {
-                const option = document.createElement('option');
-                option.value = cli.id;
-                option.textContent = `${cli.cognome_ragione_sociale} ${cli.nome}`;
-                select.appendChild(option);
-            });
-            clientiLoaded = true;
-        })
-        .catch(error => {
-            console.error('Errore caricamento clienti:', error);
-            select.innerHTML = '<option value="" disabled>Errore caricamento clienti</option>';
-        });
 }
 
 document.getElementById('clienteSelect').addEventListener('change', function() {
