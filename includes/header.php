@@ -27,6 +27,10 @@ if (isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="/assets/css/style.css">
     <!-- Bootstrap CDN for modern style -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php'])): ?>
+    <!-- Socket.IO Library -->
+    <script src="<?= getSocketIOUrl() ?>/socket.io/socket.io.js"></script>
+    <?php endif; ?>
     <style>
         body {
             background: #f7f9fb;

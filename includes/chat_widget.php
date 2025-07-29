@@ -1,6 +1,5 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
 <link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">
-<script src="<?= getSocketIOUrl() ?>/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
@@ -101,33 +100,51 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 const user_id = <?= json_encode($_SESSION['user_id']) ?>;
 const user_name = <?= json_encode($_SESSION['user_name']) ?>;
-const socket = io('<?= getSocketIOUrl() ?>');
 
-socket.emit("register", user_id);
+// Aspetta che Socket.IO sia caricato
+function initializeSocketIO() {
+    if (typeof io === 'undefined') {
+        console.log('Socket.IO non ancora caricato, riprovo...');
+        setTimeout(initializeSocketIO, 100);
+        return;
+    }
+    
+    console.log('Socket.IO caricato, inizializzo...');
+    const socket = io('<?= getSocketIOUrl() ?>');
+
+    socket.emit("register", user_id);
+
+    function inviaMsg() {
+        const input = document.getElementById("chat-input");
+        const testo = input.value.trim();
+        if (!testo) return;
+        socket.emit("chat message", {
+            utente_id: user_id,
+            utente_nome: user_name,
+            testo: testo
+        });
+        input.value = "";
+    }
+
+    socket.on("chat message", data => {
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>${data.utente_nome}</strong>: ${data.testo}`;
+        document.getElementById("chat-messages").appendChild(div);
+        document.getElementById("chat-messages").scrollTop = 9999;
+    });
+    
+    // Rendi la funzione globale per onclick
+    window.inviaMsg = inviaMsg;
+}
+
+// Avvia inizializzazione quando il DOM è pronto
+document.addEventListener('DOMContentLoaded', initializeSocketIO);
 
 function toggleChat() {
     const body = document.getElementById("chat-body");
     body.style.display = body.style.display === "none" ? "block" : "none";
 }
 
-function inviaMsg() {
-    const input = document.getElementById("chat-input");
-    const testo = input.value.trim();
-    if (!testo) return;
-    socket.emit("chat message", {
-        utente_id: user_id,
-        utente_nome: user_name,
-        testo: testo
-    });
-    input.value = "";
-}
-
-socket.on("chat message", data => {
-    const div = document.createElement("div");
-    div.innerHTML = `<strong>${data.utente_nome}</strong>: ${data.testo}`;
-    document.getElementById("chat-messages").appendChild(div);
-    document.getElementById("chat-messages").scrollTop = 9999;
-});
 // Cronologia iniziale
 fetch("/api/chat_cronologia.php")
 .then(r => r.json())
