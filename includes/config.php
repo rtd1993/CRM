@@ -8,7 +8,7 @@ const DB_USER = 'crmuser';
 const DB_PASS = 'Admin123!';
 
 const SITE_NAME = 'CRM ASContabilmente';
-const BASE_URL = 'http://crm.local';
+const BASE_URL = 'https://ascontabilmente.homes';
 
 // Socket.IO Configuration
 // Usa l'URL del tunnel Cloudflare per Socket.IO
