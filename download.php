@@ -5,7 +5,7 @@ ob_clean();
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 
-$base_dir = '/var/www/CRM/local_drive/';
+$base_dir = __DIR__ . '/local_drive/';
 $path = $_GET['path'] ?? '';
 
 // Debug: verifica il percorso ricevuto
