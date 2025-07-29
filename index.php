@@ -5,16 +5,27 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/tunnel_bypass.php';
 require_once __DIR__ . '/includes/config.php';
 
-
-// Se siamo su LocalTunnel e non abbiamo l'header di bypass, mostra pagina di bypass
+// Controllo bypass più intelligente per LocalTunnel
 if (isLocalTunnel()) {
     $headers = getallheaders();
-    $hasHeaderBypass = isset($headers['bypass-tunnel-reminder']) || isset($headers['Bypass-Tunnel-Reminder']);
+    $isFromLocaltunnelPage = isset($_GET['bypass']) || 
+                            isset($_POST['bypass']) || 
+                            (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'loca.lt') !== false);
+    
+    $hasHeaderBypass = isset($headers['bypass-tunnel-reminder']) || 
+                      isset($headers['Bypass-Tunnel-Reminder']);
+    
     $hasUserAgentBypass = isset($headers['User-Agent']) && 
                          (strpos($headers['User-Agent'], 'CRM-Access-Bot') !== false ||
+                          strpos($headers['User-Agent'], 'curl') !== false ||
                           !preg_match('/Mozilla|Chrome|Safari|Firefox|Edge/', $headers['User-Agent']));
     
-    if (!$hasHeaderBypass && !$hasUserAgentBypass) {
+    // Solo mostra bypass se:
+    // 1. Non abbiamo header di bypass
+    // 2. Non abbiamo User-Agent di bypass  
+    // 3. Non arriviamo da una pagina LocalTunnel (evita loop)
+    // 4. Non abbiamo parametri di bypass
+    if (!$hasHeaderBypass && !$hasUserAgentBypass && !$isFromLocaltunnelPage) {
         // Mostra pagina di bypass invece del redirect
         ?>
         <!DOCTYPE html>
@@ -47,146 +58,110 @@ if (isLocalTunnel()) {
                     color: #003366;
                     margin-bottom: 20px;
                 }
-                .status {
-                    padding: 15px;
+                .password-info {
+                    background: #d1ecf1;
+                    color: #0c5460;
+                    padding: 20px;
                     border-radius: 8px;
                     margin: 20px 0;
-                    font-weight: bold;
-                    background: #fff3cd;
-                    color: #856404;
-                    border: 1px solid #ffeaa7;
+                    border: 1px solid #bee5eb;
                 }
-                .loader {
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #007bff;
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    animation: spin 1s linear infinite;
-                    margin: 20px auto;
+                .btn {
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    margin: 10px;
+                    text-decoration: none;
+                    display: inline-block;
+                    transition: background 0.3s;
                 }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                .btn:hover {
+                    background: #0056b3;
                 }
-                .progress {
-                    background: #e9ecef;
-                    border-radius: 10px;
-                    height: 20px;
-                    margin: 20px 0;
-                    overflow: hidden;
+                .btn.success {
+                    background: #28a745;
                 }
-                .progress-bar {
-                    background: linear-gradient(90deg, #007bff, #0056b3);
-                    height: 100%;
-                    width: 0%;
-                    transition: width 0.5s ease;
-                    border-radius: 10px;
+                .helper-links {
+                    margin-top: 30px;
+                    font-size: 14px;
+                }
+                .helper-links a {
+                    color: #007bff;
+                    text-decoration: none;
+                    margin: 0 10px;
+                }
+                .helper-links a:hover {
+                    text-decoration: underline;
                 }
             </style>
-            <?= getTunnelBypassScript() ?>
         </head>
         <body>
             <div class="bypass-container">
                 <div class="logo">🚀</div>
                 <h1>Accesso CRM ASContabilmente</h1>
-                <div class="status" id="status">
-                    ⏳ Bypass LocalTunnel in corso...
+                
+                <div class="password-info">
+                    <h3>🔑 LocalTunnel Password</h3>
+                    <p><strong>Password fissa:</strong> <code>AnnaSabina01!</code></p>
+                    <p>Usa questa password per accedere al tunnel.</p>
                 </div>
-                <div class="progress">
-                    <div class="progress-bar" id="progressBar"></div>
+                
+                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <strong>🔐 Accesso Richiesto</strong><br>
+                    LocalTunnel richiede autenticazione per sicurezza.
                 </div>
-                <div class="loader" id="loader"></div>
-                <p id="message">Tentativo bypass automatico...</p>
+                
+                <div style="margin: 20px 0;">
+                    <p><strong>Metodo 1 (Consigliato):</strong> Usa la password fissa sopra</p>
+                    <p><strong>Metodo 2:</strong> Bypass automatico (clicca sotto)</p>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <a href="https://ascontabilmente.loca.lt" target="_blank" class="btn success">
+                        🚀 Vai al CRM (Password)
+                    </a>
+                    <button onclick="attemptBypass()" class="btn">
+                        🔧 Bypass Automatico
+                    </button>
+                </div>
+                
+                <div class="helper-links">
+                    <a href="/auto_login.html">🔐 Auto Login Helper</a> |
+                    <a href="/tunnel_wrapper.html">🚀 Wrapper Automatico</a>
+                </div>
+                
+                <div style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                    <p><strong>URL:</strong> https://ascontabilmente.loca.lt</p>
+                    <p><strong>Password:</strong> AnnaSabina01!</p>
+                </div>
             </div>
             
             <script>
-                let progressValue = 0;
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                function updateProgress(percent, message) {
-                    document.getElementById('progressBar').style.width = percent + '%';
-                    document.getElementById('message').textContent = message;
-                }
-                
-                function updateStatus(text, type = 'info') {
-                    const status = document.getElementById('status');
-                    status.textContent = text;
-                    status.className = 'status';
-                    if (type === 'success') status.style.background = '#d4edda';
-                    if (type === 'error') status.style.background = '#f8d7da';
-                }
-                
-                // Bypass automatico con metodi multipli
                 function attemptBypass() {
-                    attempts++;
-                    updateProgress(20, `Tentativo ${attempts}/${maxAttempts}...`);
+                    console.log('🚀 Tentativo bypass automatico...');
                     
-                    console.log(`🚀 Tentativo bypass ${attempts}...`);
-                    
-                    // Metodo 1: User-Agent personalizzato (più affidabile)
-                    fetch(window.location.href, {
+                    // Metodo User-Agent personalizzato
+                    fetch(window.location.href + '?bypass=1', {
                         headers: {
                             'User-Agent': 'CRM-Access-Bot',
                             'Cache-Control': 'no-cache'
                         }
                     }).then(response => {
-                        updateProgress(60, 'Verifica User-Agent bypass...');
                         if (response.ok) {
-                            updateProgress(100, 'Bypass User-Agent completato!');
-                            updateStatus('✅ Bypass completato! Reindirizzamento...', 'success');
-                            setTimeout(() => window.location.reload(), 1000);
-                            return true;
-                        }
-                        throw new Error('User-Agent bypass fallito');
-                    }).catch(error => {
-                        console.log('User-Agent bypass fallito, provo header bypass...');
-                        
-                        // Metodo 2: Header bypass (fallback)
-                        return fetch(window.location.href, {
-                            headers: {
-                                'bypass-tunnel-reminder': 'crm-access',
-                                'Cache-Control': 'no-cache'
-                            }
-                        });
-                    }).then(response => {
-                        if (response && response.ok) {
-                            updateProgress(100, 'Bypass Header completato!');
-                            updateStatus('✅ Bypass completato! Reindirizzamento...', 'success');
-                            setTimeout(() => window.location.reload(), 1000);
+                            console.log('✅ Bypass completato, reindirizzamento...');
+                            window.location.href = window.location.href + '?bypass=1';
                         } else {
-                            throw new Error('Entrambi i metodi falliti');
+                            throw new Error('Bypass fallito');
                         }
                     }).catch(error => {
-                        console.log(`Tentativo ${attempts} fallito:`, error);
-                        
-                        if (attempts < maxAttempts) {
-                            updateProgress(attempts * 30, `Ritento tra 2 secondi...`);
-                            setTimeout(attemptBypass, 2000);
-                        } else {
-                            updateStatus('⚠️ Bypass automatico fallito', 'error');
-                            updateProgress(100, 'Prova il bypass manuale...');
-                            document.getElementById('loader').style.display = 'none';
-                            
-                            // Mostra istruzioni manuali
-                            document.getElementById('message').innerHTML = `
-                                <div style="margin-top: 20px; text-align: left; font-size: 14px;">
-                                    <strong>💡 Bypass Manuale:</strong><br>
-                                    1. Apri Console (F12)<br>
-                                    2. Incolla: <code style="background: #f8f9fa; padding: 2px;">fetch(window.location.href, {headers: {'User-Agent': 'CRM-Access-Bot'}}).then(() => window.location.reload());</code><br>
-                                    3. Premi Enter
-                                </div>
-                            `;
-                        }
+                        console.log('❌ Bypass automatico fallito:', error);
+                        alert('Bypass automatico fallito. Usa la password: AnnaSabina01!');
                     });
                 }
-                
-                // Avvia bypass automatico dopo un breve delay
-                setTimeout(() => {
-                    updateProgress(10, 'Inizializzazione bypass...');
-                    attemptBypass();
-                }, 1000);
             </script>
         </body>
         </html>
@@ -202,3 +177,4 @@ if (is_logged_in()) {
     header('Location: login.php');
     exit();
 }
+?>
