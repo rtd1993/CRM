@@ -89,7 +89,7 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
         
         // Recupera i dati del task prima di eliminarlo
         $stmt = $pdo->prepare("
-            SELECT tc.*, c.`Cognome/Ragione sociale`, c.Nome, c.`Link cartella`
+            SELECT tc.*, c.`Cognome/Ragione sociale`, c.Nome, c.`Codice fiscale`
             FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id 
             WHERE tc.id = ?
@@ -103,9 +103,10 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 $nome_cliente = "Cliente ID " . $task_data['cliente_id'];
             }
             
-            // **NUOVO**: Log del task completato nella cartella del cliente
-            if (!empty($task_data['Link cartella']) && isset($_SESSION['user_name'])) {
-                $cartella_cliente = $task_data['Link cartella'];
+            // Salva il log del task completato nella cartella del cliente
+            if (!empty($task_data['Codice fiscale']) && isset($_SESSION['user_name'])) {
+                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Codice fiscale']);
+                $cartella_cliente = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
                 
                 // Assicurati che la cartella esista
                 if (!is_dir($cartella_cliente)) {
@@ -116,7 +117,15 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 $data_completamento = date('d/m/Y H:i:s');
                 $utente_completamento = $_SESSION['user_name'];
                 
-                $log_entry = "[{$data_completamento}] Task: {$task_data['descrizione']} | Completato da: {$utente_completamento}" . PHP_EOL;
+                $log_entry = sprintf(
+                    "[%s] TASK CLIENTE COMPLETATO: %s | Cliente: %s | Utente: %s | Scadenza: %s | Ricorrente: %s\n",
+                    $data_completamento,
+                    $task_data['descrizione'],
+                    $nome_cliente,
+                    $utente_completamento,
+                    date('d/m/Y', strtotime($task_data['scadenza'])),
+                    (!empty($task_data['ricorrenza']) && $task_data['ricorrenza'] > 0) ? "Sì (ogni {$task_data['ricorrenza']} giorni)" : "No"
+                );
                 
                 // Aggiungi al file di log (crea se non esiste)
                 file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);

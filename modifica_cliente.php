@@ -551,9 +551,7 @@ $sezioni = [
     </style>
 
 <div class="modifica-header">
-    <a href="info_cliente.php?id=<?php echo $cliente_id; ?>" class="back-btn">
-        <i class="fas fa-arrow-left"></i> Indietro
-    </a>
+    
     <h2><i class="fas fa-user-edit"></i> Modifica Cliente</h2>
     <p>ID: <?php echo htmlspecialchars($cliente['id']); ?> - <?php echo htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A'); ?></p>
 </div>
