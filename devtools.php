@@ -422,6 +422,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
                     <span><?= $status_text ?></span>
                     <small>systemctl node-socket</small>
                 </div>
+                <div style="font-size: 11px; color: #6c757d; margin-bottom: 10px;">
+                    <strong>Dipendenze:</strong> Apache2 + MySQL<br>
+                    <em>Avvio ritardato di 5 secondi</em>
+                </div>
                 <div class="service-controls">
                     <form method="post" style="display: inline;">
                         <input type="hidden" name="service_action" value="node_start">
