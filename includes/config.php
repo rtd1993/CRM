@@ -13,9 +13,9 @@ const BASE_URL = 'https://ascontabilmente.homes';
 // Socket.IO Configuration
 // Usa l'URL del tunnel Cloudflare per Socket.IO
 function getSocketIOUrl() {
-    // Se siamo in un tunnel Cloudflare, usa il sottodominio socket
+    // Se siamo in un tunnel Cloudflare, usa il dominio principale con reverse proxy
     if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'ascontabilmente.homes') !== false) {
-        return "https://socket.ascontabilmente.homes";
+        return "https://ascontabilmente.homes";
     }
     
     // Fallback per accesso locale

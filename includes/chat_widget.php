@@ -1,6 +1,6 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
 <link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="<?= getSocketIOUrl() ?>/socket.io/socket.io.js"></script>
 
 <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
