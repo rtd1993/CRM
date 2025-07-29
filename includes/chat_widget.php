@@ -103,43 +103,57 @@ const user_name = <?= json_encode($_SESSION['user_name']) ?>;
 
 // Definisci inviaMsg immediatamente (placeholder)
 window.inviaMsg = function() {
-    console.log('Socket.IO non ancora pronto');
+    console.log('Socket.IO non ancora pronto - funzione placeholder');
 };
+
+// Debug: controlla se Socket.IO è già disponibile
+console.log('Tipo di io:', typeof io);
+console.log('IO oggetto:', window.io);
 
 // Aspetta che Socket.IO sia caricato
 function initializeSocketIO() {
+    console.log('Controllo Socket.IO... typeof io:', typeof io);
     if (typeof io === 'undefined') {
-        console.log('Socket.IO non ancora caricato, riprovo...');
+        console.log('Socket.IO non ancora caricato, riprovo in 500ms...');
         setTimeout(initializeSocketIO, 500);
         return;
     }
     
-    console.log('Socket.IO caricato, inizializzo...');
-    const socket = io('<?= getSocketIOUrl() ?>');
+    console.log('✅ Socket.IO caricato, inizializzo connessione...');
+    try {
+        const socket = io('<?= getSocketIOUrl() ?>');
+        console.log('Socket creato:', socket);
 
-    socket.emit("register", user_id);
+        socket.emit("register", user_id);
+        console.log('Registrazione utente inviata:', user_id);
 
-    // Sovrascrivi inviaMsg con la versione funzionale
-    window.inviaMsg = function() {
-        const input = document.getElementById("chat-input");
-        const testo = input.value.trim();
-        if (!testo) return;
-        socket.emit("chat message", {
-            utente_id: user_id,
-            utente_nome: user_name,
-            testo: testo
+        // Sovrascrivi inviaMsg con la versione funzionale
+        window.inviaMsg = function() {
+            console.log('inviaMsg chiamata con Socket.IO pronto');
+            const input = document.getElementById("chat-input");
+            const testo = input.value.trim();
+            if (!testo) return;
+            console.log('Invio messaggio:', testo);
+            socket.emit("chat message", {
+                utente_id: user_id,
+                utente_nome: user_name,
+                testo: testo
+            });
+            input.value = "";
+        };
+
+        socket.on("chat message", data => {
+            console.log('Messaggio ricevuto:', data);
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${data.utente_nome}</strong>: ${data.testo}`;
+            document.getElementById("chat-messages").appendChild(div);
+            document.getElementById("chat-messages").scrollTop = 9999;
         });
-        input.value = "";
-    };
-
-    socket.on("chat message", data => {
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${data.utente_nome}</strong>: ${data.testo}`;
-        document.getElementById("chat-messages").appendChild(div);
-        document.getElementById("chat-messages").scrollTop = 9999;
-    });
-    
-    console.log('Chat inizializzata correttamente');
+        
+        console.log('✅ Chat inizializzata correttamente');
+    } catch (error) {
+        console.error('❌ Errore inizializzazione Socket.IO:', error);
+    }
 }
 
 // Avvia inizializzazione quando il DOM è pronto
