@@ -1919,12 +1919,8 @@ function handleModalKeydown(e) {
 
 // Funzione per download diretto
 function downloadFile(path) {
-    const link = document.createElement('a');
-    link.href = 'download.php?path=' + encodeURIComponent(path);
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Usa window.open per mantenere i cookie di sessione
+    window.open('download.php?path=' + encodeURIComponent(path), '_blank');
     
     showNotification('📥 Download avviato!', 'success');
 }
