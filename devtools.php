@@ -8,9 +8,14 @@ if ($_SESSION['user_role'] !== 'developer') {
     die("Accesso riservato ai developer.");
 }
 
-$messaggio = "";
-$risultati = [];
-$campi = [];
+echo "<h2>🔧 DevTools – Console di Sviluppo</h2>";
+echo "<p>Versione temporanea - In fase di ricostruzione...</p>";
+echo "<p>Servizi disponibili tramite systemctl su server.</p>";
+?>
+
+</main>
+</body>
+</html>
 
 // Esegui query SQL manuale
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql'])) {
