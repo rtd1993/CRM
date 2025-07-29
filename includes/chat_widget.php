@@ -101,11 +101,16 @@ document.addEventListener('DOMContentLoaded', function() {
 const user_id = <?= json_encode($_SESSION['user_id']) ?>;
 const user_name = <?= json_encode($_SESSION['user_name']) ?>;
 
+// Definisci inviaMsg immediatamente (placeholder)
+window.inviaMsg = function() {
+    console.log('Socket.IO non ancora pronto');
+};
+
 // Aspetta che Socket.IO sia caricato
 function initializeSocketIO() {
     if (typeof io === 'undefined') {
         console.log('Socket.IO non ancora caricato, riprovo...');
-        setTimeout(initializeSocketIO, 100);
+        setTimeout(initializeSocketIO, 500);
         return;
     }
     
@@ -114,7 +119,8 @@ function initializeSocketIO() {
 
     socket.emit("register", user_id);
 
-    function inviaMsg() {
+    // Sovrascrivi inviaMsg con la versione funzionale
+    window.inviaMsg = function() {
         const input = document.getElementById("chat-input");
         const testo = input.value.trim();
         if (!testo) return;
@@ -124,7 +130,7 @@ function initializeSocketIO() {
             testo: testo
         });
         input.value = "";
-    }
+    };
 
     socket.on("chat message", data => {
         const div = document.createElement("div");
@@ -133,8 +139,7 @@ function initializeSocketIO() {
         document.getElementById("chat-messages").scrollTop = 9999;
     });
     
-    // Rendi la funzione globale per onclick
-    window.inviaMsg = inviaMsg;
+    console.log('Chat inizializzata correttamente');
 }
 
 // Avvia inizializzazione quando il DOM è pronto
@@ -156,7 +161,8 @@ fetch("/api/chat_cronologia.php")
         div.appendChild(p);
     });
     div.scrollTop = div.scrollHeight;
-});
+})
+.catch(err => console.error('Errore caricamento cronologia:', err));
 
 </script>
 <?php endif; ?>
