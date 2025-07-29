@@ -771,6 +771,32 @@ foreach ($tasks as $task) {
     letter-spacing: 0.5px;
 }
 
+/* Pulsante crea task nelle statistiche */
+.stat-item.create-button {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+    border: 2px solid #6f42c1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+
+.stat-item.create-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+}
+
+.stat-item.create-button .btn {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.stat-item.create-button .btn:hover {
+    color: white;
+    text-decoration: none;
+}
+
 /* **NUOVO**: Area visualizzazione cliente */
 .client-view-section {
     background: #fff;
@@ -874,33 +900,8 @@ foreach ($tasks as $task) {
 <?php endif; ?>
 
 <div class="main-container">
-    <!-- Pannello Azioni Rapide -->
-    <div class="form-panel">
-        <h3>
-            <i class="fas fa-plus-circle"></i>
-            Gestione Task Clienti
-        </h3>
-        
-        <div class="quick-actions">
-            <a href="crea_task_clienti.php" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Crea Nuovo Task Cliente
-            </a>
-            
-            <div class="info-box">
-                <p><strong>💡 Come funziona:</strong></p>
-                <ul>
-                    <li>✅ Crea task specifici per ogni cliente</li>
-                    <li>📅 Imposta scadenze e priorità</li>
-                    <li>🔄 Configura task ricorrenti automatici</li>
-                    <li>📊 Monitora lo stato di avanzamento</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Pannello Lista Task -->
-    <div class="tasks-panel">
+    <!-- Pannello Lista Task a larghezza piena -->
+    <div class="tasks-panel" style="grid-column: 1 / -1;">
         <!-- **NUOVO**: Sezione Filtri -->
         <div class="filters-section">
             <h4><i class="fas fa-filter"></i> Filtri</h4>
@@ -984,6 +985,13 @@ foreach ($tasks as $task) {
                     <i class="fas fa-calendar-alt"></i>
                     <span class="stat-number"><?= $stats['quindici_giorni'] ?></span>
                     <span class="stat-label">15 giorni</span>
+                </div>
+                
+                <!-- Pulsante Crea Task -->
+                <div class="stat-item create-button">
+                    <a href="crea_task_clienti.php" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;">
+                        <i class="fas fa-plus"></i> Nuovo Task
+                    </a>
                 </div>
             </div>
         </div>
