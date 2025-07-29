@@ -39,14 +39,36 @@ function toggleChatWidget(id) {
 
 <script>
 let clientiLoaded = false;
+let currentClienteId = null;
+let praticheSocket = null;
 
 function togglePraticaChat() {
     document.getElementById('pratica-chat-widget').classList.toggle('open');
 }
 
+// Inizializza Socket.IO per le pratiche
+function initializePraticheSocket() {
+    if (typeof io === 'undefined') {
+        setTimeout(initializePraticheSocket, 500);
+        return;
+    }
+    
+    const socketUrl = '<?= getSocketIOUrl() ?>';
+    praticheSocket = io(socketUrl);
+    
+    praticheSocket.emit("register", <?= json_encode($_SESSION['user_id']) ?>);
+    
+    // Ricevi appunti in tempo reale
+    praticheSocket.on("appunto aggiunto", data => {
+        if (data.pratica_id == currentClienteId) {
+            addMessageToChat(data.utente_nome, data.testo, data.data_inserimento);
+        }
+    });
+}
+
 // Lazy loading dei clienti
 function loadClientiList() {
-    if (clientiLoaded) return; // Evita caricamenti multipli
+    if (clientiLoaded) return;
     
     const select = document.getElementById('clienteSelect');
     select.innerHTML = '<option value="" disabled>Caricamento...</option>';
@@ -72,26 +94,20 @@ function loadClientiList() {
 
 document.getElementById('clienteSelect').addEventListener('change', function() {
     let clienteId = this.value;
+    currentClienteId = clienteId;
+    
     document.getElementById('praticaMsg').disabled = !clienteId;
     document.getElementById('sendPraticaBtn').disabled = !clienteId;
+    
     if (clienteId) {
         loadPraticaChat(clienteId);
     }
 });
 
-// Cache per i messaggi per evitare richieste ripetute
-let chatCache = {};
-
 function loadPraticaChat(clienteId) {
     const chatBox = document.getElementById('praticaChatBox');
-    
-    // Usa cache se disponibile
-    if (chatCache[clienteId]) {
-        renderChatMessages(chatCache[clienteId], chatBox);
-        return;
-    }
-    
     chatBox.innerHTML = '<span class="text-secondary">Caricamento...</span>';
+    
     const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
     
     fetch(baseUrl + '/ajax/pratica_chat_fetch.php?cliente_id=' + clienteId)
@@ -102,7 +118,6 @@ function loadPraticaChat(clienteId) {
         return r.json();
       })
       .then(messages => {
-        chatCache[clienteId] = messages; // Salva in cache
         renderChatMessages(messages, chatBox);
       })
       .catch(error => {
@@ -113,16 +128,18 @@ function loadPraticaChat(clienteId) {
 
 // Rendering ottimizzato dei messaggi
 function renderChatMessages(messages, chatBox) {
+    chatBox.innerHTML = '';
+    
     if (!messages.length) {
         chatBox.innerHTML = '<small class="text-muted">Nessun messaggio per questa pratica.</small>';
         return;
     }
     
-    // Usa DocumentFragment per performance migliori
     const fragment = document.createDocumentFragment();
     
     messages.forEach(m => {
         const msgDiv = document.createElement('div');
+        msgDiv.className = 'pratica-message';
         msgDiv.innerHTML = `<strong>${m.utente}</strong> <small class="text-muted">${m.data}</small><br>${m.testo}`;
         
         const hr = document.createElement('hr');
@@ -132,44 +149,86 @@ function renderChatMessages(messages, chatBox) {
         fragment.appendChild(hr);
     });
     
-    chatBox.innerHTML = '';
     chatBox.appendChild(fragment);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Aggiungi un singolo messaggio alla chat (per tempo reale)
+function addMessageToChat(utente, testo, timestamp) {
+    const chatBox = document.getElementById('praticaChatBox');
+    
+    // Se la chat è vuota, rimuovi il messaggio placeholder
+    if (chatBox.innerHTML.includes('Nessun messaggio')) {
+        chatBox.innerHTML = '';
+    }
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'pratica-message';
+    
+    const data = new Date(timestamp).toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    msgDiv.innerHTML = `<strong>${utente}</strong> <small class="text-muted">${data}</small><br>${testo}`;
+    
+    const hr = document.createElement('hr');
+    hr.style.margin = '0.3em 0';
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.appendChild(hr);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    // Notifica sonora
+    playNotificationSound();
+}
+
+// Invio messaggio via Socket.IO
 document.getElementById('praticaChatForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    
     let clienteId = document.getElementById('clienteSelect').value;
     let msg = document.getElementById('praticaMsg').value.trim();
-    if (!clienteId || !msg) return;
     
-    const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
-    fetch(baseUrl + '/ajax/pratica_chat_send.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'cliente_id=' + encodeURIComponent(clienteId) + '&msg=' + encodeURIComponent(msg)
-    })
-    .then(r => {
-        if (!r.ok) {
-            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
-        }
-        return r.json();
-    })
-    .then(resp => {
-        if (resp.ok) {
-            // Invalida la cache per questo cliente
-            delete chatCache[clienteId];
-            loadPraticaChat(clienteId);
-            document.getElementById('praticaMsg').value = '';
-        } else {
-            console.error('Errore invio messaggio:', resp.error);
-            alert('Errore nell\'invio del messaggio: ' + (resp.error || 'Errore sconosciuto'));
-        }
-    })
-    .catch(error => {
-        console.error('Errore invio messaggio:', error);
-        alert('Errore nell\'invio del messaggio: ' + error.message);
+    if (!clienteId || !msg || !praticheSocket) return;
+    
+    // Invia via Socket.IO per tempo reale
+    praticheSocket.emit("nuovo appunto", {
+        utente_id: <?= json_encode($_SESSION['user_id']) ?>,
+        utente_nome: <?= json_encode($_SESSION['user_name']) ?>,
+        pratica_id: parseInt(clienteId),
+        testo: msg
     });
+    
+    document.getElementById('praticaMsg').value = '';
 });
+
+// Funzione per il suono di notifica
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+        console.log('Audio context not available');
+    }
+}
+
+// Inizializza Socket.IO quando il DOM è pronto
+document.addEventListener('DOMContentLoaded', initializePraticheSocket);
 </script>
 <?php endif; ?>
