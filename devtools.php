@@ -73,11 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
         case 'lt_restart':     $cmd = "sudo systemctl restart localtunnel 2>&1"; break;
         case 'lt_status':      $cmd = "sudo systemctl status localtunnel --no-pager 2>&1"; break;
         case 'lt_logs':        $cmd = "sudo journalctl -u localtunnel --no-pager -n 20 2>&1"; break;
-        
-        case 'wg_start':       $cmd = "sudo wg-quick up wg0 2>&1"; break;
-        case 'wg_stop':        $cmd = "sudo wg-quick down wg0 2>&1"; break;
-        case 'wg_restart':     $cmd = "sudo wg-quick down wg0 2>&1 && sudo wg-quick up wg0 2>&1"; break;
-        case 'wg_status':      $cmd = "sudo wg show 2>&1"; break;
     }
     if ($cmd) {
         $service_output = shell_exec($cmd);
@@ -482,7 +477,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
                 </div>
                 <?php if ($status === "active"): ?>
                     <div style="margin-top: 10px; padding: 8px; background: #d4edda; border-radius: 4px; font-size: 12px;">
-                        <strong>🌐 URL:</strong> <a href="https://ascontabilemente.loca.lt" target="_blank">https://ascontabilemente.loca.lt</a>
+                                                <strong>🌐 URL:</strong> <a href="https://ascontabilemente.loca.lt" target="_blank">https://ascontabilemente.loca.lt</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <h4>🛠️ Installazione LocalTunnel Service</h4>
                     </div>
                 <?php endif; ?>
             </div>
