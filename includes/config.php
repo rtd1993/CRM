@@ -1,5 +1,17 @@
 <?php
-// File: includes/config.php
+// Fi// Socket.IO Configuration
+// Usa l'URL del tunnel Cloudflare per Socket.IO
+function getSocketIOUrl() {
+    // Se siamo in un tunnel Cloudflare, usa il reverse proxy Apache
+    if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'ascontabilmente.homes') !== false) {
+        return "https://ascontabilmente.homes";
+    }
+    
+    // Fallback per accesso locale
+    $server_ip = $_SERVER['SERVER_ADDR'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $server_ip = explode(':', $server_ip)[0];
+    return "http://{$server_ip}:3001";
+}config.php
 
 // Configurazione globale
 const DB_HOST = 'localhost';
