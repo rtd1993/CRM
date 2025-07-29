@@ -13,8 +13,13 @@ const BASE_URL = 'https://ascontabilmente.homes';
 // Socket.IO Configuration
 // Usa l'URL del tunnel Cloudflare per Socket.IO
 function getSocketIOUrl() {
-    // Se siamo in un tunnel Cloudflare, usa sempre HTTPS attraverso il reverse proxy Apache
-    if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'ascontabilmente.homes') !== false) {
+    // Controlla prima CF-Connecting-IP per rilevare Cloudflare, poi HTTP_HOST
+    $isCloudflare = isset($_SERVER['HTTP_CF_CONNECTING_IP']) || 
+                   isset($_SERVER['HTTP_CF_RAY']) ||
+                   (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'ascontabilmente.homes') !== false);
+    
+    // Se siamo dietro Cloudflare o sul dominio corretto, usa sempre HTTPS
+    if ($isCloudflare) {
         return "https://ascontabilmente.homes";
     }
     
@@ -22,8 +27,8 @@ function getSocketIOUrl() {
     $server_ip = $_SERVER['SERVER_ADDR'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
     $server_ip = explode(':', $server_ip)[0];
     
-    // Se siamo su localhost, prova prima HTTPS poi HTTP
-    if ($server_ip === 'localhost' || $server_ip === '127.0.0.1') {
+    // Se siamo su localhost, usa il tunnel
+    if ($server_ip === 'localhost' || $server_ip === '127.0.0.1' || $server_ip === '::1') {
         return "https://ascontabilmente.homes"; // Usa sempre il tunnel anche per localhost
     }
     
