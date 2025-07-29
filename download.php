@@ -8,6 +8,9 @@ require_login();
 $base_dir = __DIR__ . '/local_drive/';
 $path = $_GET['path'] ?? '';
 
+// Decodifica il percorso URL-encoded
+$path = urldecode($path);
+
 // Debug: verifica il percorso ricevuto
 error_log("Download richiesto per: " . $path);
 
