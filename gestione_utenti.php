@@ -407,11 +407,6 @@ if (isset($_GET['edit_id'])) {
 }
 </style>
 
-<div class="users-header">
-    <h2>👥 Gestione Utenti</h2>
-    <p>Amministrazione account e permessi utenti</p>
-</div>
-
 <?php if (isset($_GET['success']) && $_GET['success'] == 1): ?>
     <div class="success-message">
         Modifiche salvate con successo!
