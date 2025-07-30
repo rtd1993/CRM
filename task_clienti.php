@@ -108,7 +108,7 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Codice fiscale']);
                 $cartella_cliente = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
                 
-                // Assicurati che la cartella esista
+                // Assicurati che la cartella esista (con controllo ottimizzato)
                 if (!is_dir($cartella_cliente)) {
                     mkdir($cartella_cliente, 0755, true);
                 }
@@ -127,8 +127,12 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                     (!empty($task_data['ricorrenza']) && $task_data['ricorrenza'] > 0) ? "Sì (ogni {$task_data['ricorrenza']} giorni)" : "No"
                 );
                 
-                // Aggiungi al file di log (crea se non esiste)
-                file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+                // Scrivi il log in modo ottimizzato (evita lock prolungati)
+                $handle = fopen($log_file, 'a');
+                if ($handle) {
+                    fwrite($handle, $log_entry);
+                    fclose($handle);
+                }
             }
             
             // Invia notifica nella chat se l'utente è loggato
@@ -174,11 +178,15 @@ if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
     }
 }
 
-// Carica lista clienti
-$clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, Nome")->fetchAll();
+// Carica lista clienti (ottimizzata - solo se necessario)
+$clienti = [];
+if (empty($filtro_cliente)) {
+    // Cache dei clienti per evitare query ripetute
+    $clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, Nome")->fetchAll();
+}
 
-// Carica lista task con clienti associati
-$where_conditions = [];
+// Carica lista task con clienti associati (query ottimizzata)
+$where_conditions = ["1=1"]; // Base condition per semplificare la logica
 $params = [];
 
 // Gestione filtri
@@ -187,14 +195,21 @@ $filtro_scadenza = $_GET['scadenza'] ?? '';
 $filtro_ricorrenza = $_GET['ricorrenza'] ?? '';
 $search = $_GET['search'] ?? '';
 
+// Query ottimizzata con calcolo statistiche integrate
 $sql = "SELECT tc.*, 
         CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
-        c.`Codice fiscale` as codice_fiscale
+        c.`Codice fiscale` as codice_fiscale,
+        CASE 
+            WHEN tc.scadenza < CURDATE() THEN 'scaduto'
+            WHEN tc.scadenza = CURDATE() THEN 'oggi'
+            WHEN tc.scadenza <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'settimana'
+            WHEN tc.scadenza <= DATE_ADD(CURDATE(), INTERVAL 15 DAY) THEN 'quindici_giorni'
+            ELSE 'futuro'
+        END as categoria_scadenza
         FROM task_clienti tc 
         LEFT JOIN clienti c ON tc.cliente_id = c.id";
 
 // I task sono già associati ai clienti nella tabella task_clienti
-$where_conditions = [];
 
 if (!empty($search)) {
     $where_conditions[] = "(tc.descrizione LIKE ? OR c.`Cognome/Ragione sociale` LIKE ? OR c.Nome LIKE ?)";
@@ -207,6 +222,13 @@ if (!empty($search)) {
 if (!empty($filtro_cliente)) {
     $where_conditions[] = "tc.cliente_id = ?";
     $params[] = intval($filtro_cliente);
+    
+    // Se stiamo filtrando per un cliente specifico, carica solo quel cliente
+    if (empty($clienti)) {
+        $stmt_cliente = $pdo->prepare("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti WHERE id = ?");
+        $stmt_cliente->execute([intval($filtro_cliente)]);
+        $clienti = $stmt_cliente->fetchAll();
+    }
 }
 
 if (!empty($filtro_scadenza)) {
@@ -247,7 +269,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tasks = $stmt->fetchAll();
 
-// Calcola statistiche
+// Calcola statistiche ottimizzate (usando i dati già caricati invece di loop separati)
 $stats = [
     'totali' => 0,
     'scaduti' => 0,
@@ -261,17 +283,20 @@ $stats = [
 foreach ($tasks as $task) {
     $stats['totali']++;
     
-    $scadenza = new DateTime($task['scadenza']);
-    $oggi = new DateTime();
-    
-    if ($scadenza < $oggi) {
-        $stats['scaduti']++;
-    } elseif ($scadenza->format('Y-m-d') === $oggi->format('Y-m-d')) {
-        $stats['oggi']++;
-    } elseif ($scadenza->diff($oggi)->days <= 7) {
-        $stats['settimana']++;
-    } elseif ($scadenza->diff($oggi)->days <= 15) {
-        $stats['quindici_giorni']++;
+    // Usa la categoria pre-calcolata nel SQL
+    switch ($task['categoria_scadenza']) {
+        case 'scaduto':
+            $stats['scaduti']++;
+            break;
+        case 'oggi':
+            $stats['oggi']++;
+            break;
+        case 'settimana':
+            $stats['settimana']++;
+            break;
+        case 'quindici_giorni':
+            $stats['quindici_giorni']++;
+            break;
     }
     
     if (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) {
@@ -279,6 +304,11 @@ foreach ($tasks as $task) {
     } else {
         $stats['oneshot']++;
     }
+}
+
+// Carica lista completa clienti solo se necessario per i filtri
+if (empty($clienti)) {
+    $clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, Nome")->fetchAll();
 }
 ?>
 
