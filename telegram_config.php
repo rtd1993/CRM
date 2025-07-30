@@ -291,10 +291,6 @@ $users = $stmt->fetchAll();
 }
 </style>
 
-<div class="telegram-header">
-    <h2>📱 Configurazione Telegram</h2>
-    <p>Gestisci le notifiche Telegram per gli utenti offline</p>
-</div>
 
 <?php if (isset($success_message)): ?>
     <div class="success-message">

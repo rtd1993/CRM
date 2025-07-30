@@ -201,10 +201,6 @@ if ($bot_token && $bot_token !== 'INSERISCI_IL_TUO_BOT_TOKEN_QUI') {
 }
 </style>
 
-<div class="telegram-id-header">
-    <h2>🔍 Trova il tuo Chat ID</h2>
-    <p>Strumento per ottenere il Chat ID di Telegram necessario per le notifiche</p>
-</div>
 
 <div class="setup-instructions">
     <h3>📋 Istruzioni per ottenere il Chat ID</h3>

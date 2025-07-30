@@ -223,11 +223,6 @@ $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 </style>
 
-<div class="chat-header">
-    <h2>💬 Chat CRM</h2>
-    <p>Comunicazione in tempo reale e gestione appunti clienti</p>
-</div>
-
 <div class="chat-container">
     <!-- Chat di gruppo -->
     <div class="chat-section">
