@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="30" r="1.5" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="60" r="1" fill="rgba(255,255,255,0.08)"/><circle cx="20" cy="80" r="1.2" fill="rgba(255,255,255,0.06)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grain)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.08)"/><circle cx="50" cy="30" r="1.5" fill="rgba(52,152,219,0.1)"/><circle cx="80" cy="60" r="1" fill="rgba(255,255,255,0.06)"/><circle cx="20" cy="80" r="1.2" fill="rgba(52,152,219,0.08)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grain)"/></svg>');
             animation: float 20s ease-in-out infinite;
         }
         
@@ -79,20 +79,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: relative;
             z-index: 10;
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             width: 100%;
             max-width: 900px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             min-height: 600px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
         }
         
         .welcome-section {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            color: #ecf0f1;
             padding: 3rem;
             display: flex;
             flex-direction: column;
@@ -100,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             text-align: center;
             position: relative;
+            border-bottom: 3px solid #3498db;
         }
         
         .welcome-section::before {
@@ -109,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="40" cy="70" r="1.8" fill="rgba(255,255,255,0.06)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(52,152,219,0.15)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="70" r="1.8" fill="rgba(52,152,219,0.12)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.08)"/></svg>');
             animation: float 15s ease-in-out infinite reverse;
         }
         
@@ -118,17 +120,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             height: 120px;
             margin-bottom: 1.5rem;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             position: relative;
             z-index: 2;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
         }
         
         .welcome-title {
             font-size: 2.5rem;
-            font-weight: 300;
+            font-weight: 600;
             margin-bottom: 1rem;
             position: relative;
             z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .welcome-subtitle {
@@ -138,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             line-height: 1.6;
             position: relative;
             z-index: 2;
+            color: #bdc3c7;
         }
         
         .features {
@@ -150,16 +159,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .feature {
             text-align: center;
             opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feature:hover {
+            opacity: 1;
         }
         
         .feature i {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
             display: block;
+            color: #3498db;
         }
         
         .feature span {
             font-size: 0.9rem;
+            color: #ecf0f1;
         }
         
         .login-section {
@@ -175,14 +191,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .login-header h2 {
-            color: #333;
+            color: #2c3e50;
             font-size: 2rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
         
         .login-header p {
-            color: #666;
+            color: #7f8c8d;
             font-size: 1rem;
         }
         
@@ -196,36 +212,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #999;
+            color: #95a5a6;
             z-index: 2;
+            transition: color 0.3s ease;
         }
         
         .form-input {
             width: 100%;
             padding: 15px 15px 15px 45px;
-            border: 2px solid #e1e5e9;
+            border: 2px solid #ecf0f1;
             border-radius: 12px;
             font-size: 1rem;
             transition: all 0.3s ease;
             background: #f8f9fa;
+            color: #2c3e50;
         }
         
         .form-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3498db;
             background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
             transform: translateY(-1px);
         }
         
+        .form-input:focus + i,
+        .form-group:focus-within i {
+            color: #3498db;
+        }
+        
         .form-input::placeholder {
-            color: #aaa;
+            color: #95a5a6;
         }
         
         .login-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border: none;
             border-radius: 12px;
@@ -234,11 +257,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
         
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
         }
         
         .login-btn:active {
@@ -246,11 +271,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .error {
-            background: #fee;
-            color: #c33;
+            background: #fadbd8;
+            color: #e74c3c;
             padding: 12px 16px;
             border-radius: 8px;
-            border: 1px solid #fcc;
+            border: 1px solid #f1948a;
             margin-bottom: 1.5rem;
             text-align: center;
             font-weight: 500;
