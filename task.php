@@ -447,12 +447,6 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 </style>
-
-<div class="task-header">
-    <h2>📋 Task Mensili</h2>
-    <p>Gestione e monitoraggio delle attività</p>
-</div>
-
 <?php
 // Messaggi di successo/errore
 $success_message = '';

@@ -135,11 +135,6 @@ require_once __DIR__ . '/includes/header.php';
 }
 </style>
 
-<div class="info-header">
-    <h2>ℹ️ Informazioni Utili</h2>
-    <p>Accesso rapido ai principali servizi e portali istituzionali</p>
-</div>
-
 <?php
 // Link organizzati per categoria con icone
 $links_per_categoria = [
