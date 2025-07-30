@@ -400,13 +400,6 @@ foreach ($clienti as $c) {
 }
 </style>
 
-<div class="clienti-header">
-    <h2>👥 Database Clienti</h2>
-    <p>Gestione completa dei clienti e monitoraggio documenti</p>
-</div>
-
-
-
 <div class="clienti-controls">
     <form method="get" class="search-form">
         <div class="search-wrapper">
