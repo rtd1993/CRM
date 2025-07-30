@@ -402,11 +402,6 @@ $section_icons = [
 ];
 ?>
 
-<div class="client-header">
-    <h2>👤 Informazioni Cliente</h2>
-    <p>Visualizza tutti i dettagli del cliente selezionato</p>
-</div>
-
 <div class="client-summary">
     <h3><?= htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A') ?></h3>
     <div class="client-summary-grid">

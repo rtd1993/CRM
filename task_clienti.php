@@ -926,11 +926,6 @@ if (empty($clienti)) {
 }
 </style>
 
-<div class="task-header">
-    <h2><i class="fas fa-tasks"></i> Task Clienti</h2>
-    <p>Gestisci task ricorrenti e one-shot per i tuoi clienti</p>
-</div>
-
 <?php if ($messaggio): ?>
     <div class="alert <?= strpos($messaggio, 'Errore') !== false ? 'alert-error' : 'alert-success' ?>">
         <i class="fas <?= strpos($messaggio, 'Errore') !== false ? 'fa-exclamation-triangle' : 'fa-check-circle' ?>"></i>
