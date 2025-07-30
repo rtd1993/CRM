@@ -2,6 +2,10 @@
 require_once 'includes/auth.php';
 require_once 'includes/db.php';
 require_once 'includes/header.php';
+require_once 'includes/email_config.php';
+
+// Verifica configurazione email
+$config_email = verificaConfigurazioneEmail();
 
 // Recupera tutti i clienti con email
 $stmt = $pdo->query("SELECT id, `Cognome/Ragione sociale` as ragione_sociale, Nome, `Codice fiscale` as codice_fiscale, `Partita IVA` as partita_iva, Mail FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome/Ragione sociale`, Nome");
@@ -15,107 +19,104 @@ $error = '';
 
 // Gestione invio email
 if ($_POST && isset($_POST['invia_email'])) {
-    $template_id = $_POST['template_id'];
-    $clienti_selezionati = $_POST['clienti'] ?? [];
-    $oggetto_modificato = trim($_POST['oggetto_modificato']);
-    $corpo_modificato = trim($_POST['corpo_modificato']);
-    
-    if (empty($template_id) || empty($clienti_selezionati) || empty($oggetto_modificato) || empty($corpo_modificato)) {
-        $error = "Tutti i campi sono obbligatori e devi selezionare almeno un cliente.";
+    if (!$config_email['configurata']) {
+        $error = $config_email['messaggio'];
     } else {
-        $email_mittente = 'gestione.ascontabilmente@gmail.com';
-        $successi = 0;
-        $errori = 0;
+        $template_id = $_POST['template_id'];
+        $clienti_selezionati = $_POST['clienti'] ?? [];
+        $oggetto_modificato = trim($_POST['oggetto_modificato']);
+        $corpo_modificato = trim($_POST['corpo_modificato']);
         
-        foreach ($clienti_selezionati as $cliente_id) {
-            // Recupera dati cliente
-            $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
-            $stmt->execute([$cliente_id]);
-            $cliente = $stmt->fetch();
+        if (empty($template_id) || empty($clienti_selezionati) || empty($oggetto_modificato) || empty($corpo_modificato)) {
+            $error = "Tutti i campi sono obbligatori e devi selezionare almeno un cliente.";
+        } else {
+            $successi = 0;
+            $errori = 0;
+            $dettagli_errori = [];
             
-            if ($cliente && !empty($cliente['Mail'])) {
-                // Sostituisci le variabili nel testo
-                $oggetto_finale = str_replace(
-                    ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
-                    [
-                        $cliente['Nome'] ?? '',
-                        $cliente['Cognome/Ragione sociale'] ?? '',
-                        $cliente['Cognome/Ragione sociale'] ?? '',
-                        $cliente['Codice fiscale'] ?? '',
-                        $cliente['Partita IVA'] ?? ''
-                    ],
-                    $oggetto_modificato
-                );
+            foreach ($clienti_selezionati as $cliente_id) {
+                // Recupera dati cliente
+                $stmt = $pdo->prepare("SELECT * FROM clienti WHERE id = ?");
+                $stmt->execute([$cliente_id]);
+                $cliente = $stmt->fetch();
                 
-                $corpo_finale = str_replace(
-                    ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
-                    [
-                        $cliente['Nome'] ?? '',
-                        $cliente['Cognome/Ragione sociale'] ?? '',
-                        $cliente['Cognome/Ragione sociale'] ?? '',
-                        $cliente['Codice fiscale'] ?? '',
-                        $cliente['Partita IVA'] ?? ''
-                    ],
-                    $corpo_modificato
-                );
-                
-                // Prepara headers email
-                $headers = [
-                    'From' => $email_mittente,
-                    'Reply-To' => $email_mittente,
-                    'Content-Type' => 'text/plain; charset=UTF-8',
-                    'Content-Transfer-Encoding' => '8bit',
-                    'X-Mailer' => 'PHP/' . phpversion()
-                ];
-                
-                $headers_string = '';
-                foreach ($headers as $key => $value) {
-                    $headers_string .= $key . ': ' . $value . "\r\n";
-                }
-                
-                // Invia email
-                $esito = mail($cliente['Mail'], $oggetto_finale, $corpo_finale, $headers_string);
-                
-                // Log dell'invio
-                $stmt = $pdo->prepare("INSERT INTO email_log (cliente_id, template_id, oggetto, corpo, destinatario_email, destinatario_nome, stato, messaggio_errore) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome/Ragione sociale'] ?? ''));
-                
-                if ($esito) {
-                    $stmt->execute([
-                        $cliente_id, 
-                        $template_id, 
-                        $oggetto_finale, 
-                        $corpo_finale, 
-                        $cliente['Mail'], 
-                        $nome_completo, 
-                        'inviata', 
-                        null
-                    ]);
-                    $successi++;
-                } else {
-                    $stmt->execute([
-                        $cliente_id, 
-                        $template_id, 
-                        $oggetto_finale, 
-                        $corpo_finale, 
-                        $cliente['Mail'], 
-                        $nome_completo, 
-                        'fallita', 
-                        'Errore durante l\'invio'
-                    ]);
-                    $errori++;
+                if ($cliente && !empty($cliente['Mail'])) {
+                    // Sostituisci le variabili nel testo
+                    $oggetto_finale = str_replace(
+                        ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
+                        [
+                            $cliente['Nome'] ?? '',
+                            $cliente['Cognome/Ragione sociale'] ?? '',
+                            $cliente['Cognome/Ragione sociale'] ?? '',
+                            $cliente['Codice fiscale'] ?? '',
+                            $cliente['Partita IVA'] ?? ''
+                        ],
+                        $oggetto_modificato
+                    );
+                    
+                    $corpo_finale = str_replace(
+                        ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
+                        [
+                            $cliente['Nome'] ?? '',
+                            $cliente['Cognome/Ragione sociale'] ?? '',
+                            $cliente['Cognome/Ragione sociale'] ?? '',
+                            $cliente['Codice fiscale'] ?? '',
+                            $cliente['Partita IVA'] ?? ''
+                        ],
+                        $corpo_modificato
+                    );
+                    
+                    // Invia email tramite PHPMailer
+                    $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome/Ragione sociale'] ?? ''));
+                    $risultato = inviaEmailSMTP($cliente['Mail'], $nome_completo, $oggetto_finale, $corpo_finale);
+                    
+                    // Log dell'invio
+                    $stmt = $pdo->prepare("INSERT INTO email_log (cliente_id, template_id, oggetto, corpo, destinatario_email, destinatario_nome, stato, messaggio_errore) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    
+                    if ($risultato['success']) {
+                        $stmt->execute([
+                            $cliente_id, 
+                            $template_id, 
+                            $oggetto_finale, 
+                            $corpo_finale, 
+                            $cliente['Mail'], 
+                            $nome_completo, 
+                            'inviata', 
+                            null
+                        ]);
+                        $successi++;
+                    } else {
+                        $stmt->execute([
+                            $cliente_id, 
+                            $template_id, 
+                            $oggetto_finale, 
+                            $corpo_finale, 
+                            $cliente['Mail'], 
+                            $nome_completo, 
+                            'fallita', 
+                            $risultato['message']
+                        ]);
+                        $errori++;
+                        $dettagli_errori[] = "• $nome_completo ({$cliente['Mail']}): {$risultato['message']}";
+                    }
                 }
             }
-        }
-        
-        if ($successi > 0) {
-            $message = "Email inviate con successo: $successi. ";
-        }
-        if ($errori > 0) {
-            $message .= "Errori: $errori.";
-        }
-        if ($successi == 0 && $errori == 0) {
-            $error = "Nessuna email è stata inviata.";
+            
+            if ($successi > 0) {
+                $message = "✅ Email inviate con successo: <strong>$successi</strong>. ";
+            }
+            if ($errori > 0) {
+                $message .= "❌ Errori: <strong>$errori</strong>.";
+                if (!empty($dettagli_errori)) {
+                    $error = "Dettagli errori:\n" . implode("\n", array_slice($dettagli_errori, 0, 5));
+                    if (count($dettagli_errori) > 5) {
+                        $error .= "\n... e altri " . (count($dettagli_errori) - 5) . " errori.";
+                    }
+                }
+            }
+            if ($successi == 0 && $errori == 0) {
+                $error = "Nessuna email è stata inviata.";
+            }
         }
     }
 }
@@ -292,6 +293,22 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
                 Invio Email ai Clienti
             </h1>
             
+            <?php if (!$config_email['configurata']): ?>
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Configurazione email incompleta:</strong> <?php echo $config_email['messaggio']; ?>
+                    <br><br>
+                    <strong>Istruzioni per l'amministratore:</strong>
+                    <ol class="mb-0 mt-2">
+                        <li>Vai su <a href="https://myaccount.google.com/security" target="_blank">Account Google - Sicurezza</a></li>
+                        <li>Attiva la "Verifica in due passaggi"</li>
+                        <li>Genera una "Password per le app" specificatamente per questa applicazione</li>
+                        <li>Inserisci la password generata nel file <code>includes/email_config.php</code> nella costante <code>SMTP_PASSWORD</code></li>
+                    </ol>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
             <?php if ($message): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle me-2"></i><?php echo $message; ?>
@@ -301,7 +318,9 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
             
             <?php if ($error): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Errore:</strong><br>
+                    <?php echo nl2br(htmlspecialchars($error)); ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
@@ -451,10 +470,17 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
                         </div>
                         
                         <div class="text-center">
-                            <button type="submit" name="invia_email" class="btn btn-primary btn-lg" id="btnInvia">
+                            <button type="submit" name="invia_email" class="btn btn-primary btn-lg" id="btnInvia"
+                                    <?php echo !$config_email['configurata'] ? 'disabled title="Configurazione email incompleta"' : ''; ?>>
                                 <i class="fas fa-paper-plane me-2"></i>
-                                Invia Email
+                                <?php echo $config_email['configurata'] ? 'Invia Email' : 'Configurazione Richiesta'; ?>
                             </button>
+                            <?php if (!$config_email['configurata']): ?>
+                                <br><small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Contatta l'amministratore per completare la configurazione SMTP
+                                </small>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
