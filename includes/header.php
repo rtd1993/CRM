@@ -33,31 +33,54 @@ if (isset($_SESSION['user_id'])) {
     <?php endif; ?>
     <style>
         body {
-            background: #f7f9fb;
+            background: #f8f9fa;
         }
         header.crm-header {
-            background: linear-gradient(90deg, #0056b3 0%, #003366 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
             color: #fff;
             padding: 0;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.09);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-bottom: 3px solid #3498db;
         }
         .crm-header .crm-title {
             font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 2rem;
-            letter-spacing: 1px;
-            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            font-weight: 600;
             margin-bottom: 0;
-            padding: 0 0 2px 0;
-            color: #ffcc00;
-            text-shadow: 0 1px 0 #003366;
+            padding: 0;
+            color: #ecf0f1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .crm-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        .crm-logo:hover {
+            transform: scale(1.05);
         }
         .crm-header .crm-user {
-            font-size: 0.97rem;
+            font-size: 0.95rem;
+            color: #bdc3c7;
+        }
+        .crm-header .crm-user a {
+            color: #3498db !important;
+            transition: color 0.2s ease;
+        }
+        .crm-header .crm-user a:hover {
+            color: #5dade2 !important;
         }
         .crm-header nav {
-            background: rgba(0,0,0,0.05);
-            border-top: 1px solid #003366;
+            background: rgba(0,0,0,0.1);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
         }
         .crm-header .crm-menu {
             padding-left: 0;
@@ -67,52 +90,76 @@ if (isset($_SESSION['user_id'])) {
             flex-wrap: wrap;
         }
         .crm-header .crm-menu li {
-            margin: 0 0.5rem;
+            margin: 0 0.25rem;
         }
         .crm-header .crm-menu a {
-            color: #fff;
-            padding: 10px 15px 8px 15px;
+            color: #ecf0f1;
+            padding: 12px 16px 10px 16px;
             display: block;
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 8px 8px;
             font-weight: 500;
             text-decoration: none;
-            transition: background 0.15s, color 0.15s;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.9rem;
         }
         .crm-header .crm-menu a:hover, .crm-header .crm-menu a.active {
-            background: #ffcc00;
-            color: #003366;
-            text-shadow: none;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        .crm-header .crm-menu a:hover::before, .crm-header .crm-menu a.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #e74c3c;
+            border-radius: 50%;
         }
         @media (max-width: 600px) {
             .crm-header .crm-title {
-                font-size: 1.3rem;
+                font-size: 1.4rem;
+            }
+            .crm-logo {
+                width: 36px;
+                height: 36px;
             }
             .crm-header .crm-menu {
                 flex-direction: column;
             }
             .crm-header .crm-menu li {
-                margin: 0.25rem 0;
+                margin: 0.2rem 0;
+            }
+            .crm-header .crm-menu a {
+                padding: 10px 14px;
+                border-radius: 6px;
+                margin: 2px 0;
             }
         }
     </style>
 </head>
 <body>
 <header class="crm-header mb-4">
-    <div class="container-fluid py-2 d-flex justify-content-between align-items-center">
+    <div class="container-fluid py-3 d-flex justify-content-between align-items-center">
         <div>
             <span class="crm-title">
-                <svg width="34" height="34" style="vertical-align: middle;margin-right:5px;" viewBox="0 0 100 100"><ellipse rx="45" ry="45" cx="50" cy="50" fill="#ffcc00"/><text x="50%" y="55%" fill="#003366" font-size="38" font-family="Segoe UI, Arial, sans-serif" font-weight="bold" text-anchor="middle" alignment-baseline="middle" dy=".3em">CRM</text></svg>
+                <img src="logo.png" alt="Logo ASContabilmente" class="crm-logo">
                 ASContabilmente
             </span>
         </div>
         <div class="crm-user text-end">
             <span class="d-none d-md-inline">Utente:</span>
-            <a href="/profilo.php" style="color: #ffcc00; text-decoration: none; margin-right: 10px;">
+            <a href="/profilo.php" style="text-decoration: none; margin-right: 10px;">
                 <strong><?= htmlspecialchars($nome_utente) ?></strong>
             </a>
-            <span class="badge bg-light text-dark ms-2"><?= htmlspecialchars($ruolo_utente) ?></span>
+            <span class="badge bg-primary text-white ms-2"><?= htmlspecialchars($ruolo_utente) ?></span>
             |
-            <a href="logout.php" style="color: #ffcc00; text-decoration: none;"><b>Logout</b></a>
+            <a href="logout.php" style="color: #e74c3c; text-decoration: none; margin-left: 8px;"><b>Logout</b></a>
         </div>
     </div>
     <nav>
