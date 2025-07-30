@@ -224,11 +224,6 @@ include __DIR__ . '/includes/header.php';
 }
 </style>
 
-<div class="dashboard-header">
-    <h2>🏠 Dashboard CRM</h2>
-    <p>Panoramica generale degli appuntamenti, task e documenti in scadenza</p>
-</div>
-
 <div class="dashboard-container">
     <!-- Calendario Google -->
     <div class="calendar-section">
