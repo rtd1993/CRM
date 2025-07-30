@@ -852,10 +852,7 @@ foreach ($contents as $c) {
 }
 </style>
 
-<div class="drive-header">
-    <h2>📂 Drive Documentale</h2>
-    <p>Gestione file e documenti clienti</p>
-</div>
+
 
 <div class="breadcrumb">
     <span style="color: #6c757d; font-weight: 500;">📍 Percorso:</span>
