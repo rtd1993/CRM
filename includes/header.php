@@ -170,6 +170,7 @@ if (isset($_SESSION['user_id'])) {
             <li><a href="/calendario.php"<?php if(basename($_SERVER['PHP_SELF'])=='calendario.php') echo ' class="active"';?>>Calendario</a></li>
             <li><a href="/task.php"<?php if(basename($_SERVER['PHP_SELF'])=='task.php') echo ' class="active"';?>>Task</a></li>
             <li><a href="/task_clienti.php"<?php if(basename($_SERVER['PHP_SELF'])=='task_clienti.php') echo ' class="active"';?>>Task Clienti</a></li>
+            <li><a href="/email.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['email.php', 'gestione_email_template.php', 'cronologia_email.php'])) echo ' class="active"';?>>Email</a></li>
             <li><a href="/chat.php"<?php if(basename($_SERVER['PHP_SELF'])=='chat.php') echo ' class="active"';?>>Chat</a></li>
             <li><a href="/info.php"<?php if(basename($_SERVER['PHP_SELF'])=='info.php') echo ' class="active"';?>>Info</a></li>
             <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
