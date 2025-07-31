@@ -10,14 +10,14 @@ include __DIR__ . '/includes/header.php';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Query base
-$sql = "SELECT id, `Cognome/Ragione sociale` AS cognome, `Codice ditta`, Mail, PEC, Telefono, `Data di scadenza`, `Scadenza PEC`, `Codice fiscale` FROM clienti";
+$sql = "SELECT id, Cognome_Ragione_sociale AS cognome, Codice_ditta, Mail, PEC, Telefono, Data_di_scadenza, Scadenza_PEC, Codice_fiscale FROM clienti";
 $params = [];
 
 // Ricerca
 if ($search !== '') {
     $sql .= " WHERE 
-        `Cognome/Ragione sociale` LIKE ? OR 
-        `Codice ditta` LIKE ? OR
+        Cognome_Ragione_sociale LIKE ? OR 
+        Codice_ditta LIKE ? OR
         Mail LIKE ? OR
         PEC LIKE ? OR
         Telefono LIKE ?";
@@ -25,7 +25,7 @@ if ($search !== '') {
     $params = [$wild, $wild, $wild, $wild, $wild];
 }
 
-$sql .= " ORDER BY `Cognome/Ragione sociale` ASC";
+$sql .= " ORDER BY Cognome_Ragione_sociale ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
