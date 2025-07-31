@@ -8,52 +8,52 @@ include __DIR__ . '/includes/header.php';
 
 // Definisco i campi della tabella clienti in base alla struttura del DB
 $campi_db = [
-    'Inizio rapporto' => 'date',
-    'Fine rapporto' => 'date',
-    'Inserito gestionale' => 'checkbox',
-    'Codice ditta' => 'text',
+    'Inizio_rapporto' => 'date',
+    'Fine_rapporto' => 'date',
+    'Inserito_gestionale' => 'checkbox',
+    'Codice_ditta' => 'text',
     'Colore' => 'color',
-    'Cognome/Ragione sociale' => 'text',
+    'Cognome_Ragione_sociale' => 'text',
     'Nome' => 'text',
-    'Codice fiscale' => 'text',
-    'Partita IVA' => 'text',
+    'Codice_fiscale' => 'text',
+    'Partita_IVA' => 'text',
     'Qualifica' => 'text',
-    'Soci Amministratori' => 'text',
-    'Sede Legale' => 'textarea',
-    'Sede Operativa' => 'textarea',
-    'Data di nascita/costituzione' => 'date',
-    'Luogo di nascita' => 'text',
+    'Soci_Amministratori' => 'text',
+    'Sede_Legale' => 'textarea',
+    'Sede_Operativa' => 'textarea',
+    'Data_di_nascita_costituzione' => 'date',
+    'Luogo_di_nascita' => 'text',
     'Cittadinanza' => 'text',
     'Residenza' => 'textarea',
-    'Numero carta d\'identità' => 'text',
-    'Rilasciata dal Comune di' => 'text',
-    'Data di rilascio' => 'date',
-    'Valida per l\'espatrio' => 'checkbox',
-    'Stato civile' => 'text',
-    'Data di scadenza' => 'date',
-    'Descrizione attivita' => 'textarea',
-    'Codice ATECO' => 'text',
-    'Camera di commercio' => 'text',
+    'Numero_carta_d_identità' => 'text',
+    'Rilasciata_dal_Comune_di' => 'text',
+    'Data_di_rilascio' => 'date',
+    'Valida_per_espatrio' => 'checkbox',
+    'Stato_civile' => 'text',
+    'Data_di_scadenza' => 'date',
+    'Descrizione_attivita' => 'textarea',
+    'Codice_ATECO' => 'text',
+    'Camera_di_commercio' => 'text',
     'Dipendenti' => 'number',
-    'Codice inps' => 'text',
+    'Codice_inps' => 'text',
     'Titolare' => 'text',
-    'Codice inps_2' => 'text',
-    'Codice inail' => 'text',
+    'Codice_inps_2' => 'text',
+    'Codice_inail' => 'text',
     'PAT' => 'text',
-    'Cod.PIN Inail' => 'text',
-    'Cassa Edile' => 'text',
-    'Numero Cassa Professionisti' => 'text',
+    'Cod_PIN_Inail' => 'text',
+    'Cassa_Edile' => 'text',
+    'Numero_Cassa_Professionisti' => 'text',
     'Contabilita' => 'text',
-    'Liquidazione IVA' => 'text',
+    'Liquidazione_IVA' => 'text',
     'Telefono' => 'tel',
     'Mail' => 'email',
     'PEC' => 'email',
-    'User Aruba' => 'text',
+    'User_Aruba' => 'text',
     'Password' => 'text',
-    'Scadenza PEC' => 'date',
-    'Rinnovo Pec' => 'date',
+    'Scadenza_PEC' => 'date',
+    'Rinnovo_Pec' => 'date',
     'SDI' => 'text',
-    'Link cartella' => 'url'
+    'Link_cartella' => 'url'
 ];
 
 // Gestione dell'inserimento
@@ -100,7 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Validazione obbligatoria per il codice fiscale
-        $codice_fiscale = $_POST['Codice fiscale'] ?? '';
+        $codice_fiscale = $_POST['Codice_fiscale'] ?? '';
+        $cognome = $_POST['Cognome_Ragione_sociale'] ?? '';
+        
         if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
             throw new Exception("Il Codice Fiscale è obbligatorio.");
         }
@@ -128,11 +130,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Aggiorna il valore del Link cartella
-        $idx = array_search('`Link cartella`', $updates);
+        $idx = array_search('`Link_cartella`', $updates);
         if ($idx !== false) {
             $values[$idx] = $link_cartella;
         } else {
-            $updates[] = "`Link cartella`";
+            $updates[] = "`Link_cartella`";
             $values[] = $link_cartella;
         }
         
@@ -158,34 +160,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Raggruppo i campi per sezioni (stesso raggruppamento di modifica_cliente.php)
+// Raggruppo i campi per sezioni (nomi aggiornati)
 $sezioni = [
     'Dati Generali' => [
-        'Inizio rapporto', 'Fine rapporto', 'Inserito gestionale', 'Codice ditta', 'Colore',
-        'Cognome/Ragione sociale', 'Nome', 'Codice fiscale', 'Partita IVA', 'Qualifica'
+        'Inizio_rapporto', 'Fine_rapporto', 'Inserito_gestionale', 'Codice_ditta', 'Colore',
+        'Cognome_Ragione_sociale', 'Nome', 'Codice_fiscale', 'Partita_IVA', 'Qualifica'
     ],
     'Soci e Sedi' => [
-        'Soci Amministratori', 'Sede Legale', 'Sede Operativa'
+        'Soci_Amministratori', 'Sede_Legale', 'Sede_Operativa'
     ],
     'Dati Anagrafici' => [
-        'Data di nascita/costituzione', 'Luogo di nascita', 'Cittadinanza', 'Residenza'
+        'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Residenza'
     ],
     'Documento di Identità' => [
-        'Numero carta d\'identità', 'Rilasciata dal Comune di', 'Data di rilascio', 
-        'Valida per l\'espatrio', 'Stato civile', 'Data di scadenza'
+        'Numero_carta_d_identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 
+        'Valida_per_espatrio', 'Stato_civile', 'Data_di_scadenza'
     ],
     'Attività' => [
-        'Descrizione attivita', 'Codice ATECO', 'Camera di commercio', 'Dipendenti'
+        'Descrizione_attivita', 'Codice_ATECO', 'Camera_di_commercio', 'Dipendenti'
     ],
     'Codici Fiscali' => [
-        'Codice inps', 'Titolare', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail',
-        'Cassa Edile', 'Numero Cassa Professionisti'
+        'Codice_inps', 'Titolare', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail',
+        'Cassa_Edile', 'Numero_Cassa_Professionisti'
     ],
     'Contabilità' => [
-        'Contabilita', 'Liquidazione IVA'
+        'Contabilita', 'Liquidazione_IVA'
     ],
     'Contatti' => [
-        'Telefono', 'Mail', 'PEC', 'User Aruba', 'Password', 'Scadenza PEC', 'Rinnovo Pec', 'SDI'
+        'Telefono', 'Mail', 'PEC', 'User_Aruba', 'Password', 'Scadenza_PEC', 'Rinnovo_Pec', 'SDI'
     ]
 ];
 ?>
@@ -511,7 +513,7 @@ $sezioni = [
                             <?php if (isset($campi_db[$campo])): ?>
                                 <div class="form-group">
                                     <?php
-                                    $is_required = in_array($campo, ['Codice fiscale']);
+                                    $is_required = in_array($campo, ['Codice_fiscale']);
                                     ?>
                                     <label for="<?php echo htmlspecialchars($campo); ?>" <?php echo $is_required ? 'class="required"' : ''; ?>>
                                         <?php echo htmlspecialchars($campo); ?>
@@ -547,9 +549,9 @@ $sezioni = [
                                             <?php echo $is_required ? 'required' : ''; ?>
                                             <?php if ($tipo === 'tel'): ?>
                                                 oninput="formatPhone(this)"
-                                            <?php elseif ($tipo === 'text' && strpos($campo, 'Codice fiscale') !== false): ?>
+                                            <?php elseif ($tipo === 'text' && strpos($campo, 'Codice_fiscale') !== false): ?>
                                                 oninput="formatCodiceFiscale(this)"
-                                            <?php elseif ($tipo === 'text' && strpos($campo, 'Partita IVA') !== false): ?>
+                                            <?php elseif ($tipo === 'text' && strpos($campo, 'Partita_IVA') !== false): ?>
                                                 oninput="formatPartitaIVA(this)"
                                             <?php endif; ?>
                                         >
@@ -630,7 +632,7 @@ $sezioni = [
         // Gestione submit form
         document.getElementById('clienteForm').addEventListener('submit', function(e) {
             // Validazione lato client del codice fiscale
-            const codiceFiscale = document.querySelector('input[name="Codice fiscale"]');
+            const codiceFiscale = document.querySelector('input[name="Codice_fiscale"]');
             if (!codiceFiscale || !codiceFiscale.value.trim()) {
                 e.preventDefault();
                 alert('Il Codice Fiscale è obbligatorio!');
