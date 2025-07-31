@@ -379,24 +379,28 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
 }
 
 .delete-btn {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-    border: 1px solid #ff6b6b;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
+    background: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 50%;
+    padding: 0.4rem;
     color: white;
-    font-weight: 500;
+    font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
+    justify-content: center;
+    font-size: 1rem;
+    width: 35px;
+    height: 35px;
+    text-decoration: none;
 }
 
 .delete-btn:hover {
-    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+    background: #c82333;
+    border-color: #bd2130;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
 }
 
 .alert {
@@ -661,7 +665,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                         class="delete-btn" 
                                         style="margin-left: 0.5rem;"
                                         title="Elimina cliente">
-                                    🗑️ Elimina
+                                    ❌
                                 </button>
                             </td>
                         </tr>
@@ -839,9 +843,58 @@ function bulkDelete() {
         return;
     }
     
-    if (confirm(`⚠️ ATTENZIONE: Vuoi eliminare ${selected.length} clienti selezionati?\n\nQuesta operazione non può essere annullata!`)) {
-        // Qui potresti implementare la logica per eliminazioni multiple
-        showNotification('🗑️ Funzionalità in arrivo!', 'info');
+    // Crea un elenco dei nomi dei clienti selezionati per la conferma
+    const selectedRows = document.querySelectorAll('.client-checkbox:checked');
+    const clientNames = Array.from(selectedRows).map(cb => {
+        const row = cb.closest('tr');
+        const nomeCell = row.querySelector('td:nth-child(3)'); // Colonna nome
+        return nomeCell ? nomeCell.textContent.trim() : 'Cliente sconosciuto';
+    });
+    
+    const clientsList = clientNames.map(name => `• ${name}`).join('\n');
+    
+    if (confirm(`⚠️ ATTENZIONE: Vuoi eliminare ${selected.length} clienti selezionati?\n\n${clientsList}\n\nQuesta operazione:\n• Eliminerà definitivamente tutti i dati dei clienti\n• NON eliminerà le cartelle e i file associati\n• NON può essere annullata\n\nSei sicuro di voler procedere?`)) {
+        
+        showNotification('🗑️ Eliminazione in corso...', 'info');
+        
+        // Invia richiesta AJAX per eliminazione multipla
+        const formData = new FormData();
+        selected.forEach(clientId => {
+            formData.append('client_ids[]', clientId);
+        });
+        
+        fetch('api/bulk_delete_clients.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✅ ${data.message}`, 'success');
+                
+                if (data.errors && data.errors.length > 0) {
+                    setTimeout(() => {
+                        showNotification(`⚠️ ${data.errors.length} errori durante l'eliminazione`, 'warning');
+                    }, 2000);
+                }
+                
+                // Ricarica la pagina dopo 3 secondi per aggiornare la lista
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+                
+            } else {
+                showNotification(`❌ Errore: ${data.message}`, 'error');
+                
+                if (data.errors && data.errors.length > 0) {
+                    console.error('Errori dettagliati:', data.errors);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Errore durante l\'eliminazione multipla:', error);
+            showNotification('❌ Errore di connessione durante l\'eliminazione', 'error');
+        });
     }
 }
 
