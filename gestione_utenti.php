@@ -481,6 +481,30 @@ if (isset($_GET['edit_id'])) {
     font-size: 1.2rem;
 }
 
+.error-message {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #f5c6cb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: shake 0.5s ease-in-out;
+}
+
+.error-message::before {
+    content: '❌';
+    font-size: 1.2rem;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
 @media (max-width: 768px) {
     .users-container {
         grid-template-columns: 1fr;
@@ -513,6 +537,25 @@ if (isset($_GET['edit_id'])) {
             Modifiche salvate con successo!
         <?php elseif ($_GET['success'] == 2): ?>
             Password resettata con successo! Nuova password: <strong>Password01!</strong>
+        <?php elseif ($_GET['success'] == 'deleted'): ?>
+            <?php $nome_eliminato = isset($_GET['nome']) ? urldecode($_GET['nome']) : 'Utente'; ?>
+            ✅ Utente "<?= htmlspecialchars($nome_eliminato) ?>" eliminato con successo!
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+    <div class="error-message">
+        <?php if ($_GET['error'] == 'delete_failed'): ?>
+            ❌ Errore durante l'eliminazione dell'utente. Riprova.
+        <?php elseif ($_GET['error'] == 'user_not_found'): ?>
+            ❌ Utente non trovato. Potrebbe essere già stato eliminato.
+        <?php elseif ($_GET['error'] == 'database_error'): ?>
+            ❌ Errore del database durante l'eliminazione. Contatta l'amministratore.
+        <?php elseif ($_GET['error'] == 'self_delete_forbidden'): ?>
+            ❌ Non puoi eliminare il tuo stesso account.
+        <?php else: ?>
+            ❌ Si è verificato un errore sconosciuto.
         <?php endif; ?>
     </div>
 <?php endif; ?>
