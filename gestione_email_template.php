@@ -9,53 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Connessione database
-try {
-    $pdo = new PDO('mysql:host=localhost;dbname=crm;charset=utf8mb4', 'crmuser', 'Admin123!', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch (PDOException $e) {
-    die("Errore connessione database: " . $e->getMessage());
-}
-
-// Crea tabelle se non esistono
-try {
-    // Tabella template email
-    $pdo->exec("CREATE TABLE IF NOT EXISTS email_templates (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nome VARCHAR(255) NOT NULL,
-        oggetto VARCHAR(500) NOT NULL,
-        corpo TEXT NOT NULL,
-        data_creazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
-    
-    // Tabella cronologia invii - SEMPLIFICATA per invii multipli
-    $pdo->exec("CREATE TABLE IF NOT EXISTS email_cronologia (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        template_id INT,
-        oggetto VARCHAR(500) NOT NULL,
-        corpo TEXT NOT NULL,
-        destinatari TEXT NOT NULL,  -- Lista email separate da virgola
-        totale_destinatari INT DEFAULT 0,
-        invii_riusciti INT DEFAULT 0,
-        invii_falliti INT DEFAULT 0,
-        data_invio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        dettagli_errori TEXT
-    )");
-    
-    // Inserisci template di esempio se non esistono
-    $count = $pdo->query("SELECT COUNT(*) FROM email_templates")->fetchColumn();
-    if ($count == 0) {
-        $pdo->exec("INSERT INTO email_templates (nome, oggetto, corpo) VALUES 
-        ('Comunicazione Generale', 'Comunicazione importante da AS Contabilmente', 'Gentile Cliente,\n\nSperiamo che tutto proceda al meglio.\n\nCordiali saluti,\nAS Contabilmente'),
-        ('Promemoria Scadenze', 'Promemoria scadenze', 'Gentile Cliente,\n\nLe ricordiamo le prossime scadenze.\n\nCordiali saluti,\nAS Contabilmente'),
-        ('Richiesta Documenti', 'Richiesta documentazione', 'Gentile Cliente,\n\nAbbiamo bisogno della seguente documentazione.\n\nCordiali saluti,\nAS Contabilmente')");
-    }
-    
-} catch (PDOException $e) {
-    die("Errore creazione tabelle: " . $e->getMessage());
-}
+// Include l'header del sito
+require_once __DIR__ . '/includes/header.php';
 
 // Gestione azioni
 $message = '';
@@ -92,117 +47,142 @@ if ($_POST) {
 $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Gestione Template Email</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body { background: #f8f9fa; }
-        .container { margin-top: 20px; }
-        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="fas fa-arrow-left me-2"></i>CRM - Gestione Email
-            </a>
-            <div>
-                <a href="email_invio.php" class="btn btn-light me-2">
-                    <i class="fas fa-paper-plane me-1"></i>Invia Email
-                </a>
-                <a href="email_cronologia.php" class="btn btn-outline-light">
-                    <i class="fas fa-history me-1"></i>Cronologia
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
-        <?php if ($message): ?>
-            <div class="alert alert-success alert-dismissible">
-                <i class="fas fa-check me-2"></i><?= $message ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if ($error): ?>
-            <div class="alert alert-danger alert-dismissible">
-                <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-
-        <div class="row">
-            <!-- Form Nuovo Template -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5><i class="fas fa-plus me-2"></i>Nuovo Template</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST">
-                            <div class="mb-3">
-                                <label class="form-label">Nome Template</label>
-                                <input type="text" name="nome" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Oggetto Email</label>
-                                <input type="text" name="oggetto" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Corpo Email</label>
-                                <textarea name="corpo" class="form-control" rows="8" required></textarea>
-                                <small class="text-muted">
-                                    Variabili disponibili: {nome_cliente}, {email_cliente}
-                                </small>
-                            </div>
-                            <button type="submit" name="crea_template" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Crea Template
-                            </button>
-                        </form>
-                    </div>
+<!-- Breadcrumb e Navigazione Email -->
+<div class="container-fluid mb-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm border">
+                <div>
+                    <h4 class="mb-0 text-primary">
+                        <i class="fas fa-envelope-open-text me-2"></i>Gestione Template Email
+                    </h4>
+                    <small class="text-muted">Crea e gestisci i template per le email</small>
+                </div>
+                <div>
+                    <a href="email_invio.php" class="btn btn-primary me-2">
+                        <i class="fas fa-paper-plane me-1"></i>Invia Email
+                    </a>
+                    <a href="email_cronologia.php" class="btn btn-outline-primary">
+                        <i class="fas fa-history me-1"></i>Cronologia
+                    </a>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Lista Template -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5><i class="fas fa-list me-2"></i>Template Esistenti (<?= count($templates) ?>)</h5>
-                    </div>
-                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+<div class="container-fluid">
+    <?php if ($message): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i><?= $message ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($error): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="row">
+        <!-- Form Nuovo Template -->
+        <div class="col-xl-5 col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Nuovo Template
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-tag me-1 text-primary"></i>Nome Template
+                            </label>
+                            <input type="text" name="nome" class="form-control form-control-lg" 
+                                   placeholder="Es. Comunicazione Generale" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-heading me-1 text-primary"></i>Oggetto Email
+                            </label>
+                            <input type="text" name="oggetto" class="form-control form-control-lg" 
+                                   placeholder="Es. Comunicazione importante" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
+                            </label>
+                            <textarea name="corpo" class="form-control" rows="10" 
+                                      placeholder="Scrivi qui il contenuto dell'email..." required></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Variabili disponibili:</strong> 
+                                <code>{nome_cliente}</code>, <code>{email_cliente}</code>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" name="crea_template" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Crea Template
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista Template -->
+        <div class="col-xl-7 col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt me-2"></i>Template Esistenti
+                    </h5>
+                    <span class="badge bg-white text-dark fs-6"><?= count($templates) ?></span>
+                </div>
+                <div class="card-body p-0">
+                    <div style="max-height: 600px; overflow-y: auto;">
                         <?php if (empty($templates)): ?>
-                            <p class="text-muted">Nessun template trovato.</p>
+                            <div class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Nessun template trovato</p>
+                                <small class="text-muted">Crea il tuo primo template usando il form a sinistra</small>
+                            </div>
                         <?php else: ?>
-                            <?php foreach ($templates as $template): ?>
-                                <div class="border rounded p-3 mb-3 bg-light">
+                            <?php foreach ($templates as $index => $template): ?>
+                                <div class="border-bottom p-3 <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?> template-item">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1"><?= htmlspecialchars($template['nome']) ?></h6>
-                                            <p class="mb-1 text-muted small">
-                                                <strong>Oggetto:</strong> <?= htmlspecialchars($template['oggetto']) ?>
+                                            <h6 class="mb-2 text-primary fw-bold">
+                                                <i class="fas fa-file-alt me-2"></i>
+                                                <?= htmlspecialchars($template['nome']) ?>
+                                            </h6>
+                                            <p class="mb-2 text-dark">
+                                                <strong class="text-muted">Oggetto:</strong> 
+                                                <?= htmlspecialchars($template['oggetto']) ?>
                                             </p>
                                             <small class="text-muted">
+                                                <i class="fas fa-calendar-alt me-1"></i>
                                                 Creato: <?= date('d/m/Y H:i', strtotime($template['data_creazione'])) ?>
                                             </small>
                                         </div>
-                                        <form method="POST" style="display: inline;">
+                                        <form method="POST" class="ms-2">
                                             <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
                                             <button type="submit" name="elimina_template" 
-                                                    class="btn btn-danger btn-sm"
-                                                    onclick="return confirm('Eliminare questo template?')">
-                                                <i class="fas fa-trash"></i>
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    onclick="return confirm('Sei sicuro di voler eliminare questo template?')"
+                                                    title="Elimina template">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </form>
                                     </div>
-                                    <div class="mt-2 p-2 bg-white border rounded">
-                                        <small><?= nl2br(htmlspecialchars(substr($template['corpo'], 0, 150))) ?>
-                                        <?= strlen($template['corpo']) > 150 ? '...' : '' ?></small>
+                                    <div class="mt-3 p-3 bg-white border rounded">
+                                        <small class="text-dark" style="line-height: 1.4;">
+                                            <?= nl2br(htmlspecialchars(substr($template['corpo'], 0, 200))) ?>
+                                            <?= strlen($template['corpo']) > 200 ? '<span class="text-muted">...</span>' : '' ?>
+                                        </small>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -212,7 +192,39 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+.template-item {
+    transition: all 0.2s ease;
+}
+.template-item:hover {
+    background-color: #f8f9fa !important;
+    border-left: 4px solid #3498db;
+}
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+.card-header {
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+.form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+.btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f4e79 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
