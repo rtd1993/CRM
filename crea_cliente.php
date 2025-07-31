@@ -62,6 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("DEBUG - Tutti i campi POST ricevuti: " . print_r($_POST, true));
     error_log("DEBUG - Campi POST ricevuti: " . print_r(array_keys($_POST), true));
     
+    // Debug: confronto tra campi DB e campi POST
+    $campi_db_keys = array_keys($campi_db);
+    $post_keys = array_keys($_POST);
+    error_log("DEBUG - Campi DB attesi: " . print_r($campi_db_keys, true));
+    error_log("DEBUG - Campi POST ricevuti: " . print_r($post_keys, true));
+    error_log("DEBUG - Campi DB mancanti nei POST: " . print_r(array_diff($campi_db_keys, $post_keys), true));
+    error_log("DEBUG - Campi POST non in DB: " . print_r(array_diff($post_keys, $campi_db_keys), true));
+    
     try {
         $updates = [];
         $values = [];
@@ -71,6 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {
                 error_log("DEBUG - Processando campo: '$campo', Valore POST: '" . ($_POST[$campo] ?? 'NON_IMPOSTATO') . "', isset: " . (isset($_POST[$campo]) ? 'SI' : 'NO'));
             }
+            
+            // Debug: controlliamo se il campo esiste nei POST
+            $campo_exists = isset($_POST[$campo]);
+            $campo_value = $_POST[$campo] ?? null;
+            
+            // Log per tutti i campi per capire il problema
+            error_log("DEBUG LOOP - Campo: '$campo', Exists: " . ($campo_exists ? 'SI' : 'NO') . ", Value: '" . ($campo_value ?? 'NULL') . "'");
             
             if (isset($_POST[$campo])) {
                 $valore = $_POST[$campo];
