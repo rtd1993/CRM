@@ -74,67 +74,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $updates = [];
         $values = [];
         
-        foreach ($campi_db as $campo => $tipo) {
-            // Debug specifico per alcuni campi importanti
-            if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {
-                error_log("DEBUG - Processando campo: '$campo', Valore POST: '" . ($_POST[$campo] ?? 'NON_IMPOSTATO') . "', isset: " . (isset($_POST[$campo]) ? 'SI' : 'NO'));
+        // NUOVA LOGICA: Processo TUTTI i campi POST ricevuti
+        foreach ($_POST as $campo_post => $valore_post) {
+            // Skip se è vuoto e non è un campo obbligatorio
+            if (empty($valore_post) && $campo_post !== 'Codice fiscale') {
+                continue;
             }
             
-            // Debug: controlliamo se il campo esiste nei POST
-            $campo_exists = isset($_POST[$campo]);
-            $campo_value = $_POST[$campo] ?? null;
+            // Determina il tipo di campo (se definito, altrimenti usa 'text')
+            $tipo = $campi_db[$campo_post] ?? 'text';
             
-            // Log per tutti i campi per capire il problema
-            error_log("DEBUG LOOP - Campo: '$campo', Exists: " . ($campo_exists ? 'SI' : 'NO') . ", Value: '" . ($campo_value ?? 'NULL') . "'");
+            error_log("DEBUG - Processando campo POST: '$campo_post', Valore: '$valore_post', Tipo: '$tipo'");
             
-            // MODIFICA: Processiamo tutti i campi, anche se vuoti, tranne se non esistono affatto
-            if (isset($_POST[$campo]) || array_key_exists($campo, $_POST)) {
-                $valore = $_POST[$campo] ?? '';  // Se null, usa stringa vuota
-                
-                // Debug per campi importanti
-                if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {
-                    error_log("DEBUG - Campo '$campo' elaborato con valore: '$valore'");
-                }
-                
-                // Validazione in base al tipo
-                if ($tipo === 'email' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_EMAIL)) {
-                    throw new Exception("Email non valida per il campo: $campo");
-                }
-                
-                if ($tipo === 'url' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_URL)) {
-                    throw new Exception("URL non valido per il campo: $campo");
-                }
-                
-                // Gestione dei tipi di dato
-                if ($tipo === 'checkbox') {
-                    $valore = $valore === 'on' ? 1 : 0;
-                } elseif ($tipo === 'number') {
-                    // Per i campi numerici, converti stringa vuota in NULL
-                    if ($valore === '' || $valore === null || trim($valore) === '') {
-                        $valore = null;
-                    } else {
-                        $valore = is_numeric($valore) ? intval($valore) : null;
-                    }
-                } elseif ($tipo === 'date') {
-                    // Per le date, converti stringa vuota in NULL
-                    if ($valore === '' || $valore === null) {
-                        $valore = null;
-                    } else {
-                        $date = DateTime::createFromFormat('Y-m-d', $valore);
-                        if (!$date) {
-                            throw new Exception("Data non valida per il campo: $campo");
-                        }
-                    }
+            $valore = $valore_post;
+            
+            // Gestione dei tipi di dato
+            if ($tipo === 'checkbox') {
+                $valore = $valore === 'on' ? 1 : 0;
+            } elseif ($tipo === 'number') {
+                if ($valore === '' || $valore === null || trim($valore) === '') {
+                    $valore = null;
                 } else {
-                    // Per i campi di testo, mantieni stringa vuota se fornita
-                    if ($valore === null) {
-                        $valore = '';
+                    $valore = is_numeric($valore) ? intval($valore) : null;
+                }
+            } elseif ($tipo === 'date') {
+                if ($valore === '' || $valore === null) {
+                    $valore = null;
+                } else {
+                    $date = DateTime::createFromFormat('Y-m-d', $valore);
+                    if (!$date) {
+                        // Data non valida, usa NULL
+                        $valore = null;
                     }
                 }
-                
-                $updates[] = "`$campo`";
-                $values[] = $valore;
+            } elseif ($tipo === 'email' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Email non valida per il campo: $campo_post");
+            } elseif ($tipo === 'url' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_URL)) {
+                // Per l'URL, se non è valido ma non è vuoto, usa come testo
+                // throw new Exception("URL non valido per il campo: $campo_post");
             }
+            
+            $updates[] = "`$campo_post`";
+            $values[] = $valore;
         }
         
         // Validazione obbligatoria per il codice fiscale
