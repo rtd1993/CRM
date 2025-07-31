@@ -135,10 +135,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'codice_fiscale_trim_empty' => trim($codice_fiscale) === '',
             'codice_fiscale_isset' => isset($_POST['Codice fiscale']),
             'post_keys' => array_keys($_POST),
-            'post_values_sample' => array_slice($_POST, 0, 5, true) // Prime 5 coppie chiave-valore
+            'post_values_sample' => array_slice($_POST, 0, 10, true), // Prime 10 coppie chiave-valore
+            'updates_count' => count($updates),
+            'updates_fields' => $updates
         ];
         
         error_log("DEBUG CODICE FISCALE: " . print_r($debug_info, true));
+        
+        // TEMPORANEO: Mostra debug anche all'utente
+        if (!empty($_POST)) {
+            $temp_debug = "DEBUG TEMPORANEO - Campi ricevuti: " . count($_POST) . " | ";
+            $temp_debug .= "Updates preparati: " . count($updates) . " | ";
+            $temp_debug .= "Codice fiscale: '" . $codice_fiscale . "' | ";
+            $temp_debug .= "Cognome: '" . $cognome . "'";
+            echo "<div style='background: yellow; padding: 10px; margin: 10px 0; border: 1px solid orange;'>$temp_debug</div>";
+        }
         
         if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
             // Mostra anche l'errore all'utente per il debug
