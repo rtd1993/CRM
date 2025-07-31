@@ -9,15 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Connessione database
-try {
-    $pdo = new PDO('mysql:host=localhost;dbname=crm;charset=utf8mb4', 'crmuser', 'Admin123!', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch (PDOException $e) {
-    die("Errore connessione database: " . $e->getMessage());
-}
+// Include l'header del sito
+require_once __DIR__ . '/includes/header.php';
 
 // Recupera cronologia con paginazione
 $page = max(1, intval($_GET['page'] ?? 1));
@@ -41,173 +34,180 @@ $stats = $pdo->query("SELECT
     FROM email_cronologia")->fetch();
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Cronologia Email</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body { background: #f8f9fa; }
-        .container { margin-top: 20px; }
-        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .stat-card { 
-            background: linear-gradient(45deg, #007bff, #0056b3); 
-            color: white; 
-            text-align: center; 
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .email-item {
-            border-left: 4px solid #007bff;
-            background: #f8f9fa;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        .email-item.success { border-left-color: #28a745; }
-        .email-item.warning { border-left-color: #ffc107; }
-        .email-item.danger { border-left-color: #dc3545; }
-        .destinatari-list {
-            max-height: 150px;
-            overflow-y: auto;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="fas fa-arrow-left me-2"></i>CRM - Cronologia Email
-            </a>
-            <div>
-                <a href="email_invio.php" class="btn btn-light me-2">
-                    <i class="fas fa-paper-plane me-1"></i>Invia Email
-                </a>
-                <a href="gestione_email_template.php" class="btn btn-outline-light">
-                    <i class="fas fa-cog me-1"></i>Template
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
-        <!-- Statistiche -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <h3><?= number_format($stats['totale_invii']) ?></h3>
-                    <small>Invii Totali</small>
+<!-- Breadcrumb e Navigazione Email -->
+<div class="container-fluid mb-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm border">
+                <div>
+                    <h4 class="mb-0 text-primary">
+                        <i class="fas fa-history me-2"></i>Cronologia Email
+                    </h4>
+                    <small class="text-muted">Visualizza lo storico degli invii email</small>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <h3><?= number_format($stats['totale_email']) ?></h3>
-                    <small>Email Inviate</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card bg-success">
-                    <h3><?= number_format($stats['totale_successi']) ?></h3>
-                    <small>Successi</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card bg-danger">
-                    <h3><?= number_format($stats['totale_errori']) ?></h3>
-                    <small>Errori</small>
+                <div>
+                    <a href="email_invio.php" class="btn btn-primary me-2">
+                        <i class="fas fa-paper-plane me-1"></i>Invia Email
+                    </a>
+                    <a href="gestione_email_template.php" class="btn btn-outline-primary">
+                        <i class="fas fa-cogs me-1"></i>Gestione Template
+                    </a>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Lista Cronologia -->
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5><i class="fas fa-history me-2"></i>Cronologia Invii (<?= number_format($total) ?> totali)</h5>
+<div class="container-fluid">
+    <!-- Statistiche -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; border-radius: 12px;">
+                    <i class="fas fa-paper-plane fa-2x mb-3"></i>
+                    <h3 class="mb-1"><?= number_format($stats['totale_invii']) ?></h3>
+                    <small class="text-light">Invii Totali</small>
+                </div>
             </div>
-            <div class="card-body">
-                <?php if (empty($cronologia)): ?>
-                    <div class="text-center text-muted py-5">
-                        <i class="fas fa-inbox fa-4x mb-3"></i>
-                        <h4>Nessun invio trovato</h4>
-                        <a href="email_invio.php" class="btn btn-primary">Invia prima email</a>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($cronologia as $invio): ?>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 12px;">
+                    <i class="fas fa-envelope fa-2x mb-3"></i>
+                    <h3 class="mb-1"><?= number_format($stats['totale_email']) ?></h3>
+                    <small class="text-light">Email Inviate</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border-radius: 12px;">
+                    <i class="fas fa-check-circle fa-2x mb-3"></i>
+                    <h3 class="mb-1"><?= number_format($stats['totale_successi']) ?></h3>
+                    <small class="text-light">Successi</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border-radius: 12px;">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <h3 class="mb-1"><?= number_format($stats['totale_errori']) ?></h3>
+                    <small class="text-light">Errori</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista Cronologia -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+            <h5 class="mb-0">
+                <i class="fas fa-clock me-2"></i>Cronologia Invii
+            </h5>
+            <span class="badge bg-white text-dark fs-6"><?= number_format($total) ?></span>
+        </div>
+        <div class="card-body p-0">
+            <?php if (empty($cronologia)): ?>
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+                    <h4 class="text-muted mb-3">Nessun invio trovato</h4>
+                    <p class="text-muted mb-4">Non hai ancora inviato nessuna email</p>
+                    <a href="email_invio.php" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane me-2"></i>Invia Prima Email
+                    </a>
+                </div>
+            <?php else: ?>
+                <div class="p-0">
+                    <?php foreach ($cronologia as $index => $invio): ?>
                         <?php
-                        $classe = 'success';
-                        if ($invio['invii_falliti'] > 0 && $invio['invii_riusciti'] == 0) $classe = 'danger';
-                        elseif ($invio['invii_falliti'] > 0) $classe = 'warning';
+                        $classe_colore = 'success';
+                        $border_colore = '#27ae60';
+                        if ($invio['invii_falliti'] > 0 && $invio['invii_riusciti'] == 0) {
+                            $classe_colore = 'danger';
+                            $border_colore = '#e74c3c';
+                        } elseif ($invio['invii_falliti'] > 0) {
+                            $classe_colore = 'warning';
+                            $border_colore = '#f39c12';
+                        }
                         ?>
-                        <div class="email-item <?= $classe ?>">
+                        <div class="border-bottom p-4 email-item <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?>" 
+                             style="border-left: 4px solid <?= $border_colore ?> !important;">
                             <div class="row">
-                                <div class="col-md-8">
-                                    <h6 class="mb-2">
-                                        <?= $invio['template_nome'] ? htmlspecialchars($invio['template_nome']) : 'Template eliminato' ?>
-                                        <span class="badge bg-secondary ms-2"><?= date('d/m/Y H:i', strtotime($invio['data_invio'])) ?></span>
-                                    </h6>
-                                    <p class="mb-2"><strong>Oggetto:</strong> <?= htmlspecialchars($invio['oggetto']) ?></p>
+                                <div class="col-lg-8 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h6 class="mb-0 text-primary fw-bold">
+                                            <i class="fas fa-file-alt me-2"></i>
+                                            <?= $invio['template_nome'] ? htmlspecialchars($invio['template_nome']) : '<span class="text-muted">Template eliminato</span>' ?>
+                                        </h6>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            <?= date('d/m/Y H:i', strtotime($invio['data_invio'])) ?>
+                                        </span>
+                                    </div>
                                     
-                                    <div class="row text-center">
-                                        <div class="col-3">
-                                            <div class="border rounded p-2">
-                                                <strong><?= $invio['totale_destinatari'] ?></strong><br>
+                                    <p class="mb-3 text-dark">
+                                        <i class="fas fa-heading me-2 text-muted"></i>
+                                        <strong>Oggetto:</strong> <?= htmlspecialchars($invio['oggetto']) ?>
+                                    </p>
+                                    
+                                    <!-- Statistiche invio -->
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-3">
+                                            <div class="text-center p-2 border rounded bg-white">
+                                                <div class="fw-bold text-primary"><?= $invio['totale_destinatari'] ?></div>
                                                 <small class="text-muted">Totale</small>
                                             </div>
                                         </div>
-                                        <div class="col-3">
-                                            <div class="border rounded p-2 bg-success text-white">
-                                                <strong><?= $invio['invii_riusciti'] ?></strong><br>
+                                        <div class="col-6 col-md-3">
+                                            <div class="text-center p-2 border rounded text-white" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                                                <div class="fw-bold"><?= $invio['invii_riusciti'] ?></div>
                                                 <small>Successi</small>
                                             </div>
                                         </div>
-                                        <div class="col-3">
-                                            <div class="border rounded p-2 bg-danger text-white">
-                                                <strong><?= $invio['invii_falliti'] ?></strong><br>
+                                        <div class="col-6 col-md-3">
+                                            <div class="text-center p-2 border rounded text-white" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                                                <div class="fw-bold"><?= $invio['invii_falliti'] ?></div>
                                                 <small>Errori</small>
                                             </div>
                                         </div>
-                                        <div class="col-3">
-                                            <div class="border rounded p-2 bg-info text-white">
-                                                <strong><?= round(($invio['invii_riusciti'] / max(1, $invio['totale_destinatari'])) * 100) ?>%</strong><br>
+                                        <div class="col-6 col-md-3">
+                                            <div class="text-center p-2 border rounded text-white" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                                                <div class="fw-bold"><?= round(($invio['invii_riusciti'] / max(1, $invio['totale_destinatari'])) * 100) ?>%</div>
                                                 <small>Successo</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="col-md-4">
-                                    <details>
-                                        <summary class="btn btn-outline-primary btn-sm mb-2">
-                                            <i class="fas fa-eye me-1"></i>Destinatari (<?= $invio['totale_destinatari'] ?>)
+                                <div class="col-lg-4">
+                                    <!-- Destinatari -->
+                                    <details class="mb-3">
+                                        <summary class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                            <i class="fas fa-users me-1"></i>Destinatari (<?= $invio['totale_destinatari'] ?>)
                                         </summary>
-                                        <div class="destinatari-list">
+                                        <div class="border rounded p-3 bg-white" style="max-height: 200px; overflow-y: auto;">
                                             <?php
                                             $destinatari = explode(', ', $invio['destinatari']);
                                             foreach ($destinatari as $email) {
-                                                echo "<div class='small'><i class='fas fa-envelope me-1'></i>" . htmlspecialchars(trim($email)) . "</div>";
+                                                echo "<div class='small mb-1'><i class='fas fa-envelope me-2 text-primary'></i>" . htmlspecialchars(trim($email)) . "</div>";
                                             }
                                             ?>
                                         </div>
                                     </details>
                                     
+                                    <!-- Errori -->
                                     <?php if ($invio['invii_falliti'] > 0 && !empty($invio['dettagli_errori'])): ?>
-                                        <details>
-                                            <summary class="btn btn-outline-danger btn-sm">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>Errori
+                                        <details class="mb-3">
+                                            <summary class="btn btn-outline-danger btn-sm w-100">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Errori (<?= $invio['invii_falliti'] ?>)
                                             </summary>
-                                            <div class="destinatari-list">
+                                            <div class="border rounded p-3 bg-white" style="max-height: 150px; overflow-y: auto;">
                                                 <?php
                                                 $errori = explode(', ', $invio['dettagli_errori']);
                                                 foreach ($errori as $errore) {
                                                     if (trim($errore)) {
-                                                        echo "<div class='small text-danger'><i class='fas fa-times me-1'></i>" . htmlspecialchars(trim($errore)) . "</div>";
+                                                        echo "<div class='small mb-1 text-danger'><i class='fas fa-times me-2'></i>" . htmlspecialchars(trim($errore)) . "</div>";
                                                     }
                                                 }
                                                 ?>
@@ -217,25 +217,30 @@ $stats = $pdo->query("SELECT
                                 </div>
                             </div>
                             
+                            <!-- Contenuto email -->
                             <details class="mt-3">
-                                <summary class="text-muted" style="cursor: pointer;">
-                                    <i class="fas fa-file-alt me-1"></i>Contenuto email
+                                <summary class="text-muted fw-semibold" style="cursor: pointer;">
+                                    <i class="fas fa-file-alt me-2"></i>Visualizza contenuto email
                                 </summary>
-                                <div class="bg-white border rounded p-3 mt-2">
-                                    <?= nl2br(htmlspecialchars($invio['corpo'])) ?>
+                                <div class="bg-white border rounded p-3 mt-3" style="border-left: 3px solid #3498db !important;">
+                                    <div style="font-family: 'Segoe UI', sans-serif; line-height: 1.6;">
+                                        <?= nl2br(htmlspecialchars($invio['corpo'])) ?>
+                                    </div>
                                 </div>
                             </details>
                         </div>
                     <?php endforeach; ?>
-                    
-                    <!-- Paginazione -->
-                    <?php if ($total_pages > 1): ?>
+                </div>
+                
+                <!-- Paginazione -->
+                <?php if ($total_pages > 1): ?>
+                    <div class="p-4 border-top bg-light">
                         <nav>
-                            <ul class="pagination justify-content-center">
+                            <ul class="pagination justify-content-center mb-0">
                                 <?php if ($page > 1): ?>
                                     <li class="page-item">
                                         <a class="page-link" href="?page=<?= $page - 1 ?>">
-                                            <i class="fas fa-chevron-left"></i>
+                                            <i class="fas fa-chevron-left"></i> Precedente
                                         </a>
                                     </li>
                                 <?php endif; ?>
@@ -249,18 +254,54 @@ $stats = $pdo->query("SELECT
                                 <?php if ($page < $total_pages): ?>
                                     <li class="page-item">
                                         <a class="page-link" href="?page=<?= $page + 1 ?>">
-                                            <i class="fas fa-chevron-right"></i>
+                                            Successiva <i class="fas fa-chevron-right"></i>
                                         </a>
                                     </li>
                                 <?php endif; ?>
                             </ul>
                         </nav>
-                    <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+.email-item {
+    transition: all 0.2s ease;
+}
+.email-item:hover {
+    background-color: #f8f9fa !important;
+    transform: translateX(2px);
+}
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+.card-header {
+    border-bottom: none;
+}
+details summary {
+    transition: all 0.2s ease;
+}
+details summary:hover {
+    background-color: #f8f9fa;
+}
+.pagination .page-link {
+    border-color: #3498db;
+    color: #3498db;
+}
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border-color: #3498db;
+}
+.pagination .page-link:hover {
+    background-color: #e3f2fd;
+    border-color: #3498db;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

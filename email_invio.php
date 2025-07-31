@@ -9,15 +9,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Connessione database
-try {
-    $pdo = new PDO('mysql:host=localhost;dbname=crm;charset=utf8mb4', 'crmuser', 'Admin123!', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch (PDOException $e) {
-    die("Errore connessione database: " . $e->getMessage());
-}
+// Include l'header del sito
+require_once __DIR__ . '/includes/header.php';
 
 // Recupera template e clienti
 $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
@@ -115,225 +108,321 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Invio Email Multiplo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body { background: #f8f9fa; }
-        .container { margin-top: 20px; }
-        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .cliente-item { 
-            padding: 8px; 
-            border-radius: 5px; 
-            margin-bottom: 5px; 
-            background: #f8f9fa;
-        }
-        .cliente-item:hover { background: #e9ecef; }
-        .cliente-count {
-            background: #28a745;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 15px;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="fas fa-arrow-left me-2"></i>CRM - Invio Email
-            </a>
-            <div>
-                <a href="gestione_email_template.php" class="btn btn-light me-2">
-                    <i class="fas fa-cog me-1"></i>Template
-                </a>
-                <a href="email_cronologia.php" class="btn btn-outline-light">
-                    <i class="fas fa-history me-1"></i>Cronologia
-                </a>
+<!-- Breadcrumb e Navigazione Email -->
+<div class="container-fluid mb-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm border">
+                <div>
+                    <h4 class="mb-0 text-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Invio Email Multiplo
+                    </h4>
+                    <small class="text-muted">Invia email a più clienti contemporaneamente</small>
+                </div>
+                <div>
+                    <a href="gestione_email_template.php" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-cogs me-1"></i>Gestione Template
+                    </a>
+                    <a href="email_cronologia.php" class="btn btn-outline-primary">
+                        <i class="fas fa-history me-1"></i>Cronologia
+                    </a>
+                </div>
             </div>
         </div>
-    </nav>
+    </div>
+</div>
 
-    <div class="container">
-        <?php if ($message): ?>
-            <div class="alert alert-success alert-dismissible">
-                <i class="fas fa-check me-2"></i><?= $message ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if ($error): ?>
-            <div class="alert alert-danger alert-dismissible">
-                <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<div class="container-fluid">
+    <?php if ($message): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i><?= $message ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($error): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
 
-        <form method="POST" id="emailForm">
-            <div class="row">
-                <!-- Selezione Template -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <h6><i class="fas fa-file-alt me-2"></i>1. Seleziona Template</h6>
-                        </div>
-                        <div class="card-body">
-                            <?php if (empty($templates)): ?>
-                                <p class="text-muted">Nessun template disponibile.</p>
-                                <a href="gestione_email_template.php" class="btn btn-primary btn-sm">Crea Template</a>
-                            <?php else: ?>
-                                <select class="form-select" name="template_id" id="templateSelect" required>
+    <form method="POST" id="emailForm">
+        <div class="row">
+            <!-- Selezione Template -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+                        <h6 class="mb-0">
+                            <span class="badge bg-white text-dark me-2">1</span>
+                            <i class="fas fa-file-alt me-2"></i>Seleziona Template
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <?php if (empty($templates)): ?>
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-excel fa-2x text-muted mb-3"></i>
+                                <p class="text-muted mb-3">Nessun template disponibile</p>
+                                <a href="gestione_email_template.php" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i>Crea Template
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-list me-1 text-primary"></i>Template Email
+                                </label>
+                                <select class="form-select form-select-lg" name="template_id" id="templateSelect" required>
                                     <option value="">-- Seleziona template --</option>
                                     <?php foreach ($templates as $template): ?>
                                         <option value="<?= $template['id'] ?>"><?= htmlspecialchars($template['nome']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                            <?php endif; ?>
-                        </div>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Seleziona un template per iniziare
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
+            </div>
 
-                <!-- Selezione Clienti -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header bg-info text-white d-flex justify-content-between">
-                            <h6><i class="fas fa-users me-2"></i>2. Seleziona Clienti</h6>
-                            <span class="cliente-count" id="clienteCount">0</span>
-                        </div>
-                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                            <?php if (empty($clienti)): ?>
-                                <p class="text-muted">Nessun cliente con email trovato.</p>
-                            <?php else: ?>
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" id="selectAll">
-                                        <i class="fas fa-check-double me-1"></i>Seleziona Tutti (<?= count($clienti) ?>)
-                                    </button>
-                                </div>
-                                
-                                <?php foreach ($clienti as $cliente): ?>
-                                    <div class="cliente-item">
+            <!-- Selezione Clienti -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                        <h6 class="mb-0">
+                            <span class="badge bg-white text-dark me-2">2</span>
+                            <i class="fas fa-users me-2"></i>Seleziona Clienti
+                        </h6>
+                        <span class="badge bg-white text-dark fs-6" id="clienteCount">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <?php if (empty($clienti)): ?>
+                            <div class="text-center py-4 px-3">
+                                <i class="fas fa-users-slash fa-2x text-muted mb-3"></i>
+                                <p class="text-muted">Nessun cliente con email trovato</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="p-3 border-bottom bg-light">
+                                <button type="button" class="btn btn-outline-primary btn-sm w-100" id="selectAll">
+                                    <i class="fas fa-check-double me-1"></i>Seleziona Tutti (<?= count($clienti) ?>)
+                                </button>
+                            </div>
+                            
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                <?php foreach ($clienti as $index => $cliente): ?>
+                                    <div class="p-3 border-bottom cliente-item <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?>">
                                         <div class="form-check">
                                             <input class="form-check-input cliente-check" type="checkbox" 
                                                    name="clienti[]" value="<?= $cliente['id'] ?>" 
                                                    id="cliente_<?= $cliente['id'] ?>">
                                             <label class="form-check-label w-100" for="cliente_<?= $cliente['id'] ?>">
-                                                <div class="d-flex justify-content-between">
-                                                    <div>
-                                                        <strong><?= htmlspecialchars(trim($cliente['nome_proprio'] . ' ' . $cliente['nome'])) ?></strong>
-                                                    </div>
+                                                <div class="d-flex flex-column">
+                                                    <strong class="text-dark">
+                                                        <?= htmlspecialchars(trim($cliente['nome_proprio'] . ' ' . $cliente['nome'])) ?>
+                                                    </strong>
+                                                    <small class="text-primary">
+                                                        <i class="fas fa-envelope me-1"></i>
+                                                        <?= htmlspecialchars($cliente['email']) ?>
+                                                    </small>
                                                 </div>
-                                                <small class="text-primary"><?= htmlspecialchars($cliente['email']) ?></small>
                                             </label>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Personalizza Email -->
-                <div class="col-md-4">
-                    <div class="card" id="emailCard" style="display: none;">
-                        <div class="card-header bg-success text-white">
-                            <h6><i class="fas fa-edit me-2"></i>3. Personalizza & Invia</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Oggetto</label>
-                                <input type="text" name="oggetto_custom" id="oggettoInput" class="form-control" required>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Corpo Email</label>
-                                <textarea name="corpo_custom" id="corpoTextarea" class="form-control" rows="8" required></textarea>
-                                <small class="text-muted">Variabili: {nome_cliente}, {email_cliente}</small>
-                            </div>
-                            
-                            <div class="d-grid">
-                                <button type="submit" name="invia_email" class="btn btn-success" id="btnInvia">
-                                    <i class="fas fa-paper-plane me-1"></i>Invia Email
-                                </button>
-                            </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-        </form>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const templateSelect = document.getElementById('templateSelect');
-            const emailCard = document.getElementById('emailCard');
-            const oggettoInput = document.getElementById('oggettoInput');
-            const corpoTextarea = document.getElementById('corpoTextarea');
-            const selectAllBtn = document.getElementById('selectAll');
-            const clienteChecks = document.querySelectorAll('.cliente-check');
-            const clienteCount = document.getElementById('clienteCount');
-            const btnInvia = document.getElementById('btnInvia');
-            
-            // Carica template
-            templateSelect.addEventListener('change', function() {
-                if (this.value) {
-                    fetch(`?get_template=1&template_id=${this.value}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            oggettoInput.value = data.oggetto;
-                            corpoTextarea.value = data.corpo;
-                            emailCard.style.display = 'block';
-                        });
-                } else {
-                    emailCard.style.display = 'none';
-                }
-            });
-            
-            // Seleziona tutti
+            <!-- Personalizza Email -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100" id="emailCard" style="display: none;">
+                    <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                        <h6 class="mb-0">
+                            <span class="badge bg-white text-dark me-2">3</span>
+                            <i class="fas fa-edit me-2"></i>Personalizza & Invia
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-heading me-1 text-primary"></i>Oggetto
+                            </label>
+                            <input type="text" name="oggetto_custom" id="oggettoInput" 
+                                   class="form-control form-control-lg" required
+                                   placeholder="Oggetto dell'email">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
+                            </label>
+                            <textarea name="corpo_custom" id="corpoTextarea" 
+                                      class="form-control" rows="8" required
+                                      placeholder="Contenuto dell'email..."></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-magic me-1"></i>
+                                <strong>Variabili disponibili:</strong> 
+                                <code>{nome_cliente}</code>, <code>{email_cliente}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" name="invia_email" class="btn btn-success btn-lg" id="btnInvia">
+                                <i class="fas fa-paper-plane me-2"></i>Invia Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placeholder quando template non selezionato -->
+                <div class="card shadow-sm border-0 h-100" id="placeholderCard">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-arrow-left fa-2x text-muted mb-3"></i>
+                        <h6 class="text-muted">Seleziona un template per continuare</h6>
+                        <small class="text-muted">Dopo aver scelto il template, potrai personalizzare e inviare l'email</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.cliente-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.cliente-item:hover {
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #3498db !important;
+}
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+.card-header {
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+.btn-success {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border: none;
+}
+.btn-success:hover {
+    background: linear-gradient(135deg, #229954 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+.btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f4e79 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+#clienteCount {
+    transition: all 0.3s ease;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const templateSelect = document.getElementById('templateSelect');
+        const emailCard = document.getElementById('emailCard');
+        const placeholderCard = document.getElementById('placeholderCard');
+        const oggettoInput = document.getElementById('oggettoInput');
+        const corpoTextarea = document.getElementById('corpoTextarea');
+        const selectAllBtn = document.getElementById('selectAll');
+        const clienteChecks = document.querySelectorAll('.cliente-check');
+        const clienteCount = document.getElementById('clienteCount');
+        const btnInvia = document.getElementById('btnInvia');
+        
+        // Carica template
+        templateSelect.addEventListener('change', function() {
+            if (this.value) {
+                fetch(`?get_template=1&template_id=${this.value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        oggettoInput.value = data.oggetto;
+                        corpoTextarea.value = data.corpo;
+                        emailCard.style.display = 'block';
+                        placeholderCard.style.display = 'none';
+                    });
+            } else {
+                emailCard.style.display = 'none';
+                placeholderCard.style.display = 'block';
+            }
+        });
+        
+        // Seleziona tutti
+        if (selectAllBtn) {
             selectAllBtn.addEventListener('click', function() {
                 const allChecked = document.querySelectorAll('.cliente-check:checked').length === clienteChecks.length;
                 clienteChecks.forEach(check => {
                     check.checked = !allChecked;
                 });
                 updateCount();
+                
+                // Aggiorna testo bottone
+                this.innerHTML = allChecked ? 
+                    '<i class="fas fa-check-double me-1"></i>Seleziona Tutti (<?= count($clienti) ?>)' :
+                    '<i class="fas fa-times me-1"></i>Deseleziona Tutti';
             });
+        }
+        
+        // Aggiorna contatore
+        clienteChecks.forEach(check => {
+            check.addEventListener('change', updateCount);
+        });
+        
+        function updateCount() {
+            const count = document.querySelectorAll('.cliente-check:checked').length;
+            clienteCount.textContent = count;
             
-            // Aggiorna contatore
-            clienteChecks.forEach(check => {
-                check.addEventListener('change', updateCount);
-            });
-            
-            function updateCount() {
-                const count = document.querySelectorAll('.cliente-check:checked').length;
-                clienteCount.textContent = count;
-                clienteCount.style.background = count > 0 ? '#28a745' : '#6c757d';
+            // Aggiorna stile badge
+            if (count === 0) {
+                clienteCount.className = 'badge bg-secondary text-white fs-6';
+            } else if (count <= 5) {
+                clienteCount.className = 'badge bg-success text-white fs-6';
+            } else if (count <= 20) {
+                clienteCount.className = 'badge bg-warning text-dark fs-6';
+            } else {
+                clienteCount.className = 'badge bg-danger text-white fs-6';
+            }
+        }
+        
+        // Validazione invio
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            const count = document.querySelectorAll('.cliente-check:checked').length;
+            if (count === 0) {
+                e.preventDefault();
+                alert('⚠️ Seleziona almeno un cliente per l\'invio.');
+                return;
             }
             
-            // Validazione invio
-            document.getElementById('emailForm').addEventListener('submit', function(e) {
-                const count = document.querySelectorAll('.cliente-check:checked').length;
-                if (count === 0) {
-                    e.preventDefault();
-                    alert('Seleziona almeno un cliente per l\'invio.');
-                    return;
-                }
-                
-                if (!confirm(`Inviare l'email a ${count} clienti?`)) {
-                    e.preventDefault();
-                    return;
-                }
-                
-                btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Invio...';
-                btnInvia.disabled = true;
-            });
+            if (!confirm(`📧 Confermi l'invio dell'email a ${count} clienti?`)) {
+                e.preventDefault();
+                return;
+            }
             
-            updateCount();
+            btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
+            btnInvia.disabled = true;
         });
-    </script>
+        
+        updateCount();
+    });
+</script>
 </body>
 </html>
