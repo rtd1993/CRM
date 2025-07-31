@@ -1398,8 +1398,43 @@ function bulkDownload() {
     }
     
     if (confirm(`Vuoi scaricare ${selected.length} elementi come archivio ZIP?`)) {
-        // Implementa download ZIP
-        showNotification('📥 Funzionalità download ZIP in arrivo!', 'info');
+        showNotification('📥 Creazione archivio ZIP in corso...', 'info');
+        
+        // Crea form per il download ZIP
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'api/bulk_download.php';
+        form.target = '_blank';
+        
+        // Aggiungi percorso corrente
+        const pathInput = document.createElement('input');
+        pathInput.type = 'hidden';
+        pathInput.name = 'current_path';
+        pathInput.value = <?= json_encode($relative_path) ?>;
+        form.appendChild(pathInput);
+        
+        // Aggiungi elementi selezionati
+        selected.forEach(item => {
+            const itemInput = document.createElement('input');
+            itemInput.type = 'hidden';
+            itemInput.name = 'items[]';
+            itemInput.value = item.name;
+            form.appendChild(itemInput);
+            
+            const typeInput = document.createElement('input');
+            typeInput.type = 'hidden';
+            typeInput.name = 'types[]';
+            typeInput.value = item.type;
+            form.appendChild(typeInput);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+        setTimeout(() => {
+            showNotification('✅ Download avviato!', 'success');
+        }, 1000);
     }
 }
 
@@ -1410,10 +1445,11 @@ function bulkMove() {
         return;
     }
     
-    if (confirm(`Vuoi spostare ${selected.length} elementi selezionati?`)) {
-        // Implementa spostamento multiplo
-        showNotification('📂 Funzionalità spostamento multiplo in arrivo!', 'info');
-    }
+    // Apri modal per selezione destinazione
+    const itemNames = selected.map(item => item.name).join(', ');
+    const title = `Sposta ${selected.length} elementi`;
+    const url = `api/bulk_move.php?current_path=${encodeURIComponent(<?= json_encode($relative_path) ?>)}&items=${encodeURIComponent(JSON.stringify(selected))}`;
+    openModal(title, url);
 }
 
 function bulkDelete() {
@@ -1423,9 +1459,47 @@ function bulkDelete() {
         return;
     }
     
-    if (confirm(`⚠️ ATTENZIONE: Vuoi eliminare ${selected.length} elementi selezionati?\n\nQuesta operazione non può essere annullata!`)) {
-        // Implementa eliminazione multipla
-        showNotification('🗑️ Funzionalità eliminazione multipla in arrivo!', 'info');
+    const itemsList = selected.map(item => `${item.type === 'folder' ? '📁' : '📄'} ${item.name}`).join('\n');
+    
+    if (confirm(`⚠️ ATTENZIONE: Vuoi eliminare ${selected.length} elementi selezionati?\n\n${itemsList}\n\nQuesta operazione non può essere annullata!`)) {
+        showNotification('🗑️ Eliminazione in corso...', 'info');
+        
+        // Invia richiesta AJAX per eliminazione multipla
+        const formData = new FormData();
+        formData.append('current_path', <?= json_encode($relative_path) ?>);
+        
+        selected.forEach(item => {
+            formData.append('items[]', item.name);
+            formData.append('types[]', item.type);
+        });
+        
+        fetch('api/bulk_delete.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✅ ${data.deleted} elementi eliminati con successo!`, 'success');
+                
+                if (data.errors && data.errors.length > 0) {
+                    setTimeout(() => {
+                        showNotification(`⚠️ ${data.errors.length} errori durante l'eliminazione`, 'warning');
+                    }, 2000);
+                }
+                
+                // Ricarica la pagina dopo 3 secondi
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                showNotification(`❌ Errore: ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Errore durante l\'eliminazione multipla:', error);
+            showNotification('❌ Errore di connessione durante l\'eliminazione', 'error');
+        });
     }
 }
 
