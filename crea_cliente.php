@@ -163,7 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $temp_debug = "DEBUG TEMPORANEO - Campi ricevuti: " . count($_POST) . " | ";
             $temp_debug .= "Updates preparati: " . count($updates) . " | ";
             $temp_debug .= "Codice fiscale: '" . $codice_fiscale . "' | ";
-            $temp_debug .= "Cognome: '" . $cognome . "'";
+            $temp_debug .= "Cognome: '" . $cognome . "' | ";
+            $temp_debug .= "Primi 5 POST: " . json_encode(array_slice($_POST, 0, 5, true)) . " | ";
+            $temp_debug .= "Updates preparati: " . json_encode(array_slice($updates, 0, 10));
             echo "<div style='background: yellow; padding: 10px; margin: 10px 0; border: 1px solid orange;'>$temp_debug</div>";
         }
         
