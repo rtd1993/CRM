@@ -32,9 +32,38 @@ if (isset($_POST['reset_password']) && $is_admin_or_dev) {
 if (isset($_GET['delete_id']) && $utente_loggato_ruolo === 'developer') {
     $delete_id = intval($_GET['delete_id']);
     if ($delete_id !== $utente_loggato_id) { // prevenzione autodistruzione
-        $stmt = $pdo->prepare("DELETE FROM utenti WHERE id = ?");
-        $stmt->execute([$delete_id]);
-        header("Location: gestione_utenti.php");
+        try {
+            // Verifica se l'utente esiste prima di eliminarlo
+            $stmt = $pdo->prepare("SELECT nome FROM utenti WHERE id = ?");
+            $stmt->execute([$delete_id]);
+            $user_to_delete = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user_to_delete) {
+                // Elimina l'utente
+                $stmt = $pdo->prepare("DELETE FROM utenti WHERE id = ?");
+                $result = $stmt->execute([$delete_id]);
+                
+                if ($result && $stmt->rowCount() > 0) {
+                    // Eliminazione riuscita
+                    $nome_eliminato = urlencode($user_to_delete['nome']);
+                    header("Location: gestione_utenti.php?success=deleted&nome=$nome_eliminato");
+                } else {
+                    // Eliminazione fallita
+                    header("Location: gestione_utenti.php?error=delete_failed");
+                }
+            } else {
+                // Utente non trovato
+                header("Location: gestione_utenti.php?error=user_not_found");
+            }
+        } catch (Exception $e) {
+            // Errore database
+            error_log("Errore eliminazione utente ID $delete_id: " . $e->getMessage());
+            header("Location: gestione_utenti.php?error=database_error");
+        }
+        exit;
+    } else {
+        // Tentativo di auto-eliminazione
+        header("Location: gestione_utenti.php?error=self_delete_forbidden");
         exit;
     }
 }
