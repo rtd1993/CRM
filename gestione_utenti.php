@@ -7,11 +7,28 @@ require_once __DIR__ . '/includes/header.php';
 $utente_loggato_id = $_SESSION['user_id'];
 $utente_loggato_ruolo = $_SESSION['user_role'];
 
-if (!in_array($utente_loggato_ruolo, ['admin', 'developer'])) {
-    die("Accesso non autorizzato.");
+// Ora tutti gli utenti possono accedere, ma con permessi diversi
+$is_admin_or_dev = in_array($utente_loggato_ruolo, ['admin', 'developer']);
+
+// Reset password per admin/developer
+if (isset($_POST['reset_password']) && $is_admin_or_dev) {
+    $target_user_id = intval($_POST['target_user_id']);
+    if ($target_user_id !== $utente_loggato_id) {
+        $default_password = "Password01!";
+        $hash = password_hash($default_password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
+        $success = $stmt->execute([$hash, $target_user_id]);
+        
+        if ($success) {
+            // Log dell'operazione
+            error_log("Password reset per utente ID $target_user_id da " . $_SESSION['username']);
+            header("Location: gestione_utenti.php?edit_id=$target_user_id&success=2");
+            exit;
+        }
+    }
 }
 
-// Eliminazione utente
+// Eliminazione utente (solo developer)
 if (isset($_GET['delete_id']) && $utente_loggato_ruolo === 'developer') {
     $delete_id = intval($_GET['delete_id']);
     if ($delete_id !== $utente_loggato_id) { // prevenzione autodistruzione
@@ -30,18 +47,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $ruolo = $_POST['ruolo'] ?? '';
     $telegram_chat_id = $_POST['telegram_chat_id'] ?? '';
     $password = $_POST['password'] ?? '';
+    
+    // Gli utenti base possono modificare solo i propri dati
+    if (!$is_admin_or_dev && $id !== $utente_loggato_id) {
+        die("Non autorizzato a modificare altri utenti.");
+    }
+    
+    // Gli utenti base non possono cambiare il proprio ruolo
+    if (!$is_admin_or_dev) {
+        // Recupera il ruolo attuale dall'utente loggato
+        $stmt = $pdo->prepare("SELECT ruolo FROM utenti WHERE id = ?");
+        $stmt->execute([$utente_loggato_id]);
+        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+        $ruolo = $user_data['ruolo']; // Mantieni il ruolo esistente
+    }
 
     $stmt = $pdo->prepare("UPDATE utenti SET nome = ?, email = ?, ruolo = ?, telegram_chat_id = ? WHERE id = ?");
     $ok = $stmt->execute([$nome, $email, $ruolo, $telegram_chat_id, $id]);
 
-    if (!empty($password)) {
+    // Solo gli utenti possono cambiare la propria password tramite il campo password
+    if (!empty($password) && $id === $utente_loggato_id) {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
         $stmt->execute([$hash, $id]);
     }
 
     if ($ok) {
-        header("Location: gestione_utenti.php?edit_id=$id&success=1");
+        $redirect_id = $is_admin_or_dev ? $id : $utente_loggato_id;
+        header("Location: gestione_utenti.php?edit_id=$redirect_id&success=1");
         exit;
     } else {
         echo "<p style='color:red;'>Errore nel salvataggio!</p>";
@@ -51,20 +84,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
 $stmt = $pdo->query("SELECT id, nome, email, ruolo, telegram_chat_id FROM utenti ORDER BY ruolo ASC, nome ASC");
 $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Ottieni dati dell'utente loggato
+$stmt = $pdo->prepare("SELECT id, nome, email, ruolo, telegram_chat_id FROM utenti WHERE id = ?");
+$stmt->execute([$utente_loggato_id]);
+$utente_loggato = $stmt->fetch(PDO::FETCH_ASSOC);
+
 $utenti_per_ruolo = [];
-foreach ($utenti as $u) {
-    $utenti_per_ruolo[$u['ruolo']][] = $u;
+if ($is_admin_or_dev) {
+    foreach ($utenti as $u) {
+        $utenti_per_ruolo[$u['ruolo']][] = $u;
+    }
 }
 
 $utente_selezionato = null;
 if (isset($_GET['edit_id'])) {
     $id_sel = intval($_GET['edit_id']);
+    
+    // Gli utenti base possono modificare solo se stessi
+    if (!$is_admin_or_dev && $id_sel !== $utente_loggato_id) {
+        $id_sel = $utente_loggato_id;
+    }
+    
     foreach ($utenti as $u) {
         if ($u['id'] === $id_sel) {
             $utente_selezionato = $u;
             break;
         }
     }
+} else if (!$is_admin_or_dev) {
+    // Per utenti base, seleziona automaticamente se stesso
+    $utente_selezionato = $utente_loggato;
 }
 ?>
 
@@ -112,6 +161,28 @@ if (isset($_GET['edit_id'])) {
     font-size: 1.1rem;
     position: relative;
     z-index: 1;
+}
+
+.reset-password-btn {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.reset-password-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
 }
 
 .create-user-btn {
@@ -407,18 +478,30 @@ if (isset($_GET['edit_id'])) {
 }
 </style>
 
-<?php if (isset($_GET['success']) && $_GET['success'] == 1): ?>
+<?php if (isset($_GET['success'])): ?>
     <div class="success-message">
-        Modifiche salvate con successo!
+        <?php if ($_GET['success'] == 1): ?>
+            Modifiche salvate con successo!
+        <?php elseif ($_GET['success'] == 2): ?>
+            Password resettata con successo! Nuova password: <strong>Password01!</strong>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 
+<div class="users-header">
+    <h2><?= $is_admin_or_dev ? '👥 Gestione Utenti' : '👤 Il Mio Profilo' ?></h2>
+    <p><?= $is_admin_or_dev ? 'Gestisci gli account utente del sistema' : 'Modifica i tuoi dati personali e cambia password' ?></p>
+</div>
+
+<?php if ($is_admin_or_dev): ?>
 <a href="create_user.php" class="create-user-btn">
     ➕ Crea nuovo utente
 </a>
+<?php endif; ?>
 
 <div class="users-container">
-    <!-- Lista utenti -->
+    <?php if ($is_admin_or_dev): ?>
+    <!-- Lista utenti (solo per admin/developer) -->
     <div class="users-list">
         <h3>Utenti per ruolo</h3>
         <?php foreach ($utenti_per_ruolo as $ruolo => $lista): ?>
@@ -452,10 +535,11 @@ if (isset($_GET['edit_id'])) {
             </div>
         <?php endforeach; ?>
     </div>
+    <?php endif; ?>
 
     <!-- Form modifica -->
     <div class="edit-form">
-        <h3>Dati utente</h3>
+        <h3><?= $is_admin_or_dev ? 'Dati utente' : 'I miei dati' ?></h3>
         <?php if ($utente_selezionato): ?>
             <form method="post">
                 <input type="hidden" name="id" value="<?= $utente_selezionato['id'] ?>">
@@ -472,6 +556,7 @@ if (isset($_GET['edit_id'])) {
                 
                 <div class="form-group">
                     <label class="form-label">🎭 Ruolo:</label>
+                    <?php if ($is_admin_or_dev): ?>
                     <select name="ruolo" class="form-select" required>
                         <?php foreach (["guest", "impiegato", "admin", "developer"] as $ruolo): ?>
                             <option value="<?= $ruolo ?>" <?= $utente_selezionato['ruolo'] === $ruolo ? 'selected' : '' ?>>
@@ -479,6 +564,10 @@ if (isset($_GET['edit_id'])) {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <?php else: ?>
+                    <input type="text" class="form-input" value="<?= ucfirst($utente_selezionato['ruolo']) ?>" readonly style="background-color: #f8f9fa;">
+                    <input type="hidden" name="ruolo" value="<?= $utente_selezionato['ruolo'] ?>">
+                    <?php endif; ?>
                 </div>
                 
                 <div class="form-group">
@@ -486,21 +575,51 @@ if (isset($_GET['edit_id'])) {
                     <input type="text" name="telegram_chat_id" class="form-input" value="<?= htmlspecialchars($utente_selezionato['telegram_chat_id']) ?>" placeholder="Opzionale">
                 </div>
                 
+                <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
+                <!-- Reset password per admin/developer su altri utenti -->
                 <div class="form-group">
-                    <label class="form-label">🔒 Nuova password:</label>
-                    <input type="password" name="password" class="form-input" placeholder="Lascia vuoto per non cambiare">
+                    <label class="form-label">🔒 Password:</label>
+                    <div style="padding: 0.8rem 1rem; background: #f8f9fa; border: 2px solid #e1e5e9; border-radius: 10px; color: #6c757d;">
+                        Non è possibile visualizzare la password corrente per motivi di sicurezza
+                    </div>
+                    <form method="post" style="display: inline;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
+                        <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
+                        <button type="submit" name="reset_password" class="reset-password-btn">
+                            🔄 Reset Password
+                        </button>
+                    </form>
                 </div>
+                <?php else: ?>
+                <!-- Campo password per il proprio account -->
+                <div class="form-group">
+                    <label class="form-label">🔒 <?= $is_admin_or_dev ? 'Nuova password' : 'Cambia password' ?>:</label>
+                    <input type="password" name="password" class="form-input" placeholder="<?= $is_admin_or_dev ? 'Lascia vuoto per non cambiare' : 'Inserisci nuova password per cambiarla' ?>">
+                </div>
+                <?php endif; ?>
                 
                 <button type="submit" class="save-btn">💾 Salva modifiche</button>
             </form>
         <?php else: ?>
             <div class="no-user-selected">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">👆</div>
-                <div>Seleziona un utente dalla lista per modificarne i dati</div>
+                <div><?= $is_admin_or_dev ? 'Seleziona un utente dalla lista per modificarne i dati' : 'Errore nel caricamento dei tuoi dati' ?></div>
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!$is_admin_or_dev): ?>
+<style>
+.users-container {
+    display: block !important;
+}
+
+.edit-form {
+    margin: 0 auto;
+    max-width: 600px;
+}
+</style>
+<?php endif; ?>
 
 </main>
 </body>
