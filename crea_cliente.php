@@ -67,8 +67,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $values = [];
         
         foreach ($campi_db as $campo => $tipo) {
+            // Debug specifico per alcuni campi importanti
+            if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {
+                error_log("DEBUG - Processando campo: '$campo', Valore POST: '" . ($_POST[$campo] ?? 'NON_IMPOSTATO') . "', isset: " . (isset($_POST[$campo]) ? 'SI' : 'NO'));
+            }
+            
             if (isset($_POST[$campo])) {
                 $valore = $_POST[$campo];
+                
+                // Debug per campi importanti
+                if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {
+                    error_log("DEBUG - Campo '$campo' elaborato con valore: '$valore'");
+                }
                 
                 // Validazione in base al tipo
                 if ($tipo === 'email' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_EMAIL)) {
@@ -168,6 +178,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (!empty($updates)) {
             $sql = "INSERT INTO clienti (" . implode(', ', $updates) . ") VALUES (" . implode(', ', array_fill(0, count($values), '?')) . ")";
+            
+            // Debug della query SQL
+            error_log("DEBUG SQL: " . $sql);
+            error_log("DEBUG VALUES: " . print_r($values, true));
+            error_log("DEBUG UPDATES: " . print_r($updates, true));
             
             $stmt = $pdo->prepare($sql);
             $result = $stmt->execute($values);
