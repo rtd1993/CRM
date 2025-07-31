@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/db.php';
 
 include __DIR__ . '/includes/header.php';
 
-// Definisco i campi della tabella clienti in base alla struttura del DB (stesso array di modifica_cliente.php)
+// Definisco i campi della tabella clienti in base alla struttura del DB
 $campi_db = [
     'Inizio rapporto' => 'date',
     'Fine rapporto' => 'date',
@@ -58,41 +58,23 @@ $campi_db = [
 
 // Gestione dell'inserimento
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Debug: logga tutti i campi POST ricevuti
-    error_log("DEBUG - Tutti i campi POST ricevuti: " . print_r($_POST, true));
-    error_log("DEBUG - Campi POST ricevuti: " . print_r(array_keys($_POST), true));
-    
-    // Debug: confronto tra campi DB e campi POST
-    $campi_db_keys = array_keys($campi_db);
-    $post_keys = array_keys($_POST);
-    error_log("DEBUG - Campi DB attesi: " . print_r($campi_db_keys, true));
-    error_log("DEBUG - Campi POST ricevuti: " . print_r($post_keys, true));
-    error_log("DEBUG - Campi DB mancanti nei POST: " . print_r(array_diff($campi_db_keys, $post_keys), true));
-    error_log("DEBUG - Campi POST non in DB: " . print_r(array_diff($post_keys, $campi_db_keys), true));
-    
     try {
         $updates = [];
         $values = [];
         
-        // NUOVA LOGICA: Processo TUTTI i campi POST ricevuti
-        foreach ($_POST as $campo_post => $valore_post) {
-            // Skip se è vuoto e non è un campo obbligatorio
-            if (empty($valore_post) && $campo_post !== 'Codice fiscale') {
-                continue;
+        // Processo tutti i campi definiti nell'array $campi_db
+        foreach ($campi_db as $campo => $tipo) {
+            if (!isset($_POST[$campo])) {
+                continue; // Salta se il campo non è presente nel POST
             }
             
-            // Determina il tipo di campo (se definito, altrimenti usa 'text')
-            $tipo = $campi_db[$campo_post] ?? 'text';
-            
-            error_log("DEBUG - Processando campo POST: '$campo_post', Valore: '$valore_post', Tipo: '$tipo'");
-            
-            $valore = $valore_post;
+            $valore = $_POST[$campo];
             
             // Gestione dei tipi di dato
             if ($tipo === 'checkbox') {
                 $valore = $valore === 'on' ? 1 : 0;
             } elseif ($tipo === 'number') {
-                if ($valore === '' || $valore === null || trim($valore) === '') {
+                if ($valore === '' || $valore === null) {
                     $valore = null;
                 } else {
                     $valore = is_numeric($valore) ? intval($valore) : null;
@@ -103,51 +85,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $date = DateTime::createFromFormat('Y-m-d', $valore);
                     if (!$date) {
-                        // Data non valida, usa NULL
                         $valore = null;
                     }
                 }
             } elseif ($tipo === 'email' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("Email non valida per il campo: $campo_post");
-            } elseif ($tipo === 'url' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_URL)) {
-                // Per l'URL, se non è valido ma non è vuoto, usa come testo
-                // throw new Exception("URL non valido per il campo: $campo_post");
+                throw new Exception("Email non valida per il campo: $campo");
             }
             
-            $updates[] = "`$campo_post`";
-            $values[] = $valore;
+            // Aggiungi solo se non è vuoto (eccetto per campi obbligatori)
+            if ($valore !== '' && $valore !== null || $campo === 'Codice fiscale') {
+                $updates[] = "`$campo`";
+                $values[] = $valore;
+            }
         }
         
         // Validazione obbligatoria per il codice fiscale
-        // Proviamo diverse varianti del nome del campo
-        $codice_fiscale = $_POST['Codice fiscale'] ?? $_POST['Codice_fiscale'] ?? $_POST['codice_fiscale'] ?? '';
-        $cognome = $_POST['Cognome/Ragione sociale'] ?? $_POST['Cognome_Ragione_sociale'] ?? '';
-        
-        // Debug dettagliato
-        $debug_info = [
-            'codice_fiscale_raw' => $codice_fiscale,
-            'codice_fiscale_length' => strlen($codice_fiscale),
-            'codice_fiscale_trim' => trim($codice_fiscale),
-            'codice_fiscale_empty' => empty($codice_fiscale),
-            'codice_fiscale_trim_empty' => trim($codice_fiscale) === '',
-            'codice_fiscale_isset' => isset($_POST['Codice fiscale']),
-            'post_keys' => array_keys($_POST),
-            'post_values_sample' => array_slice($_POST, 0, 10, true), // Prime 10 coppie chiave-valore
-            'updates_count' => count($updates),
-            'updates_fields' => $updates
-        ];
-        
-        error_log("DEBUG CODICE FISCALE: " . print_r($debug_info, true));
-        
-        // Debug rimosso per test completo
-        // if (!empty($_POST)) {
-        //     echo "<div style='background: yellow; padding: 10px; margin: 10px 0; border: 1px solid orange;'>DEBUG INFO</div>";
-        // }
-        
+        $codice_fiscale = $_POST['Codice fiscale'] ?? '';
         if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
-            // Mostra anche l'errore all'utente per il debug
-            $error_message = "Il Codice Fiscale è obbligatorio. DEBUG: " . json_encode($debug_info);
-            throw new Exception($error_message);
+            throw new Exception("Il Codice Fiscale è obbligatorio.");
         }
         
         // Creazione cartella e link
@@ -163,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Crea file di benvenuto nella cartella
             $welcome_file = $cartella_path . '/README.txt';
+            $cognome = $_POST['Cognome/Ragione sociale'] ?? '';
             $welcome_content = "Cartella cliente: " . $codice_fiscale . "\n";
             $welcome_content .= "Cognome/Ragione sociale: " . $cognome . "\n";
             $welcome_content .= "Creata il: " . date('d/m/Y H:i:s') . "\n\n";
@@ -172,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Aggiorna il valore del Link cartella
-        $idx = array_search('Link cartella', $updates);
+        $idx = array_search('`Link cartella`', $updates);
         if ($idx !== false) {
             $values[$idx] = $link_cartella;
         } else {
@@ -183,20 +139,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($updates)) {
             $sql = "INSERT INTO clienti (" . implode(', ', $updates) . ") VALUES (" . implode(', ', array_fill(0, count($values), '?')) . ")";
             
-            // Debug della query SQL
-            error_log("DEBUG SQL: " . $sql);
-            error_log("DEBUG VALUES: " . print_r($values, true));
-            error_log("DEBUG UPDATES: " . print_r($updates, true));
-            
             $stmt = $pdo->prepare($sql);
             $result = $stmt->execute($values);
             
             if ($result) {
                 $nuovo_cliente_id = $pdo->lastInsertId();
                 $success_message = "Cliente creato con successo!";
-                
-                // Log dell'operazione
-                error_log("Nuovo cliente creato ID: $nuovo_cliente_id, Cartella: $cartella_path");
                 
                 // Redirect dopo 2 secondi per mostrare il messaggio
                 header("refresh:2;url=info_cliente.php?id=$nuovo_cliente_id");
