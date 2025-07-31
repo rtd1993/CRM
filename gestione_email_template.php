@@ -1,419 +1,218 @@
 <?php
-// Abilita la visualizzazione degli errori per debug
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('log_errors', 1);
 
-require_once 'includes/auth.php';
-require_once 'includes/db.php';
-require_once 'includes/header.php';
-
-// Verifica e crea le tabelle se non esistono
-try {
-    // Verifica se la tabella email_templates esiste
-    $stmt = $pdo->query("SHOW TABLES LIKE 'email_templates'");
-    if ($stmt->rowCount() == 0) {
-        // Crea la tabella email_templates
-        $pdo->exec("CREATE TABLE `email_templates` (
-          `id` int NOT NULL AUTO_INCREMENT,
-          `nome` varchar(255) NOT NULL,
-          `oggetto` varchar(500) NOT NULL,
-          `corpo` text NOT NULL,
-          `data_creazione` datetime DEFAULT CURRENT_TIMESTAMP,
-          `data_modifica` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
-        
-        // Inserisci i template di esempio
-        $pdo->exec("INSERT INTO `email_templates` (`nome`, `oggetto`, `corpo`) VALUES
-        ('Comunicazione generale', 'Comunicazione importante da AS Contabilmente', 
-        'Gentile {nome_cliente},\\n\\nSperiamo che tutto proceda al meglio per lei e la sua attività.\\n\\nLe scriviamo per comunicarle:\\n\\n[INSERIRE TESTO DELLA COMUNICAZIONE]\\n\\nRimaniamo a disposizione per qualsiasi chiarimento.\\n\\nCordiali saluti,\\nIl team di AS Contabilmente\\n\\nTel: [TELEFONO]\\nEmail: gestione.ascontabilmente@gmail.com'),
-        
-        ('Scadenza documenti', 'Promemoria scadenze - {nome_cliente}',
-        'Gentile {nome_cliente},\\n\\nLe ricordiamo che sono in scadenza i seguenti documenti/adempimenti:\\n\\n[ELENCO SCADENZE]\\n\\nLa preghiamo di contattarci al più presto per procedere con gli adempimenti necessari.\\n\\nGrazie per la collaborazione.\\n\\nCordiali saluti,\\nAS Contabilmente\\n\\nTel: [TELEFONO]\\nEmail: gestione.ascontabilmente@gmail.com'),
-        
-        ('Richiesta documenti', 'Richiesta documentazione - {nome_cliente}',
-        'Gentile {nome_cliente},\\n\\nPer procedere con le pratiche in corso, abbiamo bisogno della seguente documentazione:\\n\\n[ELENCO DOCUMENTI RICHIESTI]\\n\\nLa preghiamo di inviarci i documenti richiesti entro [DATA SCADENZA].\\n\\nRimaniamo a disposizione per qualsiasi chiarimento.\\n\\nCordiali saluti,\\nAS Contabilmente\\n\\nTel: [TELEFONO]\\nEmail: gestione.ascontabilmente@gmail.com'),
-        
-        ('Auguri festività', 'Auguri di {festivita} da AS Contabilmente',
-        'Gentile {nome_cliente},\\n\\nTutto il team di AS Contabilmente desidera farle i migliori auguri di {festivita}.\\n\\nLe auguriamo un periodo di serenità e felicità insieme ai suoi cari.\\n\\nCordiali saluti,\\nAS Contabilmente\\n\\nTel: [TELEFONO]\\nEmail: gestione.ascontabilmente@gmail.com')");
-    }
-    
-    // Verifica se la tabella email_log esiste
-    $stmt = $pdo->query("SHOW TABLES LIKE 'email_log'");
-    if ($stmt->rowCount() == 0) {
-        // Crea la tabella email_log
-        $pdo->exec("CREATE TABLE `email_log` (
-          `id` int NOT NULL AUTO_INCREMENT,
-          `cliente_id` int NOT NULL,
-          `template_id` int NOT NULL,
-          `oggetto` varchar(500) NOT NULL,
-          `corpo` text NOT NULL,
-          `destinatario_email` varchar(255) NOT NULL,
-          `destinatario_nome` varchar(255) NOT NULL,
-          `data_invio` datetime DEFAULT CURRENT_TIMESTAMP,
-          `stato` enum('inviata','fallita') DEFAULT 'inviata',
-          `messaggio_errore` text,
-          PRIMARY KEY (`id`),
-          KEY `cliente_id` (`cliente_id`),
-          KEY `template_id` (`template_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
-    }
-} catch (Exception $e) {
-    die("Errore nella creazione delle tabelle: " . $e->getMessage());
+// Controllo autenticazione semplice
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
 }
 
-// Gestione delle azioni
-$action = $_GET['action'] ?? '';
+// Connessione database
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=crm;charset=utf8mb4', 'root', 'root', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+} catch (PDOException $e) {
+    die("Errore connessione database: " . $e->getMessage());
+}
+
+// Crea tabelle se non esistono
+try {
+    // Tabella template email
+    $pdo->exec("CREATE TABLE IF NOT EXISTS email_templates (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nome VARCHAR(255) NOT NULL,
+        oggetto VARCHAR(500) NOT NULL,
+        corpo TEXT NOT NULL,
+        data_creazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    
+    // Tabella cronologia invii - SEMPLIFICATA per invii multipli
+    $pdo->exec("CREATE TABLE IF NOT EXISTS email_cronologia (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        template_id INT,
+        oggetto VARCHAR(500) NOT NULL,
+        corpo TEXT NOT NULL,
+        destinatari TEXT NOT NULL,  -- Lista email separate da virgola
+        totale_destinatari INT DEFAULT 0,
+        invii_riusciti INT DEFAULT 0,
+        invii_falliti INT DEFAULT 0,
+        data_invio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        dettagli_errori TEXT
+    )");
+    
+    // Inserisci template di esempio se non esistono
+    $count = $pdo->query("SELECT COUNT(*) FROM email_templates")->fetchColumn();
+    if ($count == 0) {
+        $pdo->exec("INSERT INTO email_templates (nome, oggetto, corpo) VALUES 
+        ('Comunicazione Generale', 'Comunicazione importante da AS Contabilmente', 'Gentile Cliente,\n\nSperiamo che tutto proceda al meglio.\n\nCordiali saluti,\nAS Contabilmente'),
+        ('Promemoria Scadenze', 'Promemoria scadenze', 'Gentile Cliente,\n\nLe ricordiamo le prossime scadenze.\n\nCordiali saluti,\nAS Contabilmente'),
+        ('Richiesta Documenti', 'Richiesta documentazione', 'Gentile Cliente,\n\nAbbiamo bisogno della seguente documentazione.\n\nCordiali saluti,\nAS Contabilmente')");
+    }
+    
+} catch (PDOException $e) {
+    die("Errore creazione tabelle: " . $e->getMessage());
+}
+
+// Gestione azioni
 $message = '';
 $error = '';
 
 if ($_POST) {
-    if (isset($_POST['add_template'])) {
+    if (isset($_POST['crea_template'])) {
         $nome = trim($_POST['nome']);
         $oggetto = trim($_POST['oggetto']);
         $corpo = trim($_POST['corpo']);
         
-        if (!empty($nome) && !empty($oggetto) && !empty($corpo)) {
+        if ($nome && $oggetto && $corpo) {
             $stmt = $pdo->prepare("INSERT INTO email_templates (nome, oggetto, corpo) VALUES (?, ?, ?)");
             if ($stmt->execute([$nome, $oggetto, $corpo])) {
-                $message = "Template email creato con successo!";
+                $message = "Template creato con successo!";
             } else {
-                $error = "Errore durante la creazione del template.";
+                $error = "Errore nella creazione del template.";
             }
         } else {
             $error = "Tutti i campi sono obbligatori.";
         }
     }
     
-    if (isset($_POST['update_template'])) {
-        $id = $_POST['template_id'];
-        $nome = trim($_POST['nome']);
-        $oggetto = trim($_POST['oggetto']);
-        $corpo = trim($_POST['corpo']);
-        
-        if (!empty($nome) && !empty($oggetto) && !empty($corpo)) {
-            $stmt = $pdo->prepare("UPDATE email_templates SET nome = ?, oggetto = ?, corpo = ? WHERE id = ?");
-            if ($stmt->execute([$nome, $oggetto, $corpo, $id])) {
-                $message = "Template email aggiornato con successo!";
-            } else {
-                $error = "Errore durante l'aggiornamento del template.";
-            }
-        } else {
-            $error = "Tutti i campi sono obbligatori.";
-        }
-    }
-    
-    if (isset($_POST['delete_template'])) {
+    if (isset($_POST['elimina_template'])) {
         $id = $_POST['template_id'];
         $stmt = $pdo->prepare("DELETE FROM email_templates WHERE id = ?");
         if ($stmt->execute([$id])) {
-            $message = "Template email eliminato con successo!";
-        } else {
-            $error = "Errore durante l'eliminazione del template.";
+            $message = "Template eliminato!";
         }
     }
 }
 
-// Recupera tutti i template
-try {
-    $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
-} catch (Exception $e) {
-    die("Errore nel recupero dei template: " . $e->getMessage());
-}
-
-// Recupera template da modificare se richiesto
-$edit_template = null;
-if ($action === 'edit' && isset($_GET['id'])) {
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE id = ?");
-        $stmt->execute([$_GET['id']]);
-        $edit_template = $stmt->fetch();
-    } catch (Exception $e) {
-        $error = "Errore nel recupero del template: " . $e->getMessage();
-    }
-}
+// Recupera template
+$templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
 ?>
 
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Template Email - CRM</title>
+    <title>Gestione Template Email</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 2rem auto;
-            padding: 2rem;
-            max-width: 1200px;
-        }
-        
-        .page-title {
-            color: #2c3e50;
-            font-weight: 600;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border: none;
-            border-radius: 10px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #2980b9, #3498db);
-            transform: translateY(-1px);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            border: none;
-            border-radius: 10px;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            border: none;
-            border-radius: 10px;
-        }
-        
-        .form-control {
-            border-radius: 10px;
-            border: 2px solid #ecf0f1;
-            padding: 0.75rem;
-        }
-        
-        .form-control:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-        
-        .template-item {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #3498db;
-        }
-        
-        .template-preview {
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            white-space: pre-wrap;
-        }
-        
-        .variable-help {
-            background: #e8f4fd;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .variable-help h6 {
-            color: #2980b9;
-            font-weight: 600;
-        }
-        
-        .variable-tag {
-            background: #3498db;
-            color: white;
-            padding: 0.2rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            margin: 0.2rem;
-            display: inline-block;
-        }
+        body { background: #f8f9fa; }
+        .container { margin-top: 20px; }
+        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="main-container">
-            <h1 class="page-title">
-                <i class="fas fa-envelope-open-text me-3"></i>
-                Gestione Template Email
-            </h1>
-            
-            <?php if ($message): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i><?php echo $message; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if ($error): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <!-- Form per aggiungere/modificare template -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-plus-circle me-2"></i>
-                                <?php echo $edit_template ? 'Modifica Template' : 'Nuovo Template Email'; ?>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Guida variabili -->
-                            <div class="variable-help">
-                                <h6><i class="fas fa-info-circle me-2"></i>Variabili disponibili:</h6>
-                                <span class="variable-tag">{nome_cliente}</span>
-                                <span class="variable-tag">{cognome_cliente}</span>
-                                <span class="variable-tag">{ragione_sociale}</span>
-                                <span class="variable-tag">{codice_fiscale}</span>
-                                <span class="variable-tag">{partita_iva}</span>
-                                <small class="d-block mt-2 text-muted">
-                                    Le variabili verranno sostituite automaticamente con i dati del cliente selezionato.
-                                </small>
-                            </div>
-                            
-                            <form method="POST">
-                                <?php if ($edit_template): ?>
-                                    <input type="hidden" name="template_id" value="<?php echo $edit_template['id']; ?>">
-                                <?php endif; ?>
-                                
-                                <div class="mb-3">
-                                    <label for="nome" class="form-label">Nome Template</label>
-                                    <input type="text" class="form-control" id="nome" name="nome" 
-                                           value="<?php echo $edit_template ? htmlspecialchars($edit_template['nome']) : ''; ?>" 
-                                           required>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="oggetto" class="form-label">Oggetto Email</label>
-                                    <input type="text" class="form-control" id="oggetto" name="oggetto" 
-                                           value="<?php echo $edit_template ? htmlspecialchars($edit_template['oggetto']) : ''; ?>" 
-                                           required>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="corpo" class="form-label">Corpo Email</label>
-                                    <textarea class="form-control" id="corpo" name="corpo" rows="10" required><?php echo $edit_template ? htmlspecialchars($edit_template['corpo']) : ''; ?></textarea>
-                                </div>
-                                
-                                <div class="d-grid gap-2">
-                                    <?php if ($edit_template): ?>
-                                        <button type="submit" name="update_template" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Aggiorna Template
-                                        </button>
-                                        <a href="gestione_email_template.php" class="btn btn-secondary">
-                                            <i class="fas fa-times me-2"></i>Annulla
-                                        </a>
-                                    <?php else: ?>
-                                        <button type="submit" name="add_template" class="btn btn-primary">
-                                            <i class="fas fa-plus me-2"></i>Crea Template
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <!-- Lista template esistenti -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-list me-2"></i>
-                                Template Esistenti (<?php echo count($templates); ?>)
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <?php if (empty($templates)): ?>
-                                <div class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                                    <p>Nessun template trovato.</p>
-                                </div>
-                            <?php else: ?>
-                                <?php foreach ($templates as $template): ?>
-                                    <div class="template-item">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1"><?php echo htmlspecialchars($template['nome']); ?></h6>
-                                                <p class="mb-1 text-muted">
-                                                    <strong>Oggetto:</strong> <?php echo htmlspecialchars($template['oggetto']); ?>
-                                                </p>
-                                                <small class="text-muted">
-                                                    Creato: <?php echo date('d/m/Y H:i', strtotime($template['data_creazione'])); ?>
-                                                </small>
-                                            </div>
-                                            <div class="btn-group" role="group">
-                                                <a href="?action=edit&id=<?php echo $template['id']; ?>" 
-                                                   class="btn btn-warning btn-sm">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <form method="POST" style="display: inline;" 
-                                                      onsubmit="return confirm('Sei sicuro di voler eliminare questo template?');">
-                                                    <input type="hidden" name="template_id" value="<?php echo $template['id']; ?>">
-                                                    <button type="submit" name="delete_template" class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Anteprima corpo email -->
-                                        <div class="template-preview">
-                                            <?php echo nl2br(htmlspecialchars(substr($template['corpo'], 0, 200))); ?>
-                                            <?php if (strlen($template['corpo']) > 200): ?>
-                                                <span class="text-muted">...</span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="text-center mt-4">
-                <a href="email.php" class="btn btn-primary btn-lg">
-                    <i class="fas fa-paper-plane me-2"></i>
-                    Vai alla Pagina Invio Email
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="dashboard.php">
+                <i class="fas fa-arrow-left me-2"></i>CRM - Gestione Email
+            </a>
+            <div>
+                <a href="email_invio.php" class="btn btn-light me-2">
+                    <i class="fas fa-paper-plane me-1"></i>Invia Email
+                </a>
+                <a href="email_cronologia.php" class="btn btn-outline-light">
+                    <i class="fas fa-history me-1"></i>Cronologia
                 </a>
             </div>
         </div>
+    </nav>
+
+    <div class="container">
+        <?php if ($message): ?>
+            <div class="alert alert-success alert-dismissible">
+                <i class="fas fa-check me-2"></i><?= $message ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-danger alert-dismissible">
+                <i class="fas fa-exclamation-triangle me-2"></i><?= $error ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <div class="row">
+            <!-- Form Nuovo Template -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-plus me-2"></i>Nuovo Template</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Nome Template</label>
+                                <input type="text" name="nome" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Oggetto Email</label>
+                                <input type="text" name="oggetto" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Corpo Email</label>
+                                <textarea name="corpo" class="form-control" rows="8" required></textarea>
+                                <small class="text-muted">
+                                    Variabili disponibili: {nome_cliente}, {email_cliente}
+                                </small>
+                            </div>
+                            <button type="submit" name="crea_template" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Crea Template
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista Template -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5><i class="fas fa-list me-2"></i>Template Esistenti (<?= count($templates) ?>)</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                        <?php if (empty($templates)): ?>
+                            <p class="text-muted">Nessun template trovato.</p>
+                        <?php else: ?>
+                            <?php foreach ($templates as $template): ?>
+                                <div class="border rounded p-3 mb-3 bg-light">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?= htmlspecialchars($template['nome']) ?></h6>
+                                            <p class="mb-1 text-muted small">
+                                                <strong>Oggetto:</strong> <?= htmlspecialchars($template['oggetto']) ?>
+                                            </p>
+                                            <small class="text-muted">
+                                                Creato: <?= date('d/m/Y H:i', strtotime($template['data_creazione'])) ?>
+                                            </small>
+                                        </div>
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
+                                            <button type="submit" name="elimina_template" 
+                                                    class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Eliminare questo template?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="mt-2 p-2 bg-white border rounded">
+                                        <small><?= nl2br(htmlspecialchars(substr($template['corpo'], 0, 150))) ?>
+                                        <?= strlen($template['corpo']) > 150 ? '...' : '' ?></small>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
