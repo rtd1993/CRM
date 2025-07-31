@@ -112,15 +112,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Validazione obbligatoria per il codice fiscale
-        $codice_fiscale = $_POST['Codice fiscale'] ?? '';
-        $cognome = $_POST['Cognome/Ragione sociale'] ?? '';
+        // Proviamo diverse varianti del nome del campo
+        $codice_fiscale = $_POST['Codice fiscale'] ?? $_POST['Codice_fiscale'] ?? $_POST['codice_fiscale'] ?? '';
+        $cognome = $_POST['Cognome/Ragione sociale'] ?? $_POST['Cognome_Ragione_sociale'] ?? '';
         
-        // Debug: logga il valore ricevuto
-        error_log("DEBUG - Codice fiscale ricevuto: '" . $codice_fiscale . "' (length: " . strlen($codice_fiscale) . ")");
-        error_log("DEBUG - Cognome ricevuto: '" . $cognome . "'");
+        // Debug dettagliato
+        $debug_info = [
+            'codice_fiscale_raw' => $codice_fiscale,
+            'codice_fiscale_length' => strlen($codice_fiscale),
+            'codice_fiscale_trim' => trim($codice_fiscale),
+            'codice_fiscale_empty' => empty($codice_fiscale),
+            'codice_fiscale_trim_empty' => trim($codice_fiscale) === '',
+            'codice_fiscale_isset' => isset($_POST['Codice fiscale']),
+            'post_keys' => array_keys($_POST),
+            'post_values_sample' => array_slice($_POST, 0, 5, true) // Prime 5 coppie chiave-valore
+        ];
+        
+        error_log("DEBUG CODICE FISCALE: " . print_r($debug_info, true));
         
         if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
-            throw new Exception("Il Codice Fiscale è obbligatorio");
+            // Mostra anche l'errore all'utente per il debug
+            $error_message = "Il Codice Fiscale è obbligatorio. DEBUG: " . json_encode($debug_info);
+            throw new Exception($error_message);
         }
         
         // Creazione cartella e link
