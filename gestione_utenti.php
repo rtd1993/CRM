@@ -45,25 +45,24 @@ if (isset($_GET['delete_id']) && $utente_loggato_ruolo === 'developer') {
                 
                 if ($result && $stmt->rowCount() > 0) {
                     // Eliminazione riuscita
-                    $nome_eliminato = urlencode($user_to_delete['nome']);
-                    header("Location: gestione_utenti.php?success=deleted&nome=$nome_eliminato");
+                    header("Location: gestione_utenti.php");
                 } else {
                     // Eliminazione fallita
-                    header("Location: gestione_utenti.php?error=delete_failed");
+                    header("Location: gestione_utenti.php");
                 }
             } else {
                 // Utente non trovato
-                header("Location: gestione_utenti.php?error=user_not_found");
+                header("Location: gestione_utenti.php");
             }
         } catch (Exception $e) {
             // Errore database
             error_log("Errore eliminazione utente ID $delete_id: " . $e->getMessage());
-            header("Location: gestione_utenti.php?error=database_error");
+            header("Location: gestione_utenti.php");
         }
         exit;
     } else {
         // Tentativo di auto-eliminazione
-        header("Location: gestione_utenti.php?error=self_delete_forbidden");
+        header("Location: gestione_utenti.php");
         exit;
     }
 }
