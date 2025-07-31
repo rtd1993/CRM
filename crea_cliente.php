@@ -87,8 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log per tutti i campi per capire il problema
             error_log("DEBUG LOOP - Campo: '$campo', Exists: " . ($campo_exists ? 'SI' : 'NO') . ", Value: '" . ($campo_value ?? 'NULL') . "'");
             
-            if (isset($_POST[$campo])) {
-                $valore = $_POST[$campo];
+            // MODIFICA: Processiamo tutti i campi, anche se vuoti, tranne se non esistono affatto
+            if (isset($_POST[$campo]) || array_key_exists($campo, $_POST)) {
+                $valore = $_POST[$campo] ?? '';  // Se null, usa stringa vuota
                 
                 // Debug per campi importanti
                 if (in_array($campo, ['Codice fiscale', 'Cognome/Ragione sociale', 'Nome'])) {

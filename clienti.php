@@ -49,6 +49,31 @@ $clienti_alert = 0;
 foreach ($clienti as $c) {
     if (has_doc_alert($c, $oggi, $entro30)) $clienti_alert++;
 }
+
+// Gestione messaggi di successo/errore
+$message = '';
+$message_type = '';
+
+if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
+    $nome_cliente = isset($_GET['nome']) ? urldecode($_GET['nome']) : 'Cliente';
+    $message = "Cliente \"$nome_cliente\" eliminato con successo.";
+    $message_type = 'success';
+} elseif (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'parametri_invalidi':
+            $message = "Parametri non validi per l'eliminazione.";
+            $message_type = 'error';
+            break;
+        case 'eliminazione_fallita':
+            $messaggio = isset($_GET['messaggio']) ? urldecode($_GET['messaggio']) : 'Errore sconosciuto';
+            $message = "Errore durante l'eliminazione: " . $messaggio;
+            $message_type = 'error';
+            break;
+        default:
+            $message = "Si è verificato un errore.";
+            $message_type = 'error';
+    }
+}
 ?>
 
 <style>
@@ -353,6 +378,47 @@ foreach ($clienti as $c) {
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
+.delete-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    border: 1px solid #ff6b6b;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.delete-btn:hover {
+    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+.alert-success {
+    background: #d1f2eb;
+    color: #0f5132;
+    border: 1px solid #a7e9d3;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f1aeb5;
+}
+
 .empty-state {
     text-align: center;
     padding: 3rem;
@@ -446,6 +512,18 @@ foreach ($clienti as $c) {
         <a href="crea_cliente.php" class="btn btn-success">➕ Nuovo Cliente</a>
     </div>
 </div>
+
+<!-- Messaggio di feedback -->
+<?php if ($message): ?>
+<div class="alert alert-<?= $message_type === 'success' ? 'success' : 'danger' ?>" id="feedback-message">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span><?= $message_type === 'success' ? '✅' : '❌' ?></span>
+        <span><?= htmlspecialchars($message) ?></span>
+        <button type="button" onclick="document.getElementById('feedback-message').style.display='none'" 
+                style="margin-left: auto; background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Pannello Azioni Multiple -->
 <div id="bulk-actions-panel" class="bulk-actions-panel" style="display: none;">
@@ -579,6 +657,12 @@ foreach ($clienti as $c) {
                                     }
                                 }
                                 ?>
+                                <button onclick="eliminaCliente(<?= $c['id'] ?>, '<?= addslashes(htmlspecialchars($c['cognome'])) ?>')" 
+                                        class="delete-btn" 
+                                        style="margin-left: 0.5rem;"
+                                        title="Elimina cliente">
+                                    🗑️ Elimina
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -806,6 +890,43 @@ function showNotification(message, type = 'info') {
             document.body.removeChild(notification);
         }, 300);
     }, 3000);
+}
+
+// Funzione per eliminare cliente con conferma
+function eliminaCliente(clienteId, nomeCliente) {
+    const conferma = confirm(
+        `⚠️ ATTENZIONE!\n\n` +
+        `Stai per eliminare il cliente:\n"${nomeCliente}"\n\n` +
+        `Questa operazione:\n` +
+        `• Eliminerà definitivamente tutti i dati del cliente\n` +
+        `• NON eliminerà la cartella e i file associati\n` +
+        `• NON può essere annullata\n\n` +
+        `Sei sicuro di voler procedere?`
+    );
+    
+    if (conferma) {
+        // Crea form nascosto per inviare richiesta POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'elimina_cliente.php';
+        form.style.display = 'none';
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'cliente_id';
+        idInput.value = clienteId;
+        
+        const confirmInput = document.createElement('input');
+        confirmInput.type = 'hidden';
+        confirmInput.name = 'conferma';
+        confirmInput.value = '1';
+        
+        form.appendChild(idInput);
+        form.appendChild(confirmInput);
+        document.body.appendChild(form);
+        
+        form.submit();
+    }
 }
 
 // Animazioni CSS
