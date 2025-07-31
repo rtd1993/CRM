@@ -59,6 +59,7 @@ $campi_db = [
 // Gestione dell'inserimento
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Debug: logga tutti i campi POST ricevuti
+    error_log("DEBUG - Tutti i campi POST ricevuti: " . print_r($_POST, true));
     error_log("DEBUG - Campi POST ricevuti: " . print_r(array_keys($_POST), true));
     
     try {
@@ -112,9 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Validazione obbligatoria per il codice fiscale
         $codice_fiscale = $_POST['Codice fiscale'] ?? '';
+        $cognome = $_POST['Cognome/Ragione sociale'] ?? '';
         
         // Debug: logga il valore ricevuto
         error_log("DEBUG - Codice fiscale ricevuto: '" . $codice_fiscale . "' (length: " . strlen($codice_fiscale) . ")");
+        error_log("DEBUG - Cognome ricevuto: '" . $cognome . "'");
         
         if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
             throw new Exception("Il Codice Fiscale è obbligatorio");
