@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>CRM ASContabilmente</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <!-- Bootstrap CDN for modern style -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Socket.IO Library via CDN with cache busting -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js?v=1753977690"></script>
+        <style>
+        body {
+            background: #f8f9fa;
+        }
+        header.crm-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            color: #fff;
+            padding: 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-bottom: 3px solid #3498db;
+        }
+        .crm-header .crm-title {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 0;
+            padding: 0;
+            color: #ecf0f1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .crm-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        .crm-logo:hover {
+            transform: scale(1.05);
+        }
+        .crm-header .crm-user {
+            font-size: 0.95rem;
+            color: #bdc3c7;
+        }
+        .crm-header .crm-user a {
+            color: #3498db !important;
+            transition: color 0.2s ease;
+        }
+        .crm-header .crm-user a:hover {
+            color: #5dade2 !important;
+        }
+        .crm-header nav {
+            background: rgba(0,0,0,0.1);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+        .crm-header .crm-menu {
+            padding-left: 0;
+            margin-bottom: 0;
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .crm-header .crm-menu li {
+            margin: 0 0.25rem;
+        }
+        .crm-header .crm-menu a {
+            color: #ecf0f1;
+            padding: 12px 16px 10px 16px;
+            display: block;
+            border-radius: 0 0 8px 8px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        .crm-header .crm-menu a:hover, .crm-header .crm-menu a.active {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        .crm-header .crm-menu a:hover::before, .crm-header .crm-menu a.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #e74c3c;
+            border-radius: 50%;
+        }
+        @media (max-width: 600px) {
+            .crm-header .crm-title {
+                font-size: 1.4rem;
+            }
+            .crm-logo {
+                width: 36px;
+                height: 36px;
+            }
+            .crm-header .crm-menu {
+                flex-direction: column;
+            }
+            .crm-header .crm-menu li {
+                margin: 0.2rem 0;
+            }
+            .crm-header .crm-menu a {
+                padding: 10px 14px;
+                border-radius: 6px;
+                margin: 2px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="crm-header mb-4">
+    <div class="container-fluid py-3 d-flex justify-content-between align-items-center">
+        <div>
+            <span class="crm-title">
+                <img src="logo.png" alt="Logo ASContabilmente" class="crm-logo">
+                ASContabilmente
+            </span>
+        </div>
+        <div class="crm-user text-end">
+            <span class="d-none d-md-inline">Utente:</span>
+            <a href="/profilo.php" style="text-decoration: none; margin-right: 10px;">
+                <strong>Roberto</strong>
+            </a>
+            <span class="badge bg-primary text-white ms-2">developer</span>
+            |
+            <a href="logout.php" style="color: #e74c3c; text-decoration: none; margin-left: 8px;"><b>Logout</b></a>
+        </div>
+    </div>
+    <nav>
+        <ul class="crm-menu container-fluid">
+            <li><a href="/dashboard.php">Dashboard</a></li>
+            <li><a href="/clienti.php">Clienti</a></li>
+            <li><a href="/drive.php">Drive</a></li>
+            <li><a href="/calendario.php">Calendario</a></li>
+            <li><a href="/task.php">Task</a></li>
+            <li><a href="/task_clienti.php">Task Clienti</a></li>
+            <li><a href="/email_invio.php">Email</a></li>
+            <li><a href="/chat.php">Chat</a></li>
+            <li><a href="/info.php">Info</a></li>
+                            <li><a href="/gestione_utenti.php">Utenti</a></li>
+                <li><a href="/telegram_config.php">Telegram</a></li>
+                <li><a href="/admin_wireguard.php">WireGuard</a></li>
+                                        <li><a href="/devtools.php">DevTools</a></li>
+                    </ul>
+    </nav>
+</header>
+
+<div id="crm-chat-container">
+    <div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
+    <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
+        <span class="chat-icon">📁</span>
+        <span class="chat-text">Chat Pratiche</span>
+    </div>
+    <div class="crm-chat-body">
+        <form id="praticaChatForm" autocomplete="off">
+            <select class="form-select crm-chat-select" id="clienteSelect" required>
+                <option value="" selected disabled>Seleziona pratica (Cognome/Rag. Sociale)...</option>
+                                    <option value="5">
+                         kf vsò                    </option>
+                                    <option value="8">
+                         lkwemlfmew                    </option>
+                                    <option value="9">
+                         Mario                    </option>
+                                    <option value="10">
+                         Mario                    </option>
+                                    <option value="11">
+                         Mario                    </option>
+                                    <option value="12">
+                         Mario                    </option>
+                                    <option value="6">
+                         MST                    </option>
+                                    <option value="7">
+                         RO                    </option>
+                                    <option value="3">
+                         Test                    </option>
+                                    <option value="4">
+                         Test Fix                    </option>
+                                    <option value="2">
+                        Test Cliente 2025-07-17 18:17:41                     </option>
+                                    <option value="1">
+                        Toti Roberto                    </option>
+                            </select>
+            <div class="crm-chat-messages" id="praticaChatBox">
+                <small class="text-muted">Seleziona una pratica per caricare la chat...</small>
+            </div>
+            <div class="crm-chat-input-group">
+                <input type="text" id="praticaMsg" class="form-control crm-chat-pratiche-input" placeholder="Scrivi un messaggio..." autocomplete="off" disabled>
+                <button class="crm-chat-send-btn btn btn-success" type="submit" id="sendPraticaBtn" disabled>Invia</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+function toggleChatWidget(id) {
+    document.getElementById(id).classList.toggle('open');
+}
+</script>
+
+<script>
+let currentClienteId = null;
+let praticheSocket = null;
+
+function togglePraticaChat() {
+    document.getElementById('pratica-chat-widget').classList.toggle('open');
+}
+
+// Inizializza Socket.IO per le pratiche
+function initializePraticheSocket() {
+    if (typeof io === 'undefined') {
+        setTimeout(initializePraticheSocket, 500);
+        return;
+    }
+    
+    const socketUrl = 'http://:3001';
+    praticheSocket = io(socketUrl);
+    
+    praticheSocket.emit("register", 1);
+    
+    // Ricevi appunti in tempo reale
+    praticheSocket.on("appunto aggiunto", data => {
+        if (data.pratica_id == currentClienteId) {
+            addMessageToChat(data.utente_nome, data.testo, data.data_inserimento);
+        }
+    });
+}
+
+document.getElementById('clienteSelect').addEventListener('change', function() {
+    let clienteId = this.value;
+    currentClienteId = clienteId;
+    
+    document.getElementById('praticaMsg').disabled = !clienteId;
+    document.getElementById('sendPraticaBtn').disabled = !clienteId;
+    
+    if (clienteId) {
+        loadPraticaChat(clienteId);
+    }
+});
+
+function loadPraticaChat(clienteId) {
+    const chatBox = document.getElementById('praticaChatBox');
+    chatBox.innerHTML = '<span class="text-secondary">Caricamento...</span>';
+    
+    const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+    
+    fetch(baseUrl + '/ajax/pratica_chat_fetch.php?cliente_id=' + clienteId)
+      .then(r => {
+        if (!r.ok) {
+            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+      })
+      .then(messages => {
+        renderChatMessages(messages, chatBox);
+      })
+      .catch(error => {
+        console.error('Errore caricamento chat:', error);
+        chatBox.innerHTML = '<span class="text-danger">Errore: ' + error.message + '</span>';
+      });
+}
+
+// Rendering ottimizzato dei messaggi
+function renderChatMessages(messages, chatBox) {
+    chatBox.innerHTML = '';
+    
+    if (!messages.length) {
+        chatBox.innerHTML = '<small class="text-muted">Nessun messaggio per questa pratica.</small>';
+        return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    messages.forEach(m => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'pratica-message';
+        msgDiv.innerHTML = `<strong>${m.utente}</strong> <small class="text-muted">${m.data}</small><br>${m.testo}`;
+        
+        const hr = document.createElement('hr');
+        hr.style.margin = '0.3em 0';
+        
+        fragment.appendChild(msgDiv);
+        fragment.appendChild(hr);
+    });
+    
+    chatBox.appendChild(fragment);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Aggiungi un singolo messaggio alla chat (per tempo reale)
+function addMessageToChat(utente, testo, timestamp) {
+    const chatBox = document.getElementById('praticaChatBox');
+    
+    // Se la chat è vuota, rimuovi il messaggio placeholder
+    if (chatBox.innerHTML.includes('Nessun messaggio')) {
+        chatBox.innerHTML = '';
+    }
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'pratica-message';
+    
+    const data = new Date(timestamp).toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    msgDiv.innerHTML = `<strong>${utente}</strong> <small class="text-muted">${data}</small><br>${testo}`;
+    
+    const hr = document.createElement('hr');
+    hr.style.margin = '0.3em 0';
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.appendChild(hr);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    // Notifica sonora
+    playNotificationSound();
+}
+
+// Invio messaggio via Socket.IO
+document.getElementById('praticaChatForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    let clienteId = document.getElementById('clienteSelect').value;
+    let msg = document.getElementById('praticaMsg').value.trim();
+    
+    if (!clienteId || !msg || !praticheSocket) return;
+    
+    // Invia via Socket.IO per tempo reale
+    praticheSocket.emit("nuovo appunto", {
+        utente_id: 1,
+        utente_nome: "Roberto",
+        pratica_id: parseInt(clienteId),
+        testo: msg
+    });
+    
+    document.getElementById('praticaMsg').value = '';
+});
+
+// Funzione per il suono di notifica
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+        console.log('Audio context not available');
+    }
+}
+
+// Inizializza Socket.IO quando il DOM è pronto
+document.addEventListener('DOMContentLoaded', initializePraticheSocket);
+</script>
+    <link rel="stylesheet" href="/assets/css/chat_widgets.css?v=1753977690">
+
+<div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
+    <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
+        <span class="chat-icon">💬</span>
+        <span class="chat-text">Chat Globale</span>
+    </div>
+    <div class="crm-chat-body">
+        <div class="crm-chat-messages" id="chat-messages"></div>
+        <div class="crm-chat-input-group">
+            <input type="text" class="crm-chat-input" id="chat-input" placeholder="Scrivi...">
+            <button class="crm-chat-send-btn btn btn-primary" onclick="inviaMsg()">Invia</button>
+        </div>
+    </div>
+</div>
+<script>
+// Assicuriamoci che i widget partano chiusi
+document.addEventListener('DOMContentLoaded', function() {
+    const widgets = document.querySelectorAll('.crm-chat-widget');
+    widgets.forEach(widget => {
+        widget.classList.remove('open');
+        console.log('Widget ' + widget.id + ' impostato come chiuso');
+    });
+});
+
+function toggleChatWidget(id) {
+    const widget = document.getElementById(id);
+    widget.classList.toggle('open');
+    
+    // Rimuovi notifica quando aperto
+    if (widget.classList.contains('open')) {
+        widget.classList.remove('has-notification');
+    }
+    
+    // Effetto sonoro (opzionale)
+    if (widget.classList.contains('open')) {
+        playNotificationSound();
+    }
+}
+
+function playNotificationSound() {
+    // Crea un suono sottile di apertura
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+}
+
+// Simula notifiche periodiche per demo
+function simulateNotifications() {
+    const widgets = document.querySelectorAll('.crm-chat-widget:not(.open)');
+    widgets.forEach(widget => {
+        if (Math.random() > 0.7) { // 30% di probabilità
+            widget.classList.add('has-notification');
+            
+            // Rimuovi notifica dopo 10 secondi
+            setTimeout(() => {
+                widget.classList.remove('has-notification');
+            }, 10000);
+        }
+    });
+}
+
+// Avvia simulazione notifiche ogni 30 secondi
+setInterval(simulateNotifications, 30000);
+
+// Gestisci l'animazione quando si passa il mouse
+document.addEventListener('DOMContentLoaded', function() {
+    const widgets = document.querySelectorAll('.crm-chat-widget');
+    
+    widgets.forEach(widget => {
+        widget.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('open')) {
+                this.style.animation = 'none';
+            }
+        });
+        
+        widget.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('open')) {
+                this.style.animation = 'pulse 2s infinite';
+            }
+        });
+    });
+});
+</script>
+
+
+<script>
+const user_id = 1;
+const user_name = "Roberto";
+
+// Definisci inviaMsg immediatamente (placeholder)
+window.inviaMsg = function() {
+    console.log('Socket.IO non ancora pronto - funzione placeholder');
+};
+
+// Debug: controlla se Socket.IO è già disponibile
+console.log('Tipo di io:', typeof io);
+console.log('IO oggetto:', window.io);
+
+// Aspetta che Socket.IO sia caricato
+function initializeSocketIO() {
+    console.log('Controllo Socket.IO... typeof io:', typeof io);
+    if (typeof io === 'undefined') {
+        console.log('Socket.IO non ancora caricato, riprovo in 500ms...');
+        setTimeout(initializeSocketIO, 500);
+        return;
+    }
+    
+    console.log('✅ Socket.IO caricato, inizializzo connessione...');
+    const socketUrl = 'http://:3001';
+    console.log('🔗 URL Socket.IO:', socketUrl);
+    console.log('🔗 Tipo di URL:', socketUrl.startsWith('https') ? 'HTTPS (sicuro)' : 'HTTP (non sicuro)');
+    try {
+        const socket = io(socketUrl);
+        console.log('Socket creato:', socket);
+
+        socket.emit("register", user_id);
+        console.log('Registrazione utente inviata:', user_id);
+
+        // Sovrascrivi inviaMsg con la versione funzionale
+        window.inviaMsg = function() {
+            console.log('inviaMsg chiamata con Socket.IO pronto');
+            const input = document.getElementById("chat-input");
+            const testo = input.value.trim();
+            if (!testo) return;
+            console.log('Invio messaggio:', testo);
+            socket.emit("chat message", {
+                utente_id: user_id,
+                utente_nome: user_name,
+                testo: testo
+            });
+            input.value = "";
+        };
+
+        socket.on("chat message", data => {
+            console.log('Messaggio ricevuto:', data);
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${data.utente_nome}</strong>: ${data.testo}`;
+            document.getElementById("chat-messages").appendChild(div);
+            document.getElementById("chat-messages").scrollTop = 9999;
+        });
+        
+        console.log('✅ Chat inizializzata correttamente');
+    } catch (error) {
+        console.error('❌ Errore inizializzazione Socket.IO:', error);
+    }
+}
+
+// Avvia inizializzazione quando il DOM è pronto
+document.addEventListener('DOMContentLoaded', initializeSocketIO);
+
+function toggleChat() {
+    const body = document.getElementById("chat-body");
+    body.style.display = body.style.display === "none" ? "block" : "none";
+}
+
+// Cronologia iniziale
+fetch("/api/chat_cronologia.php")
+.then(r => r.json())
+.then(data => {
+    const div = document.getElementById("chat-messages");
+    data.forEach(msg => {
+        const p = document.createElement("p");
+        p.innerHTML = `<strong>${msg.nome}</strong>: ${msg.messaggio}`;
+        div.appendChild(p);
+    });
+    div.scrollTop = div.scrollHeight;
+})
+.catch(err => console.error('Errore caricamento cronologia:', err));
+
+</script>
+</div>
+<main style="padding: 20px;"><div style='background: yellow; padding: 10px; margin: 10px 0; border: 1px solid orange;'>DEBUG TEMPORANEO - Campi ricevuti: 4 | Updates preparati: 2 | Codice fiscale: 'TEST789' | Cognome: '' | Primi 5 POST: {"Codice_fiscale":"TEST789","Cognome\/Ragione_sociale":"Test Debug","Nome":"Mario","Mail":"mario@debug.it"} | Updates preparati: ["`Nome`","`Mail`"]</div>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<style>
+.crea-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.crea-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.crea-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.back-btn {
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 1.1em;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-50%) scale(1.05);
+    color: white;
+    text-decoration: none;
+}
+
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .section-header:hover {
+            background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+        }
+
+        .section-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .section.collapsed .section-header i {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            padding: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .section.collapsed .section-content {
+            max-height: 0;
+            padding: 0 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-group label.required::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            margin-left: 8px;
+        }
+
+        .form-group input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .submit-section {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .loader {
+            display: none;
+            margin-left: 10px;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #28a745;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-content {
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .crea-header {
+                padding: 20px;
+            }
+            
+            .crea-header h2 {
+                font-size: 2em;
+            }
+            
+            .back-btn {
+                position: relative;
+                left: 0;
+                top: 0;
+                transform: none;
+                margin-bottom: 15px;
+                display: block;
+                width: fit-content;
+            }
+            
+            .section-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-content {
+                padding: 20px;
+            }
+        }
+    </style>
+
+<div class="crea-header">
+    <h2><i class="fas fa-user-plus"></i> Crea Nuovo Cliente</h2>
+    <p>Inserisci i dati del nuovo cliente nel sistema</p>
+</div>
+
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> Cliente creato con successo!    </div>
+
+
+<div class="form-container">
+    <div class="form-content">
+        <form method="POST" id="clienteForm">
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Dati Generali</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Inizio rapporto" >
+                                        Inizio rapporto                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Inizio rapporto" 
+                                            name="Inizio rapporto"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Fine rapporto" >
+                                        Fine rapporto                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Fine rapporto" 
+                                            name="Fine rapporto"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Inserito gestionale" >
+                                        Inserito gestionale                                    </label>
+                                    
+                                                                        
+                                                                            <div class="checkbox-group">
+                                            <input 
+                                                type="checkbox" 
+                                                id="Inserito gestionale" 
+                                                name="Inserito gestionale"
+                                            >
+                                            <label for="Inserito gestionale">Attivo</label>
+                                        </div>
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Codice ditta" >
+                                        Codice ditta                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice ditta" 
+                                            name="Codice ditta"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Colore" >
+                                        Colore                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="color" 
+                                            id="Colore" 
+                                            name="Colore"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Cognome/Ragione sociale" >
+                                        Cognome/Ragione sociale                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Cognome/Ragione sociale" 
+                                            name="Cognome/Ragione sociale"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Nome" >
+                                        Nome                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Nome" 
+                                            name="Nome"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Codice fiscale" class="required">
+                                        Codice fiscale                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice fiscale" 
+                                            name="Codice fiscale"
+                                            required                                                                                            oninput="formatCodiceFiscale(this)"
+                                                                                    >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Partita IVA" >
+                                        Partita IVA                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Partita IVA" 
+                                            name="Partita IVA"
+                                                                                                                                        oninput="formatPartitaIVA(this)"
+                                                                                    >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Qualifica" >
+                                        Qualifica                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Qualifica" 
+                                            name="Qualifica"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Soci e Sedi</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Soci Amministratori" >
+                                        Soci Amministratori                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Soci Amministratori" 
+                                            name="Soci Amministratori"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Sede Legale" >
+                                        Sede Legale                                    </label>
+                                    
+                                                                        
+                                                                            <textarea 
+                                            id="Sede Legale" 
+                                            name="Sede Legale" 
+                                            rows="3"
+                                                                                    ></textarea>
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Sede Operativa" >
+                                        Sede Operativa                                    </label>
+                                    
+                                                                        
+                                                                            <textarea 
+                                            id="Sede Operativa" 
+                                            name="Sede Operativa" 
+                                            rows="3"
+                                                                                    ></textarea>
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Dati Anagrafici</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Data di nascita/costituzione" >
+                                        Data di nascita/costituzione                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Data di nascita/costituzione" 
+                                            name="Data di nascita/costituzione"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Luogo di nascita" >
+                                        Luogo di nascita                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Luogo di nascita" 
+                                            name="Luogo di nascita"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Cittadinanza" >
+                                        Cittadinanza                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Cittadinanza" 
+                                            name="Cittadinanza"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Residenza" >
+                                        Residenza                                    </label>
+                                    
+                                                                        
+                                                                            <textarea 
+                                            id="Residenza" 
+                                            name="Residenza" 
+                                            rows="3"
+                                                                                    ></textarea>
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Documento di Identità</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Numero carta d&#039;identità" >
+                                        Numero carta d&#039;identità                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Numero carta d&#039;identità" 
+                                            name="Numero carta d&#039;identità"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Rilasciata dal Comune di" >
+                                        Rilasciata dal Comune di                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Rilasciata dal Comune di" 
+                                            name="Rilasciata dal Comune di"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Data di rilascio" >
+                                        Data di rilascio                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Data di rilascio" 
+                                            name="Data di rilascio"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Valida per l&#039;espatrio" >
+                                        Valida per l&#039;espatrio                                    </label>
+                                    
+                                                                        
+                                                                            <div class="checkbox-group">
+                                            <input 
+                                                type="checkbox" 
+                                                id="Valida per l&#039;espatrio" 
+                                                name="Valida per l&#039;espatrio"
+                                            >
+                                            <label for="Valida per l&#039;espatrio">Attivo</label>
+                                        </div>
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Stato civile" >
+                                        Stato civile                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Stato civile" 
+                                            name="Stato civile"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Data di scadenza" >
+                                        Data di scadenza                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Data di scadenza" 
+                                            name="Data di scadenza"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Attività</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Descrizione attivita" >
+                                        Descrizione attivita                                    </label>
+                                    
+                                                                        
+                                                                            <textarea 
+                                            id="Descrizione attivita" 
+                                            name="Descrizione attivita" 
+                                            rows="3"
+                                                                                    ></textarea>
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Codice ATECO" >
+                                        Codice ATECO                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice ATECO" 
+                                            name="Codice ATECO"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Camera di commercio" >
+                                        Camera di commercio                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Camera di commercio" 
+                                            name="Camera di commercio"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Dipendenti" >
+                                        Dipendenti                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="number" 
+                                            id="Dipendenti" 
+                                            name="Dipendenti"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Codici Fiscali</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Codice inps" >
+                                        Codice inps                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice inps" 
+                                            name="Codice inps"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Titolare" >
+                                        Titolare                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Titolare" 
+                                            name="Titolare"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Codice inps_2" >
+                                        Codice inps_2                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice inps_2" 
+                                            name="Codice inps_2"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Codice inail" >
+                                        Codice inail                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Codice inail" 
+                                            name="Codice inail"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="PAT" >
+                                        PAT                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="PAT" 
+                                            name="PAT"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Cod.PIN Inail" >
+                                        Cod.PIN Inail                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Cod.PIN Inail" 
+                                            name="Cod.PIN Inail"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Cassa Edile" >
+                                        Cassa Edile                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Cassa Edile" 
+                                            name="Cassa Edile"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Numero Cassa Professionisti" >
+                                        Numero Cassa Professionisti                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Numero Cassa Professionisti" 
+                                            name="Numero Cassa Professionisti"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Contabilità</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Contabilita" >
+                                        Contabilita                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Contabilita" 
+                                            name="Contabilita"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Liquidazione IVA" >
+                                        Liquidazione IVA                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Liquidazione IVA" 
+                                            name="Liquidazione IVA"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+                            <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span><i class="fas fa-folder-open"></i> Contatti</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="section-content">
+                                                                                    <div class="form-group">
+                                                                        <label for="Telefono" >
+                                        Telefono                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="tel" 
+                                            id="Telefono" 
+                                            name="Telefono"
+                                                                                                                                        oninput="formatPhone(this)"
+                                                                                    >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Mail" >
+                                        Mail                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="email" 
+                                            id="Mail" 
+                                            name="Mail"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="PEC" >
+                                        PEC                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="email" 
+                                            id="PEC" 
+                                            name="PEC"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="User Aruba" >
+                                        User Aruba                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="User Aruba" 
+                                            name="User Aruba"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Password" >
+                                        Password                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="Password" 
+                                            name="Password"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Scadenza PEC" >
+                                        Scadenza PEC                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Scadenza PEC" 
+                                            name="Scadenza PEC"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="Rinnovo Pec" >
+                                        Rinnovo Pec                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="date" 
+                                            id="Rinnovo Pec" 
+                                            name="Rinnovo Pec"
+                                                                                                                                >
+                                                                    </div>
+                                                                                                                <div class="form-group">
+                                                                        <label for="SDI" >
+                                        SDI                                    </label>
+                                    
+                                                                        
+                                                                            <input 
+                                            type="text" 
+                                            id="SDI" 
+                                            name="SDI"
+                                                                                                                                >
+                                                                    </div>
+                                                                        </div>
+                </div>
+            
+            <div class="submit-section">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crea Cliente
+                    <span class="loader">
+                        <div class="spinner"></div>
+                    </span>
+                </button>
+                <a href="clienti.php" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Annulla
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script>
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus sul primo campo
+            const firstInput = document.querySelector('input[type="text"], input[type="email"], textarea');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+
+        // Toggle sezioni
+        function toggleSection(header) {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // Formattazione telefono
+        function formatPhone(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    value = value;
+                } else if (value.length <= 6) {
+                    value = value.slice(0, 3) + ' ' + value.slice(3);
+                } else if (value.length <= 10) {
+                    value = value.slice(0, 3) + ' ' + value.slice(3, 6) + ' ' + value.slice(6);
+                } else {
+                    value = value.slice(0, 3) + ' ' + value.slice(3, 6) + ' ' + value.slice(6, 10);
+                }
+            }
+            input.value = value;
+        }
+
+        // Formattazione codice fiscale
+        function formatCodiceFiscale(input) {
+            let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (value.length > 16) {
+                value = value.slice(0, 16);
+            }
+            input.value = value;
+        }
+
+        // Formattazione partita IVA
+        function formatPartitaIVA(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 11) {
+                value = value.slice(0, 11);
+            }
+            input.value = value;
+        }
+
+        // Gestione submit form
+        document.getElementById('clienteForm').addEventListener('submit', function(e) {
+            // Validazione lato client del codice fiscale
+            const codiceFiscale = document.querySelector('input[name="Codice fiscale"]');
+            if (!codiceFiscale || !codiceFiscale.value.trim()) {
+                e.preventDefault();
+                alert('Il Codice Fiscale è obbligatorio!');
+                if (codiceFiscale) {
+                    codiceFiscale.focus();
+                    codiceFiscale.style.borderColor = '#dc3545';
+                }
+                return;
+            }
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const loader = submitBtn.querySelector('.loader');
+            
+            submitBtn.disabled = true;
+            loader.style.display = 'inline-block';
+        });
+
+        // Shortcuts da tastiera
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Enter per inviare form
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('clienteForm').submit();
+            }
+        });
+
+        // Collassa tutte le sezioni tranne la prima
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach((section, index) => {
+                if (index > 0) {
+                    section.classList.add('collapsed');
+                }
+            });
+        });
+    </script>
+
+</main>
+</body>
+</html>

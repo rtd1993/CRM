@@ -19,7 +19,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
         // Query per ottenere i task del cliente ordinati per scadenza
         $stmt = $pdo->prepare("
             SELECT tc.*, 
-                   CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente
+                   CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente
             FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id
             WHERE tc.cliente_id = ?
@@ -89,7 +89,7 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
         
         // Recupera i dati del task prima di eliminarlo
         $stmt = $pdo->prepare("
-            SELECT tc.*, c.`Cognome/Ragione sociale`, c.Nome, c.`Codice fiscale`
+            SELECT tc.*, c.`Cognome_Ragione_sociale`, c.Nome, c.`Codice_fiscale`
             FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id 
             WHERE tc.id = ?
@@ -98,14 +98,14 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
         $task_data = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($task_data) {
-            $nome_cliente = trim(($task_data['Nome'] ?? '') . ' ' . ($task_data['Cognome/Ragione sociale'] ?? ''));
+            $nome_cliente = trim(($task_data['Nome'] ?? '') . ' ' . ($task_data['Cognome_Ragione_sociale'] ?? ''));
             if (empty($nome_cliente)) {
                 $nome_cliente = "Cliente ID " . $task_data['cliente_id'];
             }
             
             // Salva il log del task completato nella cartella del cliente
-            if (!empty($task_data['Codice fiscale']) && isset($_SESSION['user_name'])) {
-                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Codice fiscale']);
+            if (!empty($task_data['Codice_fiscale']) && isset($_SESSION['user_name'])) {
+                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Codice_fiscale']);
                 $cartella_cliente = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
                 
                 // Assicurati che la cartella esista (con controllo ottimizzato)
@@ -182,7 +182,7 @@ if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
 $clienti = [];
 if (empty($filtro_cliente)) {
     // Cache dei clienti per evitare query ripetute
-    $clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, Nome")->fetchAll();
+    $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
 }
 
 // Carica lista task con clienti associati (query ottimizzata)
@@ -197,8 +197,8 @@ $search = $_GET['search'] ?? '';
 
 // Query ottimizzata con calcolo statistiche integrate
 $sql = "SELECT tc.*, 
-        CONCAT(c.`Cognome/Ragione sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
-        c.`Codice fiscale` as codice_fiscale,
+        CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
+        c.`Codice_fiscale` as codice_fiscale,
         CASE 
             WHEN tc.scadenza < CURDATE() THEN 'scaduto'
             WHEN tc.scadenza = CURDATE() THEN 'oggi'
@@ -212,7 +212,7 @@ $sql = "SELECT tc.*,
 // I task sono già associati ai clienti nella tabella task_clienti
 
 if (!empty($search)) {
-    $where_conditions[] = "(tc.descrizione LIKE ? OR c.`Cognome/Ragione sociale` LIKE ? OR c.Nome LIKE ?)";
+    $where_conditions[] = "(tc.descrizione LIKE ? OR c.`Cognome_Ragione_sociale` LIKE ? OR c.Nome LIKE ?)";
     $search_param = "%$search%";
     $params[] = $search_param;
     $params[] = $search_param;
@@ -225,7 +225,7 @@ if (!empty($filtro_cliente)) {
     
     // Se stiamo filtrando per un cliente specifico, carica solo quel cliente
     if (empty($clienti)) {
-        $stmt_cliente = $pdo->prepare("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti WHERE id = ?");
+        $stmt_cliente = $pdo->prepare("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti WHERE id = ?");
         $stmt_cliente->execute([intval($filtro_cliente)]);
         $clienti = $stmt_cliente->fetchAll();
     }
@@ -263,7 +263,7 @@ if (!empty($where_conditions)) {
     $sql .= " WHERE " . implode(" AND ", $where_conditions);
 }
 
-$sql .= " ORDER BY tc.scadenza ASC, c.`Cognome/Ragione sociale` ASC";
+$sql .= " ORDER BY tc.scadenza ASC, c.`Cognome_Ragione_sociale` ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -308,7 +308,7 @@ foreach ($tasks as $task) {
 
 // Carica lista completa clienti solo se necessario per i filtri
 if (empty($clienti)) {
-    $clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale`, Nome, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, Nome")->fetchAll();
+    $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
 }
 ?>
 
@@ -955,7 +955,7 @@ if (empty($clienti)) {
                             <?php foreach ($clienti as $cliente): ?>
                                 <option value="<?= $cliente['id'] ?>" 
                                         <?= ($filtro_cliente == $cliente['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($cliente['Cognome/Ragione sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                                    <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -1121,7 +1121,7 @@ if (empty($clienti)) {
             <option value="">-- Scegli un cliente --</option>
             <?php foreach ($clienti as $cliente): ?>
                 <option value="<?= $cliente['id'] ?>">
-                    <?= htmlspecialchars($cliente['Cognome/Ragione sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                    <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
                 </option>
             <?php endforeach; ?>
         </select>

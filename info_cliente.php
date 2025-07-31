@@ -37,12 +37,12 @@ function format_label($label) {
 }
 
 $gruppi = [
-    'Anagrafica' => ['Cognome/Ragione sociale', 'Nome', 'Data di nascita/costituzione', 'Luogo di nascita', 'Cittadinanza', 'Stato civile', 'Codice fiscale', 'Partita IVA', 'Qualifica', 'Soci Amministratori', 'Titolare'],
-    'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza PEC', 'Rinnovo Pec', 'User Aruba', 'Password'],
-    'Sedi' => ['Sede Legale', 'Sede Operativa', 'Residenza'],
-    'Documenti' => ['Numero carta d’identità', 'Rilasciata dal Comune di', 'Data di rilascio', 'Valida per l’espatrio'],
-    'Fiscali' => ['Codice ditta', 'Codice ATECO', 'Descrizione attivita', 'Camera di commercio', 'Dipendenti', 'Codice inps', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail', 'Cassa Edile', 'Numero Cassa Professionisti', 'Contabilita', 'Liquidazione IVA', 'SDI'],
-    'Altro' => ['Colore', 'Inserito gestionale', 'Inizio rapporto', 'Fine rapporto', 'Link cartella']
+    'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
+    'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
+    'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
+    'Documenti' => ['Numero carta d’identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida per l’espatrio'],
+    'Fiscali' => ['Codice_ditta', 'Codice_ATECO', 'Descrizione_attivita', 'Camera_di_commercio', 'Dipendenti', 'Codice_inps', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail', 'Cassa_Edile', 'Numero_Cassa_Professionisti', 'Contabilita', 'Liquidazione_IVA', 'SDI'],
+    'Altro' => ['Colore', 'Inserito_gestionale', 'Inizio_rapporto', 'Fine_rapporto', 'Link_cartella']
 ];
 ?>
 
@@ -403,7 +403,7 @@ $section_icons = [
 ?>
 
 <div class="client-summary">
-    <h3><?= htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A') ?></h3>
+    <h3><?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A') ?></h3>
     <div class="client-summary-grid">
         <div class="client-summary-item">
             <strong>🆔 ID:</strong> <?= htmlspecialchars($cliente['id'] ?? 'N/A') ?>
@@ -415,7 +415,7 @@ $section_icons = [
             <strong>📞 Telefono:</strong> <?= htmlspecialchars($cliente['Telefono'] ?? 'N/A') ?>
         </div>
         <div class="client-summary-item">
-            <strong>🏛️ Cod. Fiscale:</strong> <?= htmlspecialchars($cliente['Codice fiscale'] ?? 'N/A') ?>
+            <strong>🏛️ Cod. Fiscale:</strong> <?= htmlspecialchars($cliente['Codice_fiscale'] ?? 'N/A') ?>
         </div>
     </div>
 </div>
@@ -431,7 +431,7 @@ $section_icons = [
                     <?php 
                     $valore = $cliente[$campo] ?? '';
                     $is_empty = empty($valore);
-                    $is_important = in_array($campo, ['Codice fiscale', 'Partita IVA', 'Mail', 'Telefono']);
+                    $is_important = in_array($campo, ['Codice_fiscale', 'Partita_IVA', 'Mail', 'Telefono']);
                     ?>
                     <div class="info-field <?= $is_empty ? 'empty' : '' ?> <?= $is_important && !$is_empty ? 'highlight' : '' ?>">
                         <div class="info-label"><?= htmlspecialchars(format_label($campo)) ?></div>

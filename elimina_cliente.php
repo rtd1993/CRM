@@ -21,7 +21,7 @@ if (!$cliente_id || $conferma !== '1') {
 
 try {
     // Ottieni informazioni del cliente prima dell'eliminazione
-    $stmt = $pdo->prepare("SELECT `Cognome/Ragione sociale`, `Codice fiscale` FROM clienti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Codice_fiscale` FROM clienti WHERE id = ?");
     $stmt->execute([$cliente_id]);
     $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -29,8 +29,8 @@ try {
         throw new Exception("Cliente non trovato");
     }
     
-    $nome_cliente = $cliente['Cognome/Ragione sociale'];
-    $codice_fiscale = $cliente['Codice fiscale'];
+    $nome_cliente = $cliente['Cognome_Ragione_sociale'];
+    $codice_fiscale = $cliente['Codice_fiscale'];
     
     // Elimina il cliente dal database
     $stmt = $pdo->prepare("DELETE FROM clienti WHERE id = ?");

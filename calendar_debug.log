@@ -1,0 +1,147 @@
+2025-07-29T12:08:29+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-29T12:08:30+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"}]
+2025-07-29T12:33:33+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-29T12:33:34+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"}]
+2025-07-29T12:33:42+00:00 POST raw input: {"title":"test","start":"2025-07-30T09:00","end":"2025-07-30T10:00"}
+2025-07-29T12:33:42+00:00 POST parsed input: {"title":"test","start":"2025-07-30T09:00","end":"2025-07-30T10:00"}
+2025-07-29T12:33:42+00:00 POST event to insert: Google\Service\Calendar\Event Object
+(
+    [internal_gapi_mappings:protected] => Array
+        (
+        )
+
+    [modelData:protected] => Array
+        (
+        )
+
+    [processed:protected] => Array
+        (
+        )
+
+    [collection_key:protected] => recurrence
+    [anyoneCanAddSelf] => 
+    [attachmentsType:protected] => Google\Service\Calendar\EventAttachment
+    [attachmentsDataType:protected] => array
+    [attendeesType:protected] => Google\Service\Calendar\EventAttendee
+    [attendeesDataType:protected] => array
+    [attendeesOmitted] => 
+    [birthdayPropertiesType:protected] => Google\Service\Calendar\EventBirthdayProperties
+    [birthdayPropertiesDataType:protected] => 
+    [colorId] => 
+    [conferenceDataType:protected] => Google\Service\Calendar\ConferenceData
+    [conferenceDataDataType:protected] => 
+    [created] => 
+    [creatorType:protected] => Google\Service\Calendar\EventCreator
+    [creatorDataType:protected] => 
+    [description] => 
+    [endType:protected] => Google\Service\Calendar\EventDateTime
+    [endDataType:protected] => 
+    [endTimeUnspecified] => 
+    [etag] => 
+    [eventType] => 
+    [extendedPropertiesType:protected] => Google\Service\Calendar\EventExtendedProperties
+    [extendedPropertiesDataType:protected] => 
+    [focusTimePropertiesType:protected] => Google\Service\Calendar\EventFocusTimeProperties
+    [focusTimePropertiesDataType:protected] => 
+    [gadgetType:protected] => Google\Service\Calendar\EventGadget
+    [gadgetDataType:protected] => 
+    [guestsCanInviteOthers] => 
+    [guestsCanModify] => 
+    [guestsCanSeeOtherGuests] => 
+    [hangoutLink] => 
+    [htmlLink] => 
+    [iCalUID] => 
+    [id] => 
+    [kind] => 
+    [location] => 
+    [locked] => 
+    [organizerType:protected] => Google\Service\Calendar\EventOrganizer
+    [organizerDataType:protected] => 
+    [originalStartTimeType:protected] => Google\Service\Calendar\EventDateTime
+    [originalStartTimeDataType:protected] => 
+    [outOfOfficePropertiesType:protected] => Google\Service\Calendar\EventOutOfOfficeProperties
+    [outOfOfficePropertiesDataType:protected] => 
+    [privateCopy] => 
+    [recurrence] => 
+    [recurringEventId] => 
+    [remindersType:protected] => Google\Service\Calendar\EventReminders
+    [remindersDataType:protected] => 
+    [sequence] => 
+    [sourceType:protected] => Google\Service\Calendar\EventSource
+    [sourceDataType:protected] => 
+    [startType:protected] => Google\Service\Calendar\EventDateTime
+    [startDataType:protected] => 
+    [status] => 
+    [summary] => test
+    [transparency] => 
+    [updated] => 
+    [visibility] => 
+    [workingLocationPropertiesType:protected] => Google\Service\Calendar\EventWorkingLocationProperties
+    [workingLocationPropertiesDataType:protected] => 
+    [start] => Google\Service\Calendar\EventDateTime Object
+        (
+            [internal_gapi_mappings:protected] => Array
+                (
+                )
+
+            [modelData:protected] => Array
+                (
+                )
+
+            [processed:protected] => Array
+                (
+                )
+
+            [date] => 
+            [dateTime] => 2025-07-30T09:00:00+02:00
+            [timeZone] => Europe/Rome
+        )
+
+    [end] => Google\Service\Calendar\EventDateTime Object
+        (
+            [internal_gapi_mappings:protected] => Array
+                (
+                )
+
+            [modelData:protected] => Array
+                (
+                )
+
+            [processed:protected] => Array
+                (
+                )
+
+            [date] => 
+            [dateTime] => 2025-07-30T10:00:00+02:00
+            [timeZone] => Europe/Rome
+        )
+
+)
+
+2025-07-29T12:33:43+00:00 POST event created: {"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}
+2025-07-29T12:33:43+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-29T12:33:43+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-29T22:12:13+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-29T22:12:14+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-30T14:58:46+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-30T14:58:46+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-30T14:58:47+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-30T14:58:47+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-30T19:59:45+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-30T19:59:46+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-30T20:05:41+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-30T20:05:42+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-30T23:39:27+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-30T23:39:28+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T08:20:57+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T08:20:57+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T10:01:14+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T10:01:15+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T11:05:06+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T11:05:07+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T11:21:36+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T11:21:36+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T15:45:57+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T15:45:58+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]
+2025-07-31T20:19:19+00:00 GET start=2025-06-29T00:00:00+02:00 end=2025-08-10T00:00:00+02:00
+2025-07-31T20:19:19+00:00 GET result: [{"id":"e229n2qcaeeloi3mtoa8fu225s","title":"hfhsd","start":"2025-07-24T09:00:00+02:00","end":"2025-07-24T10:00:00+02:00"},{"id":"qohbm29fgliln4mlhafmnhpjnc","title":"test","start":"2025-07-30T09:00:00+02:00","end":"2025-07-30T10:00:00+02:00"}]

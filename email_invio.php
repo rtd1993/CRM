@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Recupera template e clienti
 $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
-$clienti = $pdo->query("SELECT id, `Cognome/Ragione sociale` as nome, Nome as nome_proprio, Mail as email FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome/Ragione sociale`")->fetchAll();
+$clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale` as nome, Nome as nome_proprio, Mail as email FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome_Ragione_sociale`")->fetchAll();
 
 $message = '';
 $error = '';
@@ -43,7 +43,7 @@ if ($_POST && isset($_POST['invia_email'])) {
                 $destinatari_email[] = $cliente['Mail'];
                 
                 // Sostituisci variabili
-                $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome/Ragione sociale'] ?? ''));
+                $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome_Ragione_sociale'] ?? ''));
                 $oggetto_finale = str_replace(
                     ['{nome_cliente}', '{email_cliente}'],
                     [$nome_completo, $cliente['Mail']],

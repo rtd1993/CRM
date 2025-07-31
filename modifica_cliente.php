@@ -26,50 +26,50 @@ if (!$cliente) {
 
 // Definisco i campi della tabella clienti in base alla struttura del DB
 $campi_db = [
-    'Inizio rapporto' => 'date',
-    'Fine rapporto' => 'date',
-    'Inserito gestionale' => 'checkbox',
-    'Codice ditta' => 'text',
+    'Inizio_rapporto' => 'date',
+    'Fine_rapporto' => 'date',
+    'Inserito_gestionale' => 'checkbox',
+    'Codice_ditta' => 'text',
     'Colore' => 'color',
-    'Cognome/Ragione sociale' => 'text',
+    'Cognome_Ragione_sociale' => 'text',
     'Nome' => 'text',
-    'Codice fiscale' => 'text',
-    'Partita IVA' => 'text',
+    'Codice_fiscale' => 'text',
+    'Partita_IVA' => 'text',
     'Qualifica' => 'text',
-    'Soci Amministratori' => 'text',
-    'Sede Legale' => 'textarea',
-    'Sede Operativa' => 'textarea',
-    'Data di nascita/costituzione' => 'date',
-    'Luogo di nascita' => 'text',
+    'Soci_Amministratori' => 'text',
+    'Sede_Legale' => 'textarea',
+    'Sede_Operativa' => 'textarea',
+    'Data_di_nascita_costituzione' => 'date',
+    'Luogo_di_nascita' => 'text',
     'Cittadinanza' => 'text',
     'Residenza' => 'textarea',
     'Numero carta d\'identità' => 'text',
-    'Rilasciata dal Comune di' => 'text',
-    'Data di rilascio' => 'date',
+    'Rilasciata_dal_Comune_di' => 'text',
+    'Data_di_rilascio' => 'date',
     'Valida per l\'espatrio' => 'checkbox',
-    'Stato civile' => 'text',
-    'Data di scadenza' => 'date',
-    'Descrizione attivita' => 'textarea',
-    'Codice ATECO' => 'text',
-    'Camera di commercio' => 'text',
+    'Stato_civile' => 'text',
+    'Data_di_scadenza' => 'date',
+    'Descrizione_attivita' => 'textarea',
+    'Codice_ATECO' => 'text',
+    'Camera_di_commercio' => 'text',
     'Dipendenti' => 'number',
-    'Codice inps' => 'text',
+    'Codice_inps' => 'text',
     'Titolare' => 'text',
-    'Codice inps_2' => 'text',
-    'Codice inail' => 'text',
+    'Codice_inps_2' => 'text',
+    'Codice_inail' => 'text',
     'PAT' => 'text',
-    'Cod.PIN Inail' => 'text',
-    'Cassa Edile' => 'text',
-    'Numero Cassa Professionisti' => 'text',
+    'Cod_PIN_Inail' => 'text',
+    'Cassa_Edile' => 'text',
+    'Numero_Cassa_Professionisti' => 'text',
     'Contabilita' => 'text',
-    'Liquidazione IVA' => 'text',
+    'Liquidazione_IVA' => 'text',
     'Telefono' => 'tel',
     'Mail' => 'email',
     'PEC' => 'email',
-    'User Aruba' => 'text',
+    'User_Aruba' => 'text',
     'Password' => 'password',
-    'Scadenza PEC' => 'date',
-    'Rinnovo Pec' => 'date',
+    'Scadenza_PEC' => 'date',
+    'Rinnovo_Pec' => 'date',
     'SDI' => 'text'
 ];
 
@@ -156,31 +156,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Raggruppo i campi per sezioni
 $sezioni = [
     'Dati Generali' => [
-        'Inizio rapporto', 'Fine rapporto', 'Inserito gestionale', 'Codice ditta', 'Colore',
-        'Cognome/Ragione sociale', 'Nome', 'Codice fiscale', 'Partita IVA', 'Qualifica'
+        'Inizio_rapporto', 'Fine_rapporto', 'Inserito_gestionale', 'Codice_ditta', 'Colore',
+        'Cognome_Ragione_sociale', 'Nome', 'Codice_fiscale', 'Partita_IVA', 'Qualifica'
     ],
     'Soci e Sedi' => [
-        'Soci Amministratori', 'Sede Legale', 'Sede Operativa'
+        'Soci_Amministratori', 'Sede_Legale', 'Sede_Operativa'
     ],
     'Dati Anagrafici' => [
-        'Data di nascita/costituzione', 'Luogo di nascita', 'Cittadinanza', 'Residenza'
+        'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Residenza'
     ],
     'Documento di Identità' => [
-        'Numero carta d\'identità', 'Rilasciata dal Comune di', 'Data di rilascio', 
-        'Valida per l\'espatrio', 'Stato civile', 'Data di scadenza'
+        'Numero carta d\'identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 
+        'Valida per l\'espatrio', 'Stato_civile', 'Data_di_scadenza'
     ],
     'Attività' => [
-        'Descrizione attivita', 'Codice ATECO', 'Camera di commercio', 'Dipendenti'
+        'Descrizione_attivita', 'Codice_ATECO', 'Camera_di_commercio', 'Dipendenti'
     ],
     'Codici Fiscali' => [
-        'Codice inps', 'Titolare', 'Codice inps_2', 'Codice inail', 'PAT', 'Cod.PIN Inail',
-        'Cassa Edile', 'Numero Cassa Professionisti'
+        'Codice_inps', 'Titolare', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail',
+        'Cassa_Edile', 'Numero_Cassa_Professionisti'
     ],
     'Contabilità' => [
-        'Contabilita', 'Liquidazione IVA'
+        'Contabilita', 'Liquidazione_IVA'
     ],
     'Contatti' => [
-        'Telefono', 'Mail', 'PEC', 'User Aruba', 'Password', 'Scadenza PEC', 'Rinnovo Pec', 'SDI'
+        'Telefono', 'Mail', 'PEC', 'User_Aruba', 'Password', 'Scadenza_PEC', 'Rinnovo_Pec', 'SDI'
     ]
 ];
 ?>
@@ -553,7 +553,7 @@ $sezioni = [
 <div class="modifica-header">
     
     <h2><i class="fas fa-user-edit"></i> Modifica Cliente</h2>
-    <p>ID: <?php echo htmlspecialchars($cliente['id']); ?> - <?php echo htmlspecialchars($cliente['Cognome/Ragione sociale'] ?? 'N/A'); ?></p>
+    <p>ID: <?php echo htmlspecialchars($cliente['id']); ?> - <?php echo htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A'); ?></p>
 </div>
 
 <?php if (isset($success_message)): ?>
@@ -571,7 +571,7 @@ $sezioni = [
 <div class="stats">
     <div class="stat-item">
         <i class="fas fa-calendar-alt"></i>
-        <div class="number"><?php echo $cliente['Inizio rapporto'] ? date('d/m/Y', strtotime($cliente['Inizio rapporto'])) : 'N/A'; ?></div>
+        <div class="number"><?php echo $cliente['Inizio_rapporto'] ? date('d/m/Y', strtotime($cliente['Inizio_rapporto'])) : 'N/A'; ?></div>
         <div class="label">Inizio Rapporto</div>
     </div>
     <div class="stat-item">
@@ -643,9 +643,9 @@ $sezioni = [
                                                 onchange="markChanged(this)"
                                                 <?php if ($tipo === 'tel'): ?>
                                                     oninput="formatPhone(this)"
-                                                <?php elseif ($tipo === 'text' && strpos($campo, 'Codice fiscale') !== false): ?>
+                                                <?php elseif ($tipo === 'text' && strpos($campo, 'Codice_fiscale') !== false): ?>
                                                     oninput="formatCodiceFiscale(this)"
-                                                <?php elseif ($tipo === 'text' && strpos($campo, 'Partita IVA') !== false): ?>
+                                                <?php elseif ($tipo === 'text' && strpos($campo, 'Partita_IVA') !== false): ?>
                                                     oninput="formatPartitaIVA(this)"
                                                 <?php endif; ?>
                                             >
@@ -680,7 +680,7 @@ $sezioni = [
                     <div class="form-group">
                         <label>Cartella Local Drive</label>
                         <?php
-                        $codice_fiscale = $cliente['Codice fiscale'] ?? '';
+                        $codice_fiscale = $cliente['Codice_fiscale'] ?? '';
                         $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale;
                         $cartella_esiste = !empty($codice_fiscale) && is_dir($cartella_path);
                         ?>

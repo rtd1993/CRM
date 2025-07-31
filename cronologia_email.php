@@ -19,7 +19,7 @@ $where_conditions = [];
 $params = [];
 
 if (!empty($filter_cliente)) {
-    $where_conditions[] = "(c.`Cognome/Ragione sociale` LIKE ? OR c.Nome LIKE ?)";
+    $where_conditions[] = "(c.`Cognome_Ragione_sociale` LIKE ? OR c.Nome LIKE ?)";
     $params[] = "%$filter_cliente%";
     $params[] = "%$filter_cliente%";
 }
@@ -51,7 +51,7 @@ if (!empty($where_conditions)) {
 
 // Query principale
 $sql = "SELECT el.*, 
-               c.`Cognome/Ragione sociale` as ragione_sociale, 
+               c.`Cognome_Ragione_sociale` as ragione_sociale, 
                c.Nome,
                et.nome as template_nome
         FROM email_log el
@@ -92,7 +92,7 @@ $stats_stmt->execute($params);
 $stats = $stats_stmt->fetch();
 
 // Recupera lista clienti e template per i filtri
-$clienti_list = $pdo->query("SELECT DISTINCT `Cognome/Ragione sociale`, Nome FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome/Ragione sociale`")->fetchAll();
+$clienti_list = $pdo->query("SELECT DISTINCT `Cognome_Ragione_sociale`, Nome FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome_Ragione_sociale`")->fetchAll();
 $templates_list = $pdo->query("SELECT id, nome FROM email_templates ORDER BY nome")->fetchAll();
 ?>
 

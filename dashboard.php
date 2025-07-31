@@ -319,7 +319,7 @@ include __DIR__ . '/includes/header.php';
             // Prendiamo tutti i task: scaduti negli ultimi 30 giorni E in scadenza nei prossimi 30 giorni
             $stmt = $pdo->prepare("
                 SELECT tc.id, tc.descrizione, tc.scadenza, tc.ricorrenza,
-                       c.`Cognome/Ragione sociale` as cliente_nome, c.id as cliente_id
+                       c.`Cognome_Ragione_sociale` as cliente_nome, c.id as cliente_id
                 FROM task_clienti tc
                 LEFT JOIN clienti c ON tc.cliente_id = c.id
                 WHERE tc.scadenza BETWEEN ? AND ?
@@ -398,11 +398,11 @@ include __DIR__ . '/includes/header.php';
             $sql = "
                 SELECT 
                     id,
-                    `Cognome/Ragione sociale` AS cognome,
-                    `Numero carta d'identità` AS carta,
-                    `Data di scadenza` AS carta_scad,
+                    `Cognome_Ragione_sociale` AS cognome,
+                    `Numero_carta_d_identità` AS carta,
+                    `Data_di_scadenza` AS carta_scad,
                     PEC,
-                    `Scadenza PEC` AS pec_scad,
+                    `Scadenza_PEC` AS pec_scad,
                     `Numero patente` AS patente,
                     `Scadenza patente` AS patente_scad,
                     `Numero passaporto` AS passaporto,
@@ -411,9 +411,9 @@ include __DIR__ . '/includes/header.php';
                     `Scadenza firma digitale` AS firma_digitale_scad
                 FROM clienti
                 WHERE 
-                    (`Data di scadenza` IS NOT NULL AND `Data di scadenza` BETWEEN ? AND ?)
+                    (`Data_di_scadenza` IS NOT NULL AND `Data_di_scadenza` BETWEEN ? AND ?)
                     OR
-                    (`Scadenza PEC` IS NOT NULL AND `Scadenza PEC` BETWEEN ? AND ?)
+                    (`Scadenza_PEC` IS NOT NULL AND `Scadenza_PEC` BETWEEN ? AND ?)
                     OR
                     (`Scadenza patente` IS NOT NULL AND `Scadenza patente` BETWEEN ? AND ?)
                     OR
@@ -422,8 +422,8 @@ include __DIR__ . '/includes/header.php';
                     (`Scadenza firma digitale` IS NOT NULL AND `Scadenza firma digitale` BETWEEN ? AND ?)
                 ORDER BY 
                     LEAST(
-                        IFNULL(`Data di scadenza`, '9999-12-31'), 
-                        IFNULL(`Scadenza PEC`, '9999-12-31'),
+                        IFNULL(`Data_di_scadenza`, '9999-12-31'), 
+                        IFNULL(`Scadenza_PEC`, '9999-12-31'),
                         IFNULL(`Scadenza patente`, '9999-12-31'),
                         IFNULL(`Scadenza passaporto`, '9999-12-31'),
                         IFNULL(`Scadenza firma digitale`, '9999-12-31')

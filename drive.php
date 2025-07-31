@@ -42,10 +42,10 @@ if ($handle = opendir($current_dir)) {
         // Associa cliente se il nome cartella corrisponde al codice fiscale
         $cliente = '';
         if ($is_dir) {
-            $stmt = $pdo->prepare("SELECT `Cognome/Ragione sociale`, `Nome` FROM clienti WHERE `Codice fiscale` = ?");
+            $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome` FROM clienti WHERE `Codice_fiscale` = ?");
             $stmt->execute([$entry]);
             if ($row = $stmt->fetch()) {
-                $cliente = $row['Cognome/Ragione sociale'] . ' ' . $row['Nome'];
+                $cliente = $row['Cognome_Ragione_sociale'] . ' ' . $row['Nome'];
             }
         }
 

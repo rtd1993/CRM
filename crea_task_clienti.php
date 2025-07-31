@@ -17,7 +17,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     // Recupera i dati del task esistente dalla tabella task_clienti
     try {
         $stmt = $pdo->prepare("
-            SELECT tc.*, c.`Cognome/Ragione sociale`, c.`Nome`
+            SELECT tc.*, c.`Cognome_Ragione_sociale`, c.`Nome`
             FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id
             WHERE tc.id = ?
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Recupera la lista dei clienti
 try {
-    $stmt = $pdo->prepare("SELECT id, `Cognome/Ragione sociale`, `Nome`, `Codice fiscale` FROM clienti ORDER BY `Cognome/Ragione sociale`, `Nome`");
+    $stmt = $pdo->prepare("SELECT id, `Cognome_Ragione_sociale`, `Nome`, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`");
     $stmt->execute();
     $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
@@ -404,9 +404,9 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
                 <?php foreach ($clienti as $cliente): ?>
                     <option value="<?= $cliente['id'] ?>" 
                             <?= ($edit_mode && $task_data && $task_data['cliente_id'] == $cliente['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars(trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome/Ragione sociale'] ?? ''))) ?>
-                        <?php if (!empty($cliente['Codice fiscale'])): ?>
-                            - <?= htmlspecialchars($cliente['Codice fiscale']) ?>
+                        <?= htmlspecialchars(trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome_Ragione_sociale'] ?? ''))) ?>
+                        <?php if (!empty($cliente['Codice_fiscale'])): ?>
+                            - <?= htmlspecialchars($cliente['Codice_fiscale']) ?>
                         <?php endif; ?>
                     </option>
                 <?php endforeach; ?>

@@ -1,0 +1,18 @@
+<h1>Test Inserimento Cliente nel Database</h1><h2>Dati da inserire:</h2><pre>Array
+(
+    [Codice fiscale] => TESTDIRETTO2025
+    [Cognome/Ragione sociale] => Cliente Test Diretto SRL
+    [Nome] => Test
+    [Partita IVA] => 98765432101
+    [Telefono] => 333 9876543
+    [Mail] => testdiretto@example.com
+    [PEC] => testdiretto@pec.example.com
+    [Inizio rapporto] => 2025-01-01
+    [Fine rapporto] => 2025-12-31
+    [Inserito gestionale] => 1
+    [Codice ditta] => TEST001
+    [Colore] => #00FF00
+    [Qualifica] => Test Manager
+    [Dipendenti] => 15
+)
+</pre><h2>Query SQL:</h2><code>INSERT INTO clienti (`Codice fiscale`, `Cognome/Ragione sociale`, `Nome`, `Partita IVA`, `Telefono`, `Mail`, `PEC`, `Inizio rapporto`, `Fine rapporto`, `Inserito gestionale`, `Codice ditta`, `Colore`, `Qualifica`, `Dipendenti`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</code><h2>Esecuzione...</h2><div style='background: green; color: white; padding: 15px; margin: 10px 0;'>✅ SUCCESSO! Cliente inserito con ID: 16</div><h2>Verifica dati salvati:</h2><table border='1' style='border-collapse: collapse; width: 100%;'><tr><th>Campo</th><th>Valore Originale</th><th>Valore Salvato</th><th>Match</th></tr><tr><td><strong>Codice fiscale</strong></td><td>TESTDIRETTO2025</td><td>TESTDIRETTO2025</td><td>✅</td></tr><tr><td><strong>Cognome/Ragione sociale</strong></td><td>Cliente Test Diretto SRL</td><td>Cliente Test Diretto SRL</td><td>✅</td></tr><tr><td><strong>Nome</strong></td><td>Test</td><td>Test</td><td>✅</td></tr><tr><td><strong>Partita IVA</strong></td><td>98765432101</td><td>98765432101</td><td>✅</td></tr><tr><td><strong>Telefono</strong></td><td>333 9876543</td><td>333 9876543</td><td>✅</td></tr><tr><td><strong>Mail</strong></td><td>testdiretto@example.com</td><td>testdiretto@example.com</td><td>✅</td></tr><tr><td><strong>PEC</strong></td><td>testdiretto@pec.example.com</td><td>testdiretto@pec.example.com</td><td>✅</td></tr><tr><td><strong>Inizio rapporto</strong></td><td>2025-01-01</td><td>2025-01-01</td><td>✅</td></tr><tr><td><strong>Fine rapporto</strong></td><td>2025-12-31</td><td>2025-12-31</td><td>✅</td></tr><tr><td><strong>Inserito gestionale</strong></td><td>1</td><td>1</td><td>✅</td></tr><tr><td><strong>Codice ditta</strong></td><td>TEST001</td><td>TEST001</td><td>✅</td></tr><tr><td><strong>Colore</strong></td><td>#00FF00</td><td>#00FF00</td><td>✅</td></tr><tr><td><strong>Qualifica</strong></td><td>Test Manager</td><td>Test Manager</td><td>✅</td></tr><tr><td><strong>Dipendenti</strong></td><td>15</td><td>15</td><td>✅</td></tr></table><h2>Tutti i clienti di test:</h2><table border='1' style='border-collapse: collapse; width: 100%;'><tr><th>ID</th><th>Codice Fiscale</th><th>Ragione sociale</th><th>Nome</th><th>Partita IVA</th></tr><tr><td>16</td><td>TESTDIRETTO2025</td><td>Cliente Test Diretto SRL</td><td>Test</td><td>98765432101</td></tr><tr><td>15</td><td>TESTDIRETTO2025</td><td>Cliente Test Diretto SRL</td><td>Test</td><td>98765432101</td></tr><tr><td>14</td><td>TESTDIRETTO2025</td><td>Cliente Test Diretto SRL</td><td>Test</td><td>98765432101</td></tr></table>

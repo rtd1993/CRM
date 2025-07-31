@@ -8,7 +8,7 @@ $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
 // Elenco clienti per sezione pratiche
-$stmt = $pdo->query("SELECT id, `Cognome/Ragione sociale` AS nome FROM clienti ORDER BY `Cognome/Ragione sociale` ASC");
+$stmt = $pdo->query("SELECT id, `Cognome_Ragione_sociale` AS nome FROM clienti ORDER BY `Cognome_Ragione_sociale` ASC");
 $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

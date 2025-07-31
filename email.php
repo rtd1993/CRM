@@ -8,7 +8,7 @@ require_once 'includes/email_config.php';
 $config_email = verificaConfigurazioneEmail();
 
 // Recupera tutti i clienti con email
-$stmt = $pdo->query("SELECT id, `Cognome/Ragione sociale` as ragione_sociale, Nome, `Codice fiscale` as codice_fiscale, `Partita IVA` as partita_iva, Mail FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome/Ragione sociale`, Nome");
+$stmt = $pdo->query("SELECT id, `Cognome_Ragione_sociale` as ragione_sociale, Nome, `Codice_fiscale` as codice_fiscale, `Partita_IVA` as partita_iva, Mail FROM clienti WHERE Mail IS NOT NULL AND Mail != '' ORDER BY `Cognome_Ragione_sociale`, Nome");
 $clienti = $stmt->fetchAll();
 
 // Recupera tutti i template email
@@ -46,10 +46,10 @@ if ($_POST && isset($_POST['invia_email'])) {
                         ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
                         [
                             $cliente['Nome'] ?? '',
-                            $cliente['Cognome/Ragione sociale'] ?? '',
-                            $cliente['Cognome/Ragione sociale'] ?? '',
-                            $cliente['Codice fiscale'] ?? '',
-                            $cliente['Partita IVA'] ?? ''
+                            $cliente['Cognome_Ragione_sociale'] ?? '',
+                            $cliente['Cognome_Ragione_sociale'] ?? '',
+                            $cliente['Codice_fiscale'] ?? '',
+                            $cliente['Partita_IVA'] ?? ''
                         ],
                         $oggetto_modificato
                     );
@@ -58,16 +58,16 @@ if ($_POST && isset($_POST['invia_email'])) {
                         ['{nome_cliente}', '{cognome_cliente}', '{ragione_sociale}', '{codice_fiscale}', '{partita_iva}'],
                         [
                             $cliente['Nome'] ?? '',
-                            $cliente['Cognome/Ragione sociale'] ?? '',
-                            $cliente['Cognome/Ragione sociale'] ?? '',
-                            $cliente['Codice fiscale'] ?? '',
-                            $cliente['Partita IVA'] ?? ''
+                            $cliente['Cognome_Ragione_sociale'] ?? '',
+                            $cliente['Cognome_Ragione_sociale'] ?? '',
+                            $cliente['Codice_fiscale'] ?? '',
+                            $cliente['Partita_IVA'] ?? ''
                         ],
                         $corpo_modificato
                     );
                     
                     // Invia email tramite PHPMailer
-                    $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome/Ragione sociale'] ?? ''));
+                    $nome_completo = trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome_Ragione_sociale'] ?? ''));
                     $risultato = inviaEmailSMTP($cliente['Mail'], $nome_completo, $oggetto_finale, $corpo_finale);
                     
                     // Log dell'invio

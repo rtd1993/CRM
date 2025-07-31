@@ -1,3 +1,0 @@
-Questo è un file di test per verificare il download.
-Creato per testare la funzionalità di download del CRM.
-Data: 29 luglio 2025

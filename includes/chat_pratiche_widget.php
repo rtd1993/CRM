@@ -5,7 +5,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_login();
 // Carica i clienti direttamente in PHP per affidabilità
-$clienti = $pdo->query("SELECT id, `cognome/ragione sociale` as cognome_ragione_sociale, nome FROM clienti ORDER BY `cognome/ragione sociale`, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, `cognome_ragione_sociale` as cognome_ragione_sociale, nome FROM clienti ORDER BY `cognome_ragione_sociale`, nome")->fetchAll();
 ?>
 <div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">
