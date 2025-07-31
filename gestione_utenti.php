@@ -266,7 +266,7 @@ if (isset($_GET['edit_id'])) {
     color: white;
 }
 
-.role-impiegato {
+.role-employee {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
 }
@@ -511,7 +511,7 @@ if (isset($_GET['edit_id'])) {
                     $icons = [
                         'developer' => '👨‍💻',
                         'admin' => '👨‍💼', 
-                        'impiegato' => '👤',
+                        'employee' => '👤',
                         'guest' => '👥'
                     ];
                     echo $icons[$ruolo] ?? '👤';
@@ -558,9 +558,9 @@ if (isset($_GET['edit_id'])) {
                     <label class="form-label">🎭 Ruolo:</label>
                     <?php if ($is_admin_or_dev): ?>
                     <select name="ruolo" class="form-select" required>
-                        <?php foreach (["guest", "impiegato", "admin", "developer"] as $ruolo): ?>
+                        <?php foreach (["guest", "employee", "admin", "developer"] as $ruolo): ?>
                             <option value="<?= $ruolo ?>" <?= $utente_selezionato['ruolo'] === $ruolo ? 'selected' : '' ?>>
-                                <?= ucfirst($ruolo) ?>
+                                <?= $ruolo === 'employee' ? 'Impiegato' : ucfirst($ruolo) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

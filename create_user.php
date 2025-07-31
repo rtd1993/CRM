@@ -4,7 +4,7 @@ require_login();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
 
-if (!in_array($_SESSION['user_role'], ['administrator', 'developer'])) {
+if (!in_array($_SESSION['user_role'], ['admin', 'developer'])) {
     die("Accesso non autorizzato.");
 }
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select class="form-select" id="ruolo" name="ruolo" required>
                         <option value="" disabled selected>Seleziona ruolo...</option>
                         <option value="guest">Guest</option>
-                        <option value="impiegato">Impiegato</option>
+                        <option value="employee">Impiegato</option>
                         <option value="admin">Administrator</option>
                         <option value="developer">Developer</option>
                     </select>
