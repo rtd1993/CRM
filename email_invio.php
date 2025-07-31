@@ -1,5 +1,7 @@
 <?php
-session_start();
+// Include l'header del sito (gestisce sessione e autenticazione)
+require_once __DIR__ . '/includes/header.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -8,9 +10,6 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
-
-// Include l'header del sito
-require_once __DIR__ . '/includes/header.php';
 
 // Recupera template e clienti
 $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAll();
