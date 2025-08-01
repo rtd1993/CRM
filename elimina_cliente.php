@@ -40,11 +40,74 @@ try {
         throw new Exception("Errore durante l'eliminazione dal database");
     }
     
+    // Gestione cartella cliente
+    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
+    $cartella_cliente = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+    $cartella_ex_clienti = '/var/www/CRM/local_drive/ASContabilmente/Ex_clienti';
+    
+    // Crea la cartella degli ex clienti se non esiste
+    if (!is_dir($cartella_ex_clienti)) {
+        mkdir($cartella_ex_clienti, 0755, true);
+    }
+    
+    // Se la cartella del cliente esiste, la zippa e la sposta
+    if (is_dir($cartella_cliente)) {
+        $nome_zip = $codice_fiscale_clean . '_' . date('Y-m-d_H-i-s') . '.zip';
+        $percorso_zip = $cartella_ex_clienti . '/' . $nome_zip;
+        
+        try {
+            // Crea lo ZIP
+            $zip = new ZipArchive();
+            if ($zip->open($percorso_zip, ZipArchive::CREATE) === TRUE) {
+                
+                // Funzione ricorsiva per aggiungere tutti i file e sottocartelle
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($cartella_cliente, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST
+                );
+                
+                foreach ($iterator as $file) {
+                    $filePath = $file->getRealPath();
+                    $relativePath = substr($filePath, strlen($cartella_cliente) + 1);
+                    
+                    if ($file->isDir()) {
+                        $zip->addEmptyDir($relativePath);
+                    } else {
+                        $zip->addFile($filePath, $relativePath);
+                    }
+                }
+                
+                $zip->close();
+                
+                // Rimuovi la cartella originale dopo aver creato lo ZIP
+                function rimuoviCartella($dir) {
+                    if (!is_dir($dir)) return false;
+                    
+                    $files = array_diff(scandir($dir), array('.', '..'));
+                    foreach ($files as $file) {
+                        $path = $dir . '/' . $file;
+                        is_dir($path) ? rimuoviCartella($path) : unlink($path);
+                    }
+                    return rmdir($dir);
+                }
+                
+                rimuoviCartella($cartella_cliente);
+                
+                // Log dell'archiviazione
+                error_log("Cartella cliente archiviata: $nome_zip - Cliente: $nome_cliente (ID: $cliente_id)");
+                
+            } else {
+                error_log("Impossibile creare ZIP per cliente ID $cliente_id: errore apertura file");
+            }
+            
+        } catch (Exception $zip_error) {
+            error_log("Errore durante l'archiviazione cartella cliente ID $cliente_id: " . $zip_error->getMessage());
+            // Non bloccare l'eliminazione del cliente se l'archiviazione fallisce
+        }
+    }
+    
     // Log dell'operazione
     error_log("Cliente eliminato - ID: $cliente_id, Nome: $nome_cliente, Codice Fiscale: $codice_fiscale, Utente: " . $_SESSION['username']);
-    
-    // Nota: La cartella del cliente non viene eliminata automaticamente per sicurezza
-    // L'amministratore può eliminarla manualmente se necessario
     
     // Redirect con messaggio di successo
     header('Location: clienti.php?success=eliminato&nome=' . urlencode($nome_cliente));
