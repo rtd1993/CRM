@@ -173,8 +173,8 @@ if (isset($_SESSION['user_id'])) {
             <li><a href="/email_invio.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' class="active"';?>>Email</a></li>
             <li><a href="/chat.php"<?php if(basename($_SERVER['PHP_SELF'])=='chat.php') echo ' class="active"';?>>Chat</a></li>
             <li><a href="/info.php"<?php if(basename($_SERVER['PHP_SELF'])=='info.php') echo ' class="active"';?>>Info</a></li>
+            <li><a href="/gestione_utenti.php"<?php if(basename($_SERVER['PHP_SELF'])=='gestione_utenti.php') echo ' class="active"';?>>Utenti</a></li>
             <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
-                <li><a href="/gestione_utenti.php"<?php if(basename($_SERVER['PHP_SELF'])=='gestione_utenti.php') echo ' class="active"';?>>Utenti</a></li>
                 <li><a href="/telegram_config.php"<?php if(basename($_SERVER['PHP_SELF'])=='telegram_config.php') echo ' class="active"';?>>Telegram</a></li>
                 <li><a href="/admin_wireguard.php"<?php if(basename($_SERVER['PHP_SELF'])=='admin_wireguard.php') echo ' class="active"';?>>WireGuard</a></li>
             <?php endif; ?>
