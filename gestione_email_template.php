@@ -192,7 +192,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                     class="btn btn-outline-primary btn-sm"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal"
-                                                    onclick="loadTemplateForEdit(<?= $template['id'] ?>, '<?= addslashes($template['nome']) ?>', '<?= addslashes($template['oggetto']) ?>', `<?= addslashes($template['corpo']) ?>`)"
+                                                    onclick="loadTemplateForEdit(<?= $template['id'] ?>, '<?= str_replace("'", "\\'", $template['nome']) ?>', '<?= str_replace("'", "\\'", $template['oggetto']) ?>', '<?= str_replace(["'", "\r", "\n"], ["\\'", "\\r", "\\n"], $template['corpo']) ?>')"
                                                     title="Modifica template">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -212,8 +212,12 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                         </small>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
+                                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
