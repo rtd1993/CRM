@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Crea file di benvenuto nella cartella
             $welcome_file = $cartella_path . '/README.txt';
-            $cognome = $_POST['Cognome/Ragione sociale'] ?? '';
+            $cognome = $_POST['Cognome_Ragione_sociale'] ?? '';
             $welcome_content = "Cartella cliente: " . $codice_fiscale . "\n";
             $welcome_content .= "Cognome/Ragione sociale: " . $cognome . "\n";
             $welcome_content .= "Creata il: " . date('d/m/Y H:i:s') . "\n\n";
