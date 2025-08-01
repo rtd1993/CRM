@@ -1,4 +1,18 @@
 <?php
+// AJAX per recuperare template - DEVE essere prima di qualsiasi output
+if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
+    require_once __DIR__ . '/includes/config.php';
+    require_once __DIR__ . '/includes/db.php';
+    
+    $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE id = ?");
+    $stmt->execute([$_GET['template_id']]);
+    $template = $stmt->fetch();
+    
+    header('Content-Type: application/json');
+    echo json_encode($template);
+    exit;
+}
+
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
 
@@ -93,17 +107,6 @@ if ($_POST && isset($_POST['invia_email'])) {
             $error = "Nessuna email è stata inviata.";
         }
     }
-}
-
-// AJAX per recuperare template
-if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
-    $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE id = ?");
-    $stmt->execute([$_GET['template_id']]);
-    $template = $stmt->fetch();
-    
-    header('Content-Type: application/json');
-    echo json_encode($template);
-    exit;
 }
 ?>
 
@@ -352,12 +355,25 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
         templateSelect.addEventListener('change', function() {
             if (this.value) {
                 fetch(`?get_template=1&template_id=${this.value}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Errore nella richiesta');
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        oggettoInput.value = data.oggetto;
-                        corpoTextarea.value = data.corpo;
-                        emailCard.style.display = 'block';
-                        placeholderCard.style.display = 'none';
+                        if (data && data.oggetto && data.corpo) {
+                            oggettoInput.value = data.oggetto;
+                            corpoTextarea.value = data.corpo;
+                            emailCard.style.display = 'block';
+                            placeholderCard.style.display = 'none';
+                        } else {
+                            throw new Error('Dati template non validi');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Errore nel caricamento del template:', error);
+                        alert('Errore nel caricamento del template. Riprova.');
                     });
             } else {
                 emailCard.style.display = 'none';
