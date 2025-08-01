@@ -8,14 +8,15 @@ define('SMTP_SECURE', 'tls');
 define('SMTP_FROM_EMAIL', 'gestione.ascontabilmente@gmail.com');
 define('SMTP_FROM_NAME', 'AS Contabilmente');
 
+// Include PHPMailer
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
 // Funzione per inviare email utilizzando PHPMailer
 function inviaEmailSMTP($destinatario_email, $destinatario_nome, $oggetto, $corpo, $mittente_email = null, $mittente_nome = null) {
-    require_once __DIR__ . '/../vendor/autoload.php';
-    
-    use PHPMailer\PHPMailer\PHPMailer;
-    use PHPMailer\PHPMailer\SMTP;
-    use PHPMailer\PHPMailer\Exception;
-    
     $mail = new PHPMailer(true);
     
     try {
