@@ -28,8 +28,8 @@ if (isset($_POST['reset_password']) && $is_admin_or_dev) {
     }
 }
 
-// Eliminazione utente (solo developer)
-if (isset($_GET['delete_id']) && $utente_loggato_ruolo === 'developer') {
+// Eliminazione utente (solo admin e developer)
+if (isset($_GET['delete_id']) && $is_admin_or_dev) {
     $delete_id = intval($_GET['delete_id']);
     if ($delete_id !== $utente_loggato_id) { // prevenzione autodistruzione
         try {
@@ -82,10 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     }
     
     // Gli utenti base non possono cambiare il proprio ruolo
-    if (!$is_admin_or_dev) {
-        // Recupera il ruolo attuale dall'utente loggato
+    // Gli admin non possono cambiare il proprio ruolo (solo i developer possono)
+    if (!$is_admin_or_dev || ($utente_loggato_ruolo === 'admin' && $id === $utente_loggato_id)) {
+        // Recupera il ruolo attuale dall'utente
         $stmt = $pdo->prepare("SELECT ruolo FROM utenti WHERE id = ?");
-        $stmt->execute([$utente_loggato_id]);
+        $stmt->execute([$id]);
         $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
         $ruolo = $user_data['ruolo']; // Mantieni il ruolo esistente
     }
@@ -93,11 +94,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $stmt = $pdo->prepare("UPDATE utenti SET nome = ?, email = ?, ruolo = ?, telegram_chat_id = ? WHERE id = ?");
     $ok = $stmt->execute([$nome, $email, $ruolo, $telegram_chat_id, $id]);
 
-    // Solo gli utenti possono cambiare la propria password tramite il campo password
-    if (!empty($password) && $id === $utente_loggato_id) {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
-        $stmt->execute([$hash, $id]);
+    // Solo admin/developer possono cambiare password di altri utenti
+    if (!empty($password)) {
+        if ($id === $utente_loggato_id) {
+            // Cambio della propria password
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
+            $stmt->execute([$hash, $id]);
+        } elseif ($is_admin_or_dev) {
+            // Admin/Developer può cambiare password di altri utenti
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
+            $stmt->execute([$hash, $id]);
+        }
     }
 
     if ($ok) {
@@ -125,13 +134,8 @@ if ($is_admin_or_dev) {
 }
 
 $utente_selezionato = null;
-if (isset($_GET['edit_id'])) {
+if (isset($_GET['edit_id']) && $is_admin_or_dev) {
     $id_sel = intval($_GET['edit_id']);
-    
-    // Gli utenti base possono modificare solo se stessi
-    if (!$is_admin_or_dev && $id_sel !== $utente_loggato_id) {
-        $id_sel = $utente_loggato_id;
-    }
     
     foreach ($utenti as $u) {
         if ($u['id'] === $id_sel) {
@@ -139,8 +143,8 @@ if (isset($_GET['edit_id'])) {
             break;
         }
     }
-} else if (!$is_admin_or_dev) {
-    // Per utenti base, seleziona automaticamente se stesso
+} else {
+    // Per tutti gli utenti (compresi quelli base), seleziona automaticamente se stesso
     $utente_selezionato = $utente_loggato;
 }
 ?>
@@ -572,36 +576,54 @@ if (isset($_GET['edit_id'])) {
 
 <div class="users-container">
     <?php if ($is_admin_or_dev): ?>
-    <!-- Lista utenti (solo per admin/developer) -->
+    <!-- Sezione profilo personale sempre visibile -->
     <div class="users-list">
-        <h3>Utenti per ruolo</h3>
+        <h3>Il mio profilo</h3>
+        <div class="role-section">
+            <div class="role-title role-<?= $utente_loggato['ruolo'] ?>">
+                <?php 
+                $icons = [
+                    'developer' => '👨‍💻',
+                    'admin' => '👨‍💼', 
+                    'employee' => '👤',
+                    'guest' => '👥'
+                ];
+                echo $icons[$utente_loggato['ruolo']] ?? '👤';
+                ?>
+                I miei dati (<?= $utente_loggato['ruolo'] === 'employee' ? 'Impiegato' : ucfirst($utente_loggato['ruolo']) ?>)
+            </div>
+            <div class="user-item <?= (!isset($_GET['edit_id']) || $_GET['edit_id'] == $utente_loggato['id']) ? 'selected' : '' ?>">
+                <a href="?edit_id=<?= $utente_loggato['id'] ?>" class="user-link">
+                    <div><?= htmlspecialchars($utente_loggato['nome']) ?></div>
+                    <div class="user-email"><?= htmlspecialchars($utente_loggato['email']) ?></div>
+                </a>
+            </div>
+        </div>
+        
+        <h3>Altri utenti</h3>
         <?php foreach ($utenti_per_ruolo as $ruolo => $lista): ?>
             <div class="role-section">
                 <div class="role-title role-<?= $ruolo ?>">
                     <?php 
-                    $icons = [
-                        'developer' => '👨‍💻',
-                        'admin' => '👨‍💼', 
-                        'employee' => '👤',
-                        'guest' => '👥'
-                    ];
                     echo $icons[$ruolo] ?? '👤';
                     ?>
-                    <?= ucfirst($ruolo) ?> (<?= count($lista) ?>)
+                    <?= $ruolo === 'employee' ? 'Impiegati' : ucfirst($ruolo) ?> (<?= count($lista) ?>)
                 </div>
                 <?php foreach ($lista as $u): ?>
+                    <?php if ($u['id'] !== $utente_loggato_id): // Non mostrare se stesso nella lista altri utenti ?>
                     <div class="user-item <?= (isset($_GET['edit_id']) && $_GET['edit_id'] == $u['id']) ? 'selected' : '' ?>">
                         <a href="?edit_id=<?= $u['id'] ?>" class="user-link">
                             <div><?= htmlspecialchars($u['nome']) ?></div>
                             <div class="user-email"><?= htmlspecialchars($u['email']) ?></div>
                         </a>
-                        <?php if ($utente_loggato_ruolo === 'developer' && $u['id'] !== $utente_loggato_id): ?>
+                        <?php if ($is_admin_or_dev && $u['id'] !== $utente_loggato_id): ?>
                             <a href="?delete_id=<?= $u['id'] ?>" 
                                class="delete-btn"
                                onclick="return confirm('Sei sicuro di voler eliminare l\'utente <?= addslashes($u['nome']) ?>?');" 
                                title="Elimina utente">🗑️</a>
                         <?php endif; ?>
                     </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
         <?php endforeach; ?>
@@ -627,7 +649,7 @@ if (isset($_GET['edit_id'])) {
                 
                 <div class="form-group">
                     <label class="form-label">🎭 Ruolo:</label>
-                    <?php if ($is_admin_or_dev): ?>
+                    <?php if ($is_admin_or_dev && ($utente_selezionato['id'] !== $utente_loggato_id || $utente_loggato_ruolo === 'developer')): ?>
                     <select name="ruolo" class="form-select" required>
                         <?php foreach (["guest", "employee", "admin", "developer"] as $ruolo): ?>
                             <option value="<?= $ruolo ?>" <?= $utente_selezionato['ruolo'] === $ruolo ? 'selected' : '' ?>>
@@ -636,7 +658,7 @@ if (isset($_GET['edit_id'])) {
                         <?php endforeach; ?>
                     </select>
                     <?php else: ?>
-                    <input type="text" class="form-input" value="<?= ucfirst($utente_selezionato['ruolo']) ?>" readonly style="background-color: #f8f9fa;">
+                    <input type="text" class="form-input" value="<?= $utente_selezionato['ruolo'] === 'employee' ? 'Impiegato' : ucfirst($utente_selezionato['ruolo']) ?>" readonly style="background-color: #f8f9fa;">
                     <input type="hidden" name="ruolo" value="<?= $utente_selezionato['ruolo'] ?>">
                     <?php endif; ?>
                 </div>
@@ -647,24 +669,25 @@ if (isset($_GET['edit_id'])) {
                 </div>
                 
                 <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
-                <!-- Reset password per admin/developer su altri utenti -->
+                <!-- Reset password e cambio password per admin/developer su altri utenti -->
                 <div class="form-group">
                     <label class="form-label">🔒 Password:</label>
-                    <div style="padding: 0.8rem 1rem; background: #f8f9fa; border: 2px solid #e1e5e9; border-radius: 10px; color: #6c757d;">
-                        Non è possibile visualizzare la password corrente per motivi di sicurezza
+                    <input type="password" name="password" class="form-input" placeholder="Inserisci nuova password per cambiarla">
+                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: #e3f2fd; border-radius: 6px; font-size: 0.9rem; color: #1976d2;">
+                        💡 <strong>Alternativa rapida:</strong> Usa il pulsante "Reset Password" per impostare automaticamente "Password01!"
                     </div>
-                    <form method="post" style="display: inline;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
+                    <form method="post" style="display: inline; margin-top: 1rem;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
                         <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
                         <button type="submit" name="reset_password" class="reset-password-btn">
-                            🔄 Reset Password
+                            🔄 Reset Password a "Password01!"
                         </button>
                     </form>
                 </div>
                 <?php else: ?>
                 <!-- Campo password per il proprio account -->
                 <div class="form-group">
-                    <label class="form-label">🔒 <?= $is_admin_or_dev ? 'Nuova password' : 'Cambia password' ?>:</label>
-                    <input type="password" name="password" class="form-input" placeholder="<?= $is_admin_or_dev ? 'Lascia vuoto per non cambiare' : 'Inserisci nuova password per cambiarla' ?>">
+                    <label class="form-label">🔒 Cambia password:</label>
+                    <input type="password" name="password" class="form-input" placeholder="Inserisci nuova password per cambiarla (lascia vuoto per non cambiare)">
                 </div>
                 <?php endif; ?>
                 
