@@ -646,8 +646,8 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                 </a>
                                 <?php
                                 // Controlla se esiste la cartella del cliente
-                                if (!empty($c['Codice fiscale'])) {
-                                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $c['Codice fiscale']);
+                                if (!empty($c['Codice_fiscale'])) {
+                                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $c['Codice_fiscale']);
                                     $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
                                     if (is_dir($cartella_path)) {
                                 ?>
