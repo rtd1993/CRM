@@ -152,6 +152,19 @@ if ($_POST && isset($_POST['invia_email'])) {
 </div>
 
 <div class="container-fluid">
+    <!-- Banner configurazione SMTP -->
+    <?php if (SMTP_PASSWORD === 'xxxx xxxx xxxx xxxx'): ?>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Configurazione SMTP richiesta!</strong> 
+            Per inviare email, configura la password dell'app Gmail in <code>includes/email_config.php</code>.
+            <a href="https://myaccount.google.com/apppasswords" target="_blank" class="alert-link">
+                Genera password app Gmail
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
     <?php if ($message): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i><?= $message ?>
