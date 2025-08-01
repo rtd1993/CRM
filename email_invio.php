@@ -13,6 +13,14 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
     exit;
 }
 
+// Include PHPMailer per invio email
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+require 'vendor/autoload.php';
+require_once __DIR__ . '/includes/email_config.php';
+
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
 
@@ -70,41 +78,53 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $corpo_custom
                 );
                 
-                // Simulazione invio email (sostituire con vero invio)
-                $esito_invio = mail($cliente['Mail'], $oggetto_finale, $corpo_finale, 
-                    "From: gestione.ascontabilmente@gmail.com\r\n" .
-                    "Content-Type: text/plain; charset=UTF-8\r\n"
-                );
+                // Invio email con PHPMailer
+                $mail = new PHPMailer(true);
                 
-                if ($esito_invio) {
+                try {
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host       = SMTP_HOST;
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = SMTP_USERNAME;
+                    $mail->Password   = SMTP_PASSWORD;
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = SMTP_PORT;
+                    $mail->CharSet    = 'UTF-8';
+                    
+                    // Recipients
+                    $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+                    $mail->addAddress($cliente['Mail'], $nome_completo);
+                    
+                    // Content
+                    $mail->isHTML(false); // Invio come testo semplice
+                    $mail->Subject = $oggetto_finale;
+                    $mail->Body    = $corpo_finale;
+                    
+                    $mail->send();
                     $successi++;
-                } else {
+                    
+                } catch (Exception $e) {
                     $errori++;
-                    $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ")";
+                    $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ") - Errore: " . $mail->ErrorInfo;
                 }
             }
         }
         
-        // Salva nella cronologia (una riga per tutto l'invio multiplo)
-        $stmt = $pdo->prepare("INSERT INTO email_cronologia (template_id, oggetto, corpo, destinatari, totale_destinatari, invii_riusciti, invii_falliti, dettagli_errori) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $template_id,
-            $oggetto_custom,
-            $corpo_custom,
-            implode(', ', $destinatari_email),
-            count($clienti_selezionati),
-            $successi,
-            $errori,
-            implode(', ', $dettagli_errori)
-        ]);
+        // Salva log semplice in file
+        $log_entry = date('Y-m-d H:i:s') . " - Invio multiplo: $successi successi, $errori errori\n";
+        file_put_contents(__DIR__ . '/logs/email_invii.log', $log_entry, FILE_APPEND | LOCK_EX);
         
         if ($successi > 0) {
             $message = "✅ Email inviate con successo: <strong>$successi</strong>";
             if ($errori > 0) {
                 $message .= " | ❌ Errori: <strong>$errori</strong>";
+                // Log degli errori dettagliati
+                $error_log = date('Y-m-d H:i:s') . " - Errori dettagliati: " . implode('; ', $dettagli_errori) . "\n";
+                file_put_contents(__DIR__ . '/logs/email_errori.log', $error_log, FILE_APPEND | LOCK_EX);
             }
         } else {
-            $error = "Nessuna email è stata inviata.";
+            $error = "Nessuna email è stata inviata. Controlla la configurazione SMTP.";
         }
     }
 }
@@ -122,11 +142,8 @@ if ($_POST && isset($_POST['invia_email'])) {
                     <small class="text-muted">Invia email a più clienti contemporaneamente</small>
                 </div>
                 <div>
-                    <a href="gestione_email_template.php" class="btn btn-outline-primary me-2">
+                    <a href="gestione_email_template.php" class="btn btn-outline-primary">
                         <i class="fas fa-cogs me-1"></i>Gestione Template
-                    </a>
-                    <a href="email_cronologia.php" class="btn btn-outline-primary">
-                        <i class="fas fa-history me-1"></i>Cronologia
                     </a>
                 </div>
             </div>

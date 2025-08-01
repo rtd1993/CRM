@@ -192,8 +192,12 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                     class="btn btn-outline-primary btn-sm"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal"
-                                                    onclick="loadTemplateForEdit(<?= $template['id'] ?>, '<?= str_replace("'", "\\'", $template['nome']) ?>', '<?= str_replace("'", "\\'", $template['oggetto']) ?>', '<?= str_replace(["'", "\r", "\n"], ["\\'", "\\r", "\\n"], $template['corpo']) ?>')"
-                                                    title="Modifica template">
+                                                    data-template-id="<?= $template['id'] ?>"
+                                                    data-template-nome="<?= htmlspecialchars($template['nome']) ?>"
+                                                    data-template-oggetto="<?= htmlspecialchars($template['oggetto']) ?>"
+                                                    data-template-corpo="<?= htmlspecialchars($template['corpo']) ?>"
+                                                    title="Modifica template"
+                                                    class="edit-btn">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button type="submit" name="elimina_template" 
@@ -321,19 +325,29 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Funzione per caricare i dati del template nel modal di modifica
-    function loadTemplateForEdit(id, nome, oggetto, corpo) {
-        document.getElementById('edit_template_id').value = id;
-        document.getElementById('edit_nome').value = nome;
-        document.getElementById('edit_oggetto').value = oggetto;
-        document.getElementById('edit_corpo').value = corpo;
-    }
-    
-    // Conferma modifica
-    document.getElementById('editForm').addEventListener('submit', function(e) {
-        if (!confirm('Sei sicuro di voler modificare questo template?')) {
-            e.preventDefault();
-        }
+    // Gestione modifica template con event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // Event listener per tutti i pulsanti di modifica
+        document.querySelectorAll('[data-bs-target="#editModal"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-template-id');
+                const nome = this.getAttribute('data-template-nome');
+                const oggetto = this.getAttribute('data-template-oggetto');
+                const corpo = this.getAttribute('data-template-corpo');
+                
+                document.getElementById('edit_template_id').value = id;
+                document.getElementById('edit_nome').value = nome;
+                document.getElementById('edit_oggetto').value = oggetto;
+                document.getElementById('edit_corpo').value = corpo;
+            });
+        });
+        
+        // Conferma modifica
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            if (!confirm('Sei sicuro di voler modificare questo template?')) {
+                e.preventDefault();
+            }
+        });
     });
 </script>
 </body>
