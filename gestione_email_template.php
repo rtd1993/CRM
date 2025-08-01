@@ -33,6 +33,24 @@ if ($_POST) {
         }
     }
     
+    if (isset($_POST['modifica_template'])) {
+        $id = $_POST['template_id'];
+        $nome = trim($_POST['nome']);
+        $oggetto = trim($_POST['oggetto']);
+        $corpo = trim($_POST['corpo']);
+        
+        if ($nome && $oggetto && $corpo) {
+            $stmt = $pdo->prepare("UPDATE email_templates SET nome = ?, oggetto = ?, corpo = ? WHERE id = ?");
+            if ($stmt->execute([$nome, $oggetto, $corpo, $id])) {
+                $message = "Template modificato con successo!";
+            } else {
+                $error = "Errore nella modifica del template.";
+            }
+        } else {
+            $error = "Tutti i campi sono obbligatori.";
+        }
+    }
+    
     if (isset($_POST['elimina_template'])) {
         $id = $_POST['template_id'];
         $stmt = $pdo->prepare("DELETE FROM email_templates WHERE id = ?");
@@ -169,12 +187,22 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                         </div>
                                         <form method="POST" class="ms-2">
                                             <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
+                                        <div class="btn-group" role="group">
+                                            <button type="button" 
+                                                    class="btn btn-outline-primary btn-sm"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editModal"
+                                                    onclick="loadTemplateForEdit(<?= $template['id'] ?>, '<?= addslashes($template['nome']) ?>', '<?= addslashes($template['oggetto']) ?>', `<?= addslashes($template['corpo']) ?>`)"
+                                                    title="Modifica template">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
                                             <button type="submit" name="elimina_template" 
                                                     class="btn btn-outline-danger btn-sm"
                                                     onclick="return confirm('Sei sicuro di voler eliminare questo template?')"
                                                     title="Elimina template">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
+                                        </div>
                                         </form>
                                     </div>
                                     <div class="mt-3 p-3 bg-white border rounded">
@@ -185,10 +213,62 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                        <?php endif; ?>
+                        </div>
+    </div>
+</div>
+
+<!-- Modal per Modifica Template -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);">
+                <h5 class="modal-title" id="editModalLabel">
+                    <i class="fas fa-edit me-2"></i>Modifica Template
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" id="editForm">
+                <div class="modal-body">
+                    <input type="hidden" name="template_id" id="edit_template_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-tag me-1 text-primary"></i>Nome Template
+                        </label>
+                        <input type="text" name="nome" id="edit_nome" class="form-control form-control-lg" 
+                               placeholder="Es. Comunicazione Generale" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-heading me-1 text-primary"></i>Oggetto Email
+                        </label>
+                        <input type="text" name="oggetto" id="edit_oggetto" class="form-control form-control-lg" 
+                               placeholder="Es. Comunicazione importante" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
+                        </label>
+                        <textarea name="corpo" id="edit_corpo" class="form-control" rows="12" 
+                                  placeholder="Scrivi qui il contenuto dell'email..." required></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Variabili disponibili:</strong> 
+                            <code>{nome_cliente}</code>, <code>{email_cliente}</code>
+                        </div>
                     </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Annulla
+                    </button>
+                    <button type="submit" name="modifica_template" class="btn btn-warning">
+                        <i class="fas fa-save me-2"></i>Salva Modifiche
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -222,8 +302,35 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
+.btn-warning {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    border: none;
+    color: white;
+}
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d35400 0%, #c0392b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+    color: white;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Funzione per caricare i dati del template nel modal di modifica
+    function loadTemplateForEdit(id, nome, oggetto, corpo) {
+        document.getElementById('edit_template_id').value = id;
+        document.getElementById('edit_nome').value = nome;
+        document.getElementById('edit_oggetto').value = oggetto;
+        document.getElementById('edit_corpo').value = corpo;
+    }
+    
+    // Conferma modifica
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        if (!confirm('Sei sicuro di voler modificare questo template?')) {
+            e.preventDefault();
+        }
+    });
+</script>
 </body>
 </html>
