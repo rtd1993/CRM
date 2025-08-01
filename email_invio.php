@@ -13,12 +13,7 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
     exit;
 }
 
-// Include PHPMailer per invio email
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-require 'vendor/autoload.php';
+// Include configurazione email (che include anche PHPMailer)
 require_once __DIR__ . '/includes/email_config.php';
 
 // Include l'header del sito (gestisce sessione e autenticazione)
