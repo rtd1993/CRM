@@ -19,6 +19,7 @@ log_message() {
 # Crea directory log se non esiste
 mkdir -p /var/www/CRM/logs
 
+
 log_message "=== INIZIO ARCHIVIAZIONE CHAT GLOBALE ==="
 
 # Calcola la data di 60 giorni fa
