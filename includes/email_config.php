@@ -26,7 +26,7 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
         $mail->SMTPAuth   = true; 
         $mail->Username   = SMTP_USERNAME;
         $mail->Password   = SMTP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = SMTP_PORT;
         
         // Impostazioni per migliorare la deliverability
