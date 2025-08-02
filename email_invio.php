@@ -37,13 +37,21 @@ $error = '';
 
 // Gestione invio email
 if ($_POST && isset($_POST['invia_email'])) {
+    // DEBUG: Log inizio processo
+    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - INIZIO INVIO EMAIL\n", FILE_APPEND | LOCK_EX);
+    
     $template_id = $_POST['template_id'];
     $clienti_selezionati = $_POST['clienti'] ?? [];
     $oggetto_custom = trim($_POST['oggetto_custom']);
     $corpo_custom = trim($_POST['corpo_custom']);
     
+    // DEBUG: Log dati ricevuti
+    $debug_data = date('Y-m-d H:i:s') . " - DATI: template_id={$template_id}, clienti=" . count($clienti_selezionati) . ", oggetto='{$oggetto_custom}'\n";
+    file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_data, FILE_APPEND | LOCK_EX);
+    
     if (empty($template_id) || empty($clienti_selezionati) || empty($oggetto_custom) || empty($corpo_custom)) {
         $error = "Tutti i campi sono obbligatori e devi selezionare almeno un cliente.";
+        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - ERRORE VALIDAZIONE: {$error}\n", FILE_APPEND | LOCK_EX);
     } else {
         $successi = 0;
         $errori = 0;
@@ -447,6 +455,14 @@ if ($_POST && isset($_POST['invia_email'])) {
                 e.preventDefault();
                 return;
             }
+            
+            // DEBUG: Log invio form
+            console.log('Form inviato con:', {
+                template: document.getElementById('templateSelect').value,
+                clienti: count,
+                oggetto: document.getElementById('oggettoInput').value,
+                corpo: document.getElementById('corpoTextarea').value.substring(0, 50) + '...'
+            });
             
             btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
             btnInvia.disabled = true;
