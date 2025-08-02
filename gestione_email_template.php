@@ -2,7 +2,17 @@
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
 
-error_reporting(E_ALL);
+error_repo                        <div class="mb-3">
+                            <label for="corpo" class="form-label fw-semibold">
+                                <i class="fas fa-align-left me-2 text-primary"></i>Corpo Email
+                            </label>
+                            <div id="corpo-editor" style="height: 300px;"></div>
+                            <textarea name="corpo" id="corpo-textarea" style="display: none;"></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-magic me-1"></i>
+                                <strong>Variabili disponibili:</strong> 
+                                <code>{nome_cliente}</code>, <code>{email_cliente}</code>
+                            </div>);
 ini_set('display_errors', 1);
 
 // Controllo autenticazione
@@ -113,7 +123,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form method="POST" id="newTemplateForm">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-tag me-1 text-primary"></i>Nome Template
@@ -132,8 +142,8 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
                             </label>
-                            <textarea name="corpo" class="form-control" rows="10" 
-                                      placeholder="Scrivi qui il contenuto dell'email..." required></textarea>
+                            <div id="newQuillEditor" style="height: 200px;"></div>
+                            <textarea name="corpo" id="corpo" style="display: none;" required></textarea>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
                                 <strong>Variabili disponibili:</strong> 
@@ -189,15 +199,14 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                             <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
                                         <div class="btn-group" role="group">
                                             <button type="button" 
-                                                    class="btn btn-outline-primary btn-sm"
+                                                    class="btn btn-outline-primary btn-sm edit-btn"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal"
                                                     data-template-id="<?= $template['id'] ?>"
                                                     data-template-nome="<?= htmlspecialchars($template['nome']) ?>"
                                                     data-template-oggetto="<?= htmlspecialchars($template['oggetto']) ?>"
                                                     data-template-corpo="<?= htmlspecialchars($template['corpo']) ?>"
-                                                    title="Modifica template"
-                                                    class="edit-btn">
+                                                    title="Modifica template">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button type="submit" name="elimina_template" 
@@ -259,8 +268,8 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                         <label class="form-label fw-semibold">
                             <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
                         </label>
-                        <textarea name="corpo" id="edit_corpo" class="form-control" rows="12" 
-                                  placeholder="Scrivi qui il contenuto dell'email..." required></textarea>
+                        <div id="edit-corpo-editor" style="height: 300px;"></div>
+                        <textarea name="corpo" id="edit_corpo" style="display: none;" required></textarea>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
                             <strong>Variabili disponibili:</strong> 
@@ -323,10 +332,66 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
 }
 </style>
 
+<!-- Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Quill Editor JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
-    // Gestione modifica template con event listener
+    // Inizializzazione editor Quill
+    let newQuill, editQuill;
+    
     document.addEventListener('DOMContentLoaded', function() {
+        // Editor per creazione nuovo template
+        newQuill = new Quill('#newQuillEditor', {
+            theme: 'snow',
+            placeholder: 'Scrivi qui il contenuto dell\'email...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['blockquote', 'code-block'],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Editor per modifica template
+        editQuill = new Quill('#edit-corpo-editor', {
+            theme: 'snow',
+            placeholder: 'Modifica il contenuto dell\'email...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['blockquote', 'code-block'],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Sincronizza contenuto Quill con textarea nascosta prima dell'invio del form
+        document.getElementById('templateForm').addEventListener('submit', function() {
+            document.getElementById('corpo-textarea').value = quillEditor.root.innerHTML;
+        });
+        
+        document.getElementById('editTemplateForm').addEventListener('submit', function() {
+            document.getElementById('edit_corpo').value = quillEditEditor.root.innerHTML;
+        });
+        
         // Event listener per tutti i pulsanti di modifica
         document.querySelectorAll('[data-bs-target="#editModal"]').forEach(button => {
             button.addEventListener('click', function() {
@@ -338,12 +403,32 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                 document.getElementById('edit_template_id').value = id;
                 document.getElementById('edit_nome').value = nome;
                 document.getElementById('edit_oggetto').value = oggetto;
-                document.getElementById('edit_corpo').value = corpo;
+                // Carica il contenuto nell'editor Quill
+                if (editQuill) {
+                    editQuill.root.innerHTML = corpo || '';
+                }
             });
+        });
+        
+        // Form per nuovo template
+        document.getElementById('newTemplateForm').addEventListener('submit', function(e) {
+            // Sincronizza il contenuto dell'editor con il textarea nascosto
+            if (newQuill) {
+                document.getElementById('corpo').value = newQuill.root.innerHTML;
+            }
+            
+            if (!confirm('Sei sicuro di voler creare questo template?')) {
+                e.preventDefault();
+            }
         });
         
         // Conferma modifica
         document.getElementById('editForm').addEventListener('submit', function(e) {
+            // Sincronizza il contenuto dell'editor con il campo nascosto
+            if (editQuill) {
+                document.getElementById('edit_corpo').value = editQuill.root.innerHTML;
+            }
+            
             if (!confirm('Sei sicuro di voler modificare questo template?')) {
                 e.preventDefault();
             }

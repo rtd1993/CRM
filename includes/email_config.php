@@ -48,11 +48,15 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
         // Content
         $mail->isHTML($isHTML);
         $mail->Subject = $oggetto;
-        $mail->Body    = $messaggio;
         
-        // Se è HTML, aggiungi anche versione testo
         if ($isHTML) {
-            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $messaggio));
+            // Se è HTML, convertiamo i ritorni a capo in <br> se necessario
+            $messaggio_html = nl2br($messaggio);
+            $mail->Body = $messaggio_html;
+            // Versione testo alternativa
+            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $messaggio_html));
+        } else {
+            $mail->Body = $messaggio;
         }
         
         $mail->send();
