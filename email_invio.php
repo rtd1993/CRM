@@ -506,7 +506,8 @@ if ($_POST && isset($_POST['invia_email'])) {
             
             console.log('🚀 Form inviato!');
             btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
-            btnInvia.disabled = true;
+            // Non disabilitiamo il pulsante per permettere l'invio del name
+            // btnInvia.disabled = true;
         });
         
         updateCount();
