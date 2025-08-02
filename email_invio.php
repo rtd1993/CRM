@@ -35,6 +35,12 @@ $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale` as nome, Nome as no
 $message = '';
 $error = '';
 
+// DEBUG: Controlla se è arrivato un POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST RICEVUTO!\n", FILE_APPEND | LOCK_EX);
+    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST DATA: " . print_r($_POST, true) . "\n", FILE_APPEND | LOCK_EX);
+}
+
 // Gestione invio email
 if ($_POST && isset($_POST['invia_email'])) {
     // DEBUG: Log inizio processo
@@ -444,26 +450,54 @@ if ($_POST && isset($_POST['invia_email'])) {
         
         // Validazione invio
         document.getElementById('emailForm').addEventListener('submit', function(e) {
+            const templateValue = document.getElementById('templateSelect').value;
+            const oggettoValue = document.getElementById('oggettoInput').value;
+            const corpoValue = document.getElementById('corpoTextarea').value;
             const count = document.querySelectorAll('.cliente-check:checked').length;
+            
+            console.log('=== DEBUG FORM INVIO ===');
+            console.log('Template selezionato:', templateValue);
+            console.log('Oggetto:', oggettoValue);
+            console.log('Corpo (primi 100 caratteri):', corpoValue.substring(0, 100));
+            console.log('Clienti selezionati:', count);
+            
             if (count === 0) {
                 e.preventDefault();
+                console.log('ERRORE: Nessun cliente selezionato');
                 alert('⚠️ Seleziona almeno un cliente per l\'invio.');
                 return;
             }
             
-            if (!confirm(`📧 Confermi l'invio dell'email a ${count} clienti?`)) {
+            if (!templateValue) {
                 e.preventDefault();
+                console.log('ERRORE: Nessun template selezionato');
+                alert('⚠️ Seleziona un template.');
                 return;
             }
             
-            // DEBUG: Log invio form
-            console.log('Form inviato con:', {
-                template: document.getElementById('templateSelect').value,
-                clienti: count,
-                oggetto: document.getElementById('oggettoInput').value,
-                corpo: document.getElementById('corpoTextarea').value.substring(0, 50) + '...'
-            });
+            if (!oggettoValue.trim()) {
+                e.preventDefault();
+                console.log('ERRORE: Oggetto vuoto');
+                alert('⚠️ Inserisci l\'oggetto dell\'email.');
+                return;
+            }
             
+            if (!corpoValue.trim()) {
+                e.preventDefault();
+                console.log('ERRORE: Corpo vuoto');
+                alert('⚠️ Inserisci il contenuto dell\'email.');
+                return;
+            }
+            
+            console.log('✅ Validazione superata, invio form...');
+            
+            if (!confirm(`📧 Confermi l'invio dell'email a ${count} clienti?`)) {
+                e.preventDefault();
+                console.log('ANNULLATO: Utente ha annullato l\'invio');
+                return;
+            }
+            
+            console.log('🚀 Form inviato!');
             btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
             btnInvia.disabled = true;
         });
