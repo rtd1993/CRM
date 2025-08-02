@@ -35,36 +35,15 @@ $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale` as nome, Nome as no
 $message = '';
 $error = '';
 
-// DEBUG: Controlla se è arrivato un POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST RICEVUTO!\n", FILE_APPEND | LOCK_EX);
-    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST DATA: " . print_r($_POST, true) . "\n", FILE_APPEND | LOCK_EX);
-    
-    // DEBUG: Verifica se il pulsante invia_email è presente
-    if (isset($_POST['invia_email'])) {
-        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - PULSANTE invia_email TROVATO\n", FILE_APPEND | LOCK_EX);
-    } else {
-        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - PULSANTE invia_email NON TROVATO!\n", FILE_APPEND | LOCK_EX);
-    }
-}
-
 // Gestione invio email
 if ($_POST && isset($_POST['invia_email'])) {
-    // DEBUG: Log inizio processo
-    file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - INIZIO INVIO EMAIL\n", FILE_APPEND | LOCK_EX);
-    
     $template_id = $_POST['template_id'];
     $clienti_selezionati = $_POST['clienti'] ?? [];
     $oggetto_custom = trim($_POST['oggetto_custom']);
     $corpo_custom = trim($_POST['corpo_custom']);
     
-    // DEBUG: Log dati ricevuti
-    $debug_data = date('Y-m-d H:i:s') . " - DATI: template_id={$template_id}, clienti=" . count($clienti_selezionati) . ", oggetto='{$oggetto_custom}'\n";
-    file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_data, FILE_APPEND | LOCK_EX);
-    
     if (empty($template_id) || empty($clienti_selezionati) || empty($oggetto_custom) || empty($corpo_custom)) {
         $error = "Tutti i campi sono obbligatori e devi selezionare almeno un cliente.";
-        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - ERRORE VALIDAZIONE: {$error}\n", FILE_APPEND | LOCK_EX);
     } else {
         $successi = 0;
         $errori = 0;
@@ -94,16 +73,8 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $corpo_custom
                 );
                 
-                // DEBUG: Log dei dati prima dell'invio
-                $debug_log = date('Y-m-d H:i:s') . " - INVIO A: {$cliente['Mail']} ({$nome_completo})\n";
-                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_log, FILE_APPEND | LOCK_EX);
-                
                 // Invio email usando la funzione ottimizzata
                 $risultato = inviaEmailSMTP($cliente['Mail'], $nome_completo, $oggetto_finale, $corpo_finale, true);
-                
-                // DEBUG: Log del risultato
-                $debug_result = date('Y-m-d H:i:s') . " - RISULTATO: " . json_encode($risultato) . "\n";
-                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_result, FILE_APPEND | LOCK_EX);
                 
                 if ($risultato['success']) {
                     $successi++;
@@ -111,10 +82,6 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $errori++;
                     $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ") - Errore: " . $risultato['message'];
                 }
-            } else {
-                // DEBUG: Cliente non trovato o senza email
-                $debug_error = date('Y-m-d H:i:s') . " - ERRORE: Cliente ID {$cliente_id} non trovato o senza email\n";
-                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_error, FILE_APPEND | LOCK_EX);
             }
         }
         
@@ -462,52 +429,36 @@ if ($_POST && isset($_POST['invia_email'])) {
             const corpoValue = document.getElementById('corpoTextarea').value;
             const count = document.querySelectorAll('.cliente-check:checked').length;
             
-            console.log('=== DEBUG FORM INVIO ===');
-            console.log('Template selezionato:', templateValue);
-            console.log('Oggetto:', oggettoValue);
-            console.log('Corpo (primi 100 caratteri):', corpoValue.substring(0, 100));
-            console.log('Clienti selezionati:', count);
-            
             if (count === 0) {
                 e.preventDefault();
-                console.log('ERRORE: Nessun cliente selezionato');
                 alert('⚠️ Seleziona almeno un cliente per l\'invio.');
                 return;
             }
             
             if (!templateValue) {
                 e.preventDefault();
-                console.log('ERRORE: Nessun template selezionato');
                 alert('⚠️ Seleziona un template.');
                 return;
             }
             
             if (!oggettoValue.trim()) {
                 e.preventDefault();
-                console.log('ERRORE: Oggetto vuoto');
                 alert('⚠️ Inserisci l\'oggetto dell\'email.');
                 return;
             }
             
             if (!corpoValue.trim()) {
                 e.preventDefault();
-                console.log('ERRORE: Corpo vuoto');
                 alert('⚠️ Inserisci il contenuto dell\'email.');
                 return;
             }
             
-            console.log('✅ Validazione superata, invio form...');
-            
             if (!confirm(`📧 Confermi l'invio dell'email a ${count} clienti?`)) {
                 e.preventDefault();
-                console.log('ANNULLATO: Utente ha annullato l\'invio');
                 return;
             }
             
-            console.log('🚀 Form inviato!');
             btnInvia.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
-            // Non disabilitiamo il pulsante per permettere l'invio del name
-            // btnInvia.disabled = true;
         });
         
         updateCount();
