@@ -15,6 +15,9 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
 
 // Include configurazione email (che include anche PHPMailer)
 require_once __DIR__ . '/includes/email_config.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
@@ -73,35 +76,14 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $corpo_custom
                 );
                 
-                // Invio email con PHPMailer
-                $mail = new PHPMailer(true);
+                // Invio email usando la funzione ottimizzata
+                $risultato = inviaEmailSMTP($cliente['Mail'], $nome_completo, $oggetto_finale, $corpo_finale, true);
                 
-                try {
-                    // Server settings
-                    $mail->isSMTP();
-                    $mail->Host       = SMTP_HOST;
-                    $mail->SMTPAuth   = true;
-                    $mail->Username   = SMTP_USERNAME;
-                    $mail->Password   = SMTP_PASSWORD;
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port       = SMTP_PORT;
-                    $mail->CharSet    = 'UTF-8';
-                    
-                    // Recipients
-                    $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
-                    $mail->addAddress($cliente['Mail'], $nome_completo);
-                    
-                    // Content
-                    $mail->isHTML(false); // Invio come testo semplice
-                    $mail->Subject = $oggetto_finale;
-                    $mail->Body    = $corpo_finale;
-                    
-                    $mail->send();
+                if ($risultato['success']) {
                     $successi++;
-                    
-                } catch (Exception $e) {
+                } else {
                     $errori++;
-                    $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ") - Errore: " . $mail->ErrorInfo;
+                    $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ") - Errore: " . $risultato['message'];
                 }
             }
         }
