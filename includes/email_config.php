@@ -61,7 +61,9 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
     } catch (Exception $e) {
         return ['success' => false, 'message' => 'Errore invio email: ' . $mail->ErrorInfo];
     }
-}// Funzione per verificare la configurazione email
+}
+
+// Funzione per verificare la configurazione email
 function verificaConfigurazioneEmail() {
     if (empty(SMTP_PASSWORD)) {
         return [
