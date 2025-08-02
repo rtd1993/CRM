@@ -267,9 +267,9 @@ if ($_POST && isset($_POST['invia_email'])) {
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
                             </label>
+                            <div id="corpoQuillEditor" style="height: 250px;"></div>
                             <textarea name="corpo_custom" id="corpoTextarea" 
-                                      class="form-control" rows="8" required
-                                      placeholder="Contenuto dell'email..."></textarea>
+                                      style="display: none;" required></textarea>
                             <div class="form-text">
                                 <i class="fas fa-magic me-1"></i>
                                 <strong>Variabili disponibili:</strong> 
@@ -342,14 +342,38 @@ if ($_POST && isset($_POST['invia_email'])) {
 }
 </style>
 
+<!-- Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Quill Editor JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Inizializza editor Quill
+        const corpoQuill = new Quill('#corpoQuillEditor', {
+            theme: 'snow',
+            placeholder: 'Contenuto dell\'email...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['blockquote', 'code-block'],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+        
         const templateSelect = document.getElementById('templateSelect');
         const emailCard = document.getElementById('emailCard');
         const placeholderCard = document.getElementById('placeholderCard');
         const oggettoInput = document.getElementById('oggettoInput');
-        const corpoTextarea = document.getElementById('corpoTextarea');
         const selectAllBtn = document.getElementById('selectAll');
         const clienteChecks = document.querySelectorAll('.cliente-check');
         const clienteCount = document.getElementById('clienteCount');
@@ -368,7 +392,7 @@ if ($_POST && isset($_POST['invia_email'])) {
                     .then(data => {
                         if (data && data.oggetto && data.corpo) {
                             oggettoInput.value = data.oggetto;
-                            corpoTextarea.value = data.corpo;
+                            corpoQuill.root.innerHTML = data.corpo;
                             emailCard.style.display = 'block';
                             placeholderCard.style.display = 'none';
                         } else {
@@ -424,9 +448,14 @@ if ($_POST && isset($_POST['invia_email'])) {
         
         // Validazione invio
         document.getElementById('emailForm').addEventListener('submit', function(e) {
+            // Sincronizza contenuto Quill con textarea nascosta
+            if (corpoQuill) {
+                document.getElementById('corpoTextarea').value = corpoQuill.root.innerHTML;
+            }
+            
             const templateValue = document.getElementById('templateSelect').value;
             const oggettoValue = document.getElementById('oggettoInput').value;
-            const corpoValue = document.getElementById('corpoTextarea').value;
+            const corpoValue = corpoQuill ? corpoQuill.getText().trim() : '';
             const count = document.querySelectorAll('.cliente-check:checked').length;
             
             if (count === 0) {
@@ -447,7 +476,7 @@ if ($_POST && isset($_POST['invia_email'])) {
                 return;
             }
             
-            if (!corpoValue.trim()) {
+            if (!corpoValue) {
                 e.preventDefault();
                 alert('⚠️ Inserisci il contenuto dell\'email.');
                 return;

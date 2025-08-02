@@ -210,8 +210,10 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                     </div>
                                     <div class="mt-3 p-3 bg-white border rounded">
                                         <small class="text-dark" style="line-height: 1.4;">
-                                            <?= nl2br(htmlspecialchars(substr($template['corpo'], 0, 200))) ?>
-                                            <?= strlen($template['corpo']) > 200 ? '<span class="text-muted">...</span>' : '' ?>
+                                            <div class="template-preview">
+                                                <?= substr(strip_tags($template['corpo']), 0, 200) ?>
+                                                <?= strlen(strip_tags($template['corpo'])) > 200 ? '<span class="text-muted">...</span>' : '' ?>
+                                            </div>
                                         </small>
                                     </div>
                                 </div>
@@ -319,6 +321,11 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
     color: white;
+}
+.template-preview {
+    max-height: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>
 
