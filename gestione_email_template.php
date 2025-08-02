@@ -2,17 +2,7 @@
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
 
-error_repo                        <div class="mb-3">
-                            <label for="corpo" class="form-label fw-semibold">
-                                <i class="fas fa-align-left me-2 text-primary"></i>Corpo Email
-                            </label>
-                            <div id="corpo-editor" style="height: 300px;"></div>
-                            <textarea name="corpo" id="corpo-textarea" style="display: none;"></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-magic me-1"></i>
-                                <strong>Variabili disponibili:</strong> 
-                                <code>{nome_cliente}</code>, <code>{email_cliente}</code>
-                            </div>);
+error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Controllo autenticazione
@@ -381,15 +371,6 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                     ['clean']
                 ]
             }
-        });
-        
-        // Sincronizza contenuto Quill con textarea nascosta prima dell'invio del form
-        document.getElementById('templateForm').addEventListener('submit', function() {
-            document.getElementById('corpo-textarea').value = quillEditor.root.innerHTML;
-        });
-        
-        document.getElementById('editTemplateForm').addEventListener('submit', function() {
-            document.getElementById('edit_corpo').value = quillEditEditor.root.innerHTML;
         });
         
         // Event listener per tutti i pulsanti di modifica
