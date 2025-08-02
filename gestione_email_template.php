@@ -133,7 +133,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                 <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
                             </label>
                             <div id="newQuillEditor" style="height: 200px;"></div>
-                            <textarea name="corpo" id="corpo" style="display: none;" required></textarea>
+                            <textarea name="corpo" id="corpo" style="display: none;"></textarea>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
                                 <strong>Variabili disponibili:</strong> 
@@ -259,7 +259,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                             <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
                         </label>
                         <div id="edit-corpo-editor" style="height: 300px;"></div>
-                        <textarea name="corpo" id="edit_corpo" style="display: none;" required></textarea>
+                        <textarea name="corpo" id="edit_corpo" style="display: none;"></textarea>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
                             <strong>Variabili disponibili:</strong> 
@@ -395,7 +395,15 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
         document.getElementById('newTemplateForm').addEventListener('submit', function(e) {
             // Sincronizza il contenuto dell'editor con il textarea nascosto
             if (newQuill) {
-                document.getElementById('corpo').value = newQuill.root.innerHTML;
+                const content = newQuill.root.innerHTML.trim();
+                document.getElementById('corpo').value = content;
+                
+                // Validazione contenuto
+                if (content === '<p><br></p>' || content === '' || newQuill.getText().trim() === '') {
+                    alert('Il corpo dell\'email è obbligatorio!');
+                    e.preventDefault();
+                    return false;
+                }
             }
             
             if (!confirm('Sei sicuro di voler creare questo template?')) {
@@ -407,7 +415,15 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
         document.getElementById('editForm').addEventListener('submit', function(e) {
             // Sincronizza il contenuto dell'editor con il campo nascosto
             if (editQuill) {
-                document.getElementById('edit_corpo').value = editQuill.root.innerHTML;
+                const content = editQuill.root.innerHTML.trim();
+                document.getElementById('edit_corpo').value = content;
+                
+                // Validazione contenuto
+                if (content === '<p><br></p>' || content === '' || editQuill.getText().trim() === '') {
+                    alert('Il corpo dell\'email è obbligatorio!');
+                    e.preventDefault();
+                    return false;
+                }
             }
             
             if (!confirm('Sei sicuro di voler modificare questo template?')) {
