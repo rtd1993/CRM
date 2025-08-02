@@ -73,8 +73,16 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $corpo_custom
                 );
                 
+                // DEBUG: Log dei dati prima dell'invio
+                $debug_log = date('Y-m-d H:i:s') . " - INVIO A: {$cliente['Mail']} ({$nome_completo})\n";
+                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_log, FILE_APPEND | LOCK_EX);
+                
                 // Invio email usando la funzione ottimizzata
                 $risultato = inviaEmailSMTP($cliente['Mail'], $nome_completo, $oggetto_finale, $corpo_finale, true);
+                
+                // DEBUG: Log del risultato
+                $debug_result = date('Y-m-d H:i:s') . " - RISULTATO: " . json_encode($risultato) . "\n";
+                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_result, FILE_APPEND | LOCK_EX);
                 
                 if ($risultato['success']) {
                     $successi++;
@@ -82,6 +90,10 @@ if ($_POST && isset($_POST['invia_email'])) {
                     $errori++;
                     $dettagli_errori[] = $nome_completo . " (" . $cliente['Mail'] . ") - Errore: " . $risultato['message'];
                 }
+            } else {
+                // DEBUG: Cliente non trovato o senza email
+                $debug_error = date('Y-m-d H:i:s') . " - ERRORE: Cliente ID {$cliente_id} non trovato o senza email\n";
+                file_put_contents(__DIR__ . '/logs/email_debug.log', $debug_error, FILE_APPEND | LOCK_EX);
             }
         }
         
