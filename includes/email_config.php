@@ -28,6 +28,7 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
         $mail->Password   = SMTP_PASSWORD;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = SMTP_PORT;
+        $mail->Timeout    = 30; // Timeout di 30 secondi
         
         // Impostazioni per migliorare la deliverability
         $mail->CharSet    = 'UTF-8';
@@ -51,15 +52,14 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
         
         // Se è HTML, aggiungi anche versione testo
         if ($isHTML) {
-            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "
-", $messaggio));
+            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $messaggio));
         }
         
         $mail->send();
         return ['success' => true, 'message' => 'Email inviata con successo'];
         
     } catch (Exception $e) {
-        return ['success' => false, 'message' => 'Errore invio email: ' . $mail->ErrorInfo];
+        return ['success' => false, 'message' => 'Errore invio email: ' . $e->getMessage()];
     }
 }
 
