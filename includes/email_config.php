@@ -18,7 +18,7 @@ use PHPMailer\PHPMailer\Exception;
 // Funzione per inviare email utilizzando PHPMailer
 function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio, $isHTML = true) {
     try {
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mail = new PHPMailer(true);
         
         // Server settings
         $mail->isSMTP();
