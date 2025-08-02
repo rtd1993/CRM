@@ -197,13 +197,13 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                     data-template-oggetto="<?= htmlspecialchars($template['oggetto']) ?>"
                                                     data-template-corpo="<?= htmlspecialchars($template['corpo']) ?>"
                                                     title="Modifica template">
-                                                <i class="fas fa-edit"></i>
+                                                <i class="fas fa-pen text-primary"></i>
                                             </button>
                                             <button type="submit" name="elimina_template" 
                                                     class="btn btn-outline-danger btn-sm"
                                                     onclick="return confirm('Sei sicuro di voler eliminare questo template?')"
                                                     title="Elimina template">
-                                                <i class="fas fa-trash-alt"></i>
+                                                <i class="fas fa-times text-danger"></i>
                                             </button>
                                         </div>
                                         </form>
