@@ -1,10 +1,10 @@
 <?php
 // Configurazione email SMTP per Gmail
 define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_PORT', 587);
+define('SMTP_PORT', 465); // Cambiamo a porta 465 (SSL)
 define('SMTP_USERNAME', 'gestione.ascontabilmente@gmail.com');
 define('SMTP_PASSWORD', 'cxiglifvkiylssrk'); // CONFIGURARE: Password app specifica Gmail (16 caratteri)
-define('SMTP_SECURE', 'tls');
+define('SMTP_SECURE', 'ssl'); // Cambiamo a SSL
 define('SMTP_FROM_EMAIL', 'gestione.ascontabilmente@gmail.com');
 define('SMTP_FROM_NAME', 'AS Contabilmente');
 
@@ -26,7 +26,7 @@ function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio,
         $mail->SMTPAuth   = true; 
         $mail->Username   = SMTP_USERNAME;
         $mail->Password   = SMTP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL invece di STARTTLS
         $mail->Port       = SMTP_PORT;
         $mail->Timeout    = 30; // Timeout di 30 secondi
         
