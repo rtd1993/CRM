@@ -76,11 +76,8 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                     <small class="text-muted">Crea e gestisci i template per le email</small>
                 </div>
                 <div>
-                    <a href="email_invio.php" class="btn btn-primary me-2">
+                    <a href="email_invio.php" class="btn btn-primary">
                         <i class="fas fa-paper-plane me-1"></i>Invia Email
-                    </a>
-                    <a href="email_cronologia.php" class="btn btn-outline-primary">
-                        <i class="fas fa-history me-1"></i>Cronologia
                     </a>
                 </div>
             </div>
@@ -103,73 +100,46 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
         </div>
     <?php endif; ?>
 
-    <div class="row">
-        <!-- Form Nuovo Template -->
-        <div class="col-xl-5 col-lg-6 mb-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
-                    <h5 class="mb-0">
-                        <i class="fas fa-plus-circle me-2"></i>Nuovo Template
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST" id="newTemplateForm">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-tag me-1 text-primary"></i>Nome Template
-                            </label>
-                            <input type="text" name="nome" class="form-control form-control-lg" 
-                                   placeholder="Es. Comunicazione Generale" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-heading me-1 text-primary"></i>Oggetto Email
-                            </label>
-                            <input type="text" name="oggetto" class="form-control form-control-lg" 
-                                   placeholder="Es. Comunicazione importante" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
-                            </label>
-                            <div id="newQuillEditor" style="height: 200px;"></div>
-                            <textarea name="corpo" id="corpo" style="display: none;"></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <strong>Variabili disponibili:</strong> 
-                                <code>{nome_cliente}</code>, <code>{email_cliente}</code>
-                            </div>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" name="crea_template" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save me-2"></i>Crea Template
-                            </button>
-                        </div>
-                    </form>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="fas fa-plus me-2"></i>Crea Template
+                </button>
+                <div class="d-flex align-items-center">
+                    <div class="input-group" style="width: 300px;">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchTemplate" 
+                               placeholder="Cerca template per nome...">
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Lista Template -->
-        <div class="col-xl-7 col-lg-6 mb-4">
-            <div class="card shadow-sm border-0 h-100">
+    <div class="row">
+        <!-- Lista Template (ora a tutta larghezza) -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
                 <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
                     <h5 class="mb-0">
                         <i class="fas fa-list-alt me-2"></i>Template Esistenti
                     </h5>
-                    <span class="badge bg-white text-dark fs-6"><?= count($templates) ?></span>
+                    <span class="badge bg-white text-dark fs-6" id="templateCount"><?= count($templates) ?></span>
                 </div>
                 <div class="card-body p-0">
-                    <div style="max-height: 600px; overflow-y: auto;">
+                    <div style="max-height: 700px; overflow-y: auto;" id="templateList">
                         <?php if (empty($templates)): ?>
                             <div class="text-center py-5">
                                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">Nessun template trovato</p>
-                                <small class="text-muted">Crea il tuo primo template usando il form a sinistra</small>
+                                <small class="text-muted">Crea il tuo primo template usando il pulsante "Crea Template"</small>
                             </div>
                         <?php else: ?>
                             <?php foreach ($templates as $index => $template): ?>
-                                <div class="border-bottom p-3 <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?> template-item">
+                                <div class="border-bottom p-3 <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?> template-item" data-template-name="<?= strtolower(htmlspecialchars($template['nome'])) ?>">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <h6 class="mb-2 text-primary fw-bold">
@@ -185,28 +155,29 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                 Creato: <?= date('d/m/Y H:i', strtotime($template['data_creazione'])) ?>
                                             </small>
                                         </div>
-                                        <form method="POST" class="ms-2">
-                                            <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
-                                        <div class="btn-group" role="group">
+                                        <div class="d-flex gap-2">
                                             <button type="button" 
-                                                    class="btn btn-light btn-sm edit-btn"
+                                                    class="btn btn-sm"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal"
                                                     data-template-id="<?= $template['id'] ?>"
                                                     data-template-nome="<?= htmlspecialchars($template['nome']) ?>"
                                                     data-template-oggetto="<?= htmlspecialchars($template['oggetto']) ?>"
                                                     data-template-corpo="<?= htmlspecialchars($template['corpo']) ?>"
-                                                    title="Modifica template">
+                                                    title="Modifica template"
+                                                    style="background: none; border: none; font-size: 1.2em;">
                                                 <i class="fas fa-pen text-primary"></i>
                                             </button>
-                                            <button type="submit" name="elimina_template" 
-                                                    class="btn btn-light btn-sm"
-                                                    onclick="return confirm('Sei sicuro di voler eliminare questo template?')"
-                                                    title="Elimina template">
-                                                <i class="fas fa-times text-danger"></i>
-                                            </button>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questo template?')">
+                                                <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
+                                                <button type="submit" name="elimina_template" 
+                                                        class="btn btn-sm"
+                                                        title="Elimina template"
+                                                        style="background: none; border: none; font-size: 1.2em;">
+                                                    <i class="fas fa-times text-danger"></i>
+                                                </button>
+                                            </form>
                                         </div>
-                                        </form>
                                     </div>
                                     <div class="mt-3 p-3 bg-white border rounded">
                                         <small class="text-dark" style="line-height: 1.4;">
@@ -217,11 +188,63 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                         </small>
                                     </div>
                                 </div>
-                                            <?php endforeach; ?>
+                            <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal per Creazione Template -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                <h5 class="modal-title" id="createModalLabel">
+                    <i class="fas fa-plus me-2"></i>Crea Nuovo Template
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" id="newTemplateForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-tag me-1 text-primary"></i>Nome Template
+                        </label>
+                        <input type="text" name="nome" class="form-control form-control-lg" 
+                               placeholder="Es. Comunicazione Generale" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-heading me-1 text-primary"></i>Oggetto Email
+                        </label>
+                        <input type="text" name="oggetto" class="form-control form-control-lg" 
+                               placeholder="Es. Comunicazione importante" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-align-left me-1 text-primary"></i>Corpo Email
+                        </label>
+                        <div id="newQuillEditor" style="height: 300px;"></div>
+                        <textarea name="corpo" id="corpo" style="display: none;"></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Variabili disponibili:</strong> 
+                            <code>{nome_cliente}</code>, <code>{email_cliente}</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Annulla
+                    </button>
+                    <button type="submit" name="crea_template" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Crea Template
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -327,6 +350,18 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.btn-success {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border: none;
+}
+.btn-success:hover {
+    background: linear-gradient(135deg, #229954 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+.template-item .btn:hover {
+    transform: scale(1.2);
+}
 </style>
 
 <!-- Quill Editor CSS -->
@@ -340,7 +375,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
     let newQuill, editQuill;
     
     document.addEventListener('DOMContentLoaded', function() {
-        // Editor per creazione nuovo template
+        // Inizializza editor Quill per creazione
         newQuill = new Quill('#newQuillEditor', {
             theme: 'snow',
             placeholder: 'Scrivi qui il contenuto dell\'email...',
@@ -379,6 +414,48 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                 ]
             }
         });
+        
+        // Funzione di ricerca template
+        const searchInput = document.getElementById('searchTemplate');
+        const templateItems = document.querySelectorAll('.template-item');
+        const templateCount = document.getElementById('templateCount');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+                
+                templateItems.forEach(item => {
+                    const templateName = item.getAttribute('data-template-name');
+                    if (templateName.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                templateCount.textContent = visibleCount;
+                
+                // Mostra messaggio se nessun risultato
+                const noResults = document.getElementById('noResults');
+                if (visibleCount === 0 && searchTerm !== '') {
+                    if (!noResults) {
+                        const noResultsDiv = document.createElement('div');
+                        noResultsDiv.id = 'noResults';
+                        noResultsDiv.className = 'text-center py-5';
+                        noResultsDiv.innerHTML = `
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nessun template trovato per "${searchTerm}"</p>
+                            <small class="text-muted">Prova con un termine di ricerca diverso</small>
+                        `;
+                        document.getElementById('templateList').appendChild(noResultsDiv);
+                    }
+                } else if (noResults) {
+                    noResults.remove();
+                }
+            });
+        }
         
         // Event listener per tutti i pulsanti di modifica
         document.querySelectorAll('[data-bs-target="#editModal"]').forEach(button => {
