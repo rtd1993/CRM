@@ -39,6 +39,13 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST RICEVUTO!\n", FILE_APPEND | LOCK_EX);
     file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - POST DATA: " . print_r($_POST, true) . "\n", FILE_APPEND | LOCK_EX);
+    
+    // DEBUG: Verifica se il pulsante invia_email è presente
+    if (isset($_POST['invia_email'])) {
+        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - PULSANTE invia_email TROVATO\n", FILE_APPEND | LOCK_EX);
+    } else {
+        file_put_contents(__DIR__ . '/logs/email_debug.log', date('Y-m-d H:i:s') . " - PULSANTE invia_email NON TROVATO!\n", FILE_APPEND | LOCK_EX);
+    }
 }
 
 // Gestione invio email
