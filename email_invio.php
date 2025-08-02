@@ -15,9 +15,6 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
 
 // Include configurazione email (che include anche PHPMailer)
 require_once __DIR__ . '/includes/email_config.php';
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
 
 // Include l'header del sito (gestisce sessione e autenticazione)
 require_once __DIR__ . '/includes/header.php';
