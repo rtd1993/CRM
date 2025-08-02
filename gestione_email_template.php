@@ -189,7 +189,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                             <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
                                         <div class="btn-group" role="group">
                                             <button type="button" 
-                                                    class="btn btn-outline-primary btn-sm edit-btn"
+                                                    class="btn btn-light btn-sm edit-btn"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editModal"
                                                     data-template-id="<?= $template['id'] ?>"
@@ -200,7 +200,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                 <i class="fas fa-pen text-primary"></i>
                                             </button>
                                             <button type="submit" name="elimina_template" 
-                                                    class="btn btn-outline-danger btn-sm"
+                                                    class="btn btn-light btn-sm"
                                                     onclick="return confirm('Sei sicuro di voler eliminare questo template?')"
                                                     title="Elimina template">
                                                 <i class="fas fa-times text-danger"></i>
