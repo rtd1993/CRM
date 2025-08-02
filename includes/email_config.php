@@ -3,7 +3,7 @@
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
 define('SMTP_USERNAME', 'gestione.ascontabilmente@gmail.com');
-define('SMTP_PASSWORD', 'xxxx xxxx xxxx xxxx'); // CONFIGURARE: Password app specifica Gmail (16 caratteri)
+define('SMTP_PASSWORD', 'cxig lifv kiyl ssrk'); // CONFIGURARE: Password app specifica Gmail (16 caratteri)
 define('SMTP_SECURE', 'tls');
 define('SMTP_FROM_EMAIL', 'gestione.ascontabilmente@gmail.com');
 define('SMTP_FROM_NAME', 'AS Contabilmente');
