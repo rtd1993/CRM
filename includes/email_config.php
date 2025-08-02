@@ -16,44 +16,52 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 // Funzione per inviare email utilizzando PHPMailer
-function inviaEmailSMTP($destinatario_email, $destinatario_nome, $oggetto, $corpo, $mittente_email = null, $mittente_nome = null) {
-    $mail = new PHPMailer(true);
-    
+function inviaEmailSMTP($destinatario, $nome_destinatario, $oggetto, $messaggio, $isHTML = true) {
     try {
-        // Configurazione server SMTP
+        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        
+        // Server settings
         $mail->isSMTP();
-        $mail->Host = SMTP_HOST;
-        $mail->SMTPAuth = true;
-        $mail->Username = SMTP_USERNAME;
-        $mail->Password = SMTP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = SMTP_PORT;
-        $mail->CharSet = 'UTF-8';
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true; 
+        $mail->Username   = SMTP_USERNAME;
+        $mail->Password   = SMTP_PASSWORD;
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
         
-        // Mittente
-        $from_email = $mittente_email ?? SMTP_FROM_EMAIL;
-        $from_name = $mittente_nome ?? SMTP_FROM_NAME;
-        $mail->setFrom($from_email, $from_name);
-        $mail->addReplyTo($from_email, $from_name);
+        // Impostazioni per migliorare la deliverability
+        $mail->CharSet    = 'UTF-8';
+        $mail->Encoding   = 'base64';
+        $mail->WordWrap   = 70;
         
-        // Destinatario
-        $mail->addAddress($destinatario_email, $destinatario_nome);
+        // Headers personalizzati per evitare spam
+        $mail->addCustomHeader('X-Priority', '3');
+        $mail->addCustomHeader('X-MSMail-Priority', 'Normal');
+        $mail->addCustomHeader('X-Mailer', 'CRM AS Contabilmente v1.0');
         
-        // Contenuto
-        $mail->isHTML(false); // Invio come testo semplice
+        // Recipients
+        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        $mail->addAddress($destinatario, $nome_destinatario);
+        $mail->addReplyTo(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        
+        // Content
+        $mail->isHTML($isHTML);
         $mail->Subject = $oggetto;
-        $mail->Body = $corpo;
+        $mail->Body    = $messaggio;
         
-        // Invia email
+        // Se è HTML, aggiungi anche versione testo
+        if ($isHTML) {
+            $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "
+", $messaggio));
+        }
+        
         $mail->send();
         return ['success' => true, 'message' => 'Email inviata con successo'];
         
     } catch (Exception $e) {
-        return ['success' => false, 'message' => "Errore nell'invio: {$mail->ErrorInfo}"];
+        return ['success' => false, 'message' => 'Errore invio email: ' . $mail->ErrorInfo];
     }
-}
-
-// Funzione per verificare la configurazione email
+}// Funzione per verificare la configurazione email
 function verificaConfigurazioneEmail() {
     if (empty(SMTP_PASSWORD)) {
         return [
