@@ -73,6 +73,87 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
     }
 }
 
+// **NUOVO**: Gestione copia task multipli
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    
+    if (isset($json_data['action']) && $json_data['action'] === 'copy_tasks') {
+        header('Content-Type: application/json');
+        
+        try {
+            $tasks = $json_data['tasks'] ?? [];
+            $target_clients = $json_data['target_clients'] ?? [];
+            
+            if (empty($tasks)) {
+                echo json_encode(['success' => false, 'error' => 'Nessun task selezionato']);
+                exit;
+            }
+            
+            if (empty($target_clients)) {
+                echo json_encode(['success' => false, 'error' => 'Nessun cliente di destinazione selezionato']);
+                exit;
+            }
+            
+            $copied_count = 0;
+            $pdo->beginTransaction();
+            
+            foreach ($target_clients as $target_client_id) {
+                $target_client_id = intval($target_client_id);
+                
+                foreach ($tasks as $task) {
+                    // Verifica che il cliente target esista
+                    $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM clienti WHERE id = ?");
+                    $stmt_check->execute([$target_client_id]);
+                    
+                    if ($stmt_check->fetchColumn() == 0) {
+                        continue; // Salta se il cliente non esiste
+                    }
+                    
+                    // Copia il task
+                    $stmt_copy = $pdo->prepare("
+                        INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
+                        VALUES (?, ?, ?, ?)
+                    ");
+                    
+                    $result = $stmt_copy->execute([
+                        $target_client_id,
+                        $task['descrizione'],
+                        $task['scadenza'],
+                        $task['ricorrenza']
+                    ]);
+                    
+                    if ($result) {
+                        $copied_count++;
+                    }
+                }
+            }
+            
+            // Invia notifica nella chat se l'utente è loggato
+            if (isset($_SESSION['user_id']) && isset($_SESSION['user_name']) && $copied_count > 0) {
+                $msg_notifica = $_SESSION['user_name'] . " ha copiato $copied_count task a " . count($target_clients) . " client" . (count($target_clients) > 1 ? 'i' : 'e');
+                $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
+                $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
+            }
+            
+            $pdo->commit();
+            
+            echo json_encode([
+                'success' => true, 
+                'copied_count' => $copied_count,
+                'message' => "Copiati $copied_count task con successo"
+            ]);
+            exit;
+            
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+}
+
 include __DIR__ . '/includes/header.php';
 
 $messaggio = "";
@@ -950,8 +1031,8 @@ foreach ($tasks as $task) {
     margin-bottom: 10px;
     border-radius: 0 8px 8px 0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 15px;
 }
 
 .client-task-item.scaduto {
@@ -963,6 +1044,20 @@ foreach ($tasks as $task) {
     border-left-color: #e83e8c;
 }
 
+.task-checkbox {
+    flex-shrink: 0;
+}
+
+.task-checkbox-input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.client-task-info {
+    flex: 1;
+}
+
 .client-task-info h5 {
     margin: 0 0 5px 0;
     color: #333;
@@ -971,6 +1066,40 @@ foreach ($tasks as $task) {
 .client-task-meta {
     font-size: 0.9em;
     color: #666;
+}
+
+.task-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 5px;
+}
+
+/* Stili per i controlli di copia */
+#copy_controls {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#target_clients {
+    min-height: 80px;
+}
+
+#target_clients option {
+    padding: 5px;
+}
+
+.badge {
+    font-size: 0.9em;
 }
 
 @media (max-width: 768px) {
@@ -1251,6 +1380,46 @@ foreach ($tasks as $task) {
             <i class="fas fa-spinner fa-spin"></i> Caricamento task...
         </div>
         
+        <!-- Controlli per copia multipla -->
+        <div id="copy_controls" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-check-square"></i> Azioni Selezionati
+                    </label>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="selectAllTasks()">
+                            <i class="fas fa-check-double"></i> Seleziona Tutti
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="clearSelection()">
+                            <i class="fas fa-times"></i> Deseleziona
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="target_clients" class="form-label">
+                        <i class="fas fa-users"></i> Copia Task Selezionati a:
+                    </label>
+                    <select id="target_clients" class="form-select" multiple size="3">
+                        <?php foreach ($clienti as $cliente): ?>
+                            <option value="<?= $cliente['id'] ?>">
+                                <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="text-muted">Tieni premuto Ctrl/Cmd per selezionare più clienti</small>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-success" onclick="copySelectedTasks()">
+                        <i class="fas fa-copy"></i> Copia Task
+                    </button>
+                    <div class="mt-2">
+                        <span id="selected_count" class="badge bg-info">0 selezionati</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="client_tasks_content"></div>
         
         <div id="no_tasks" style="display: none; text-align: center; padding: 40px; color: #666;">
@@ -1268,10 +1437,12 @@ function loadClientTasks() {
     const content = document.getElementById('client_tasks_content');
     const loading = document.getElementById('loading_tasks');
     const noTasks = document.getElementById('no_tasks');
+    const copyControls = document.getElementById('copy_controls');
     
     // Reset stato
     content.innerHTML = '';
     noTasks.style.display = 'none';
+    copyControls.style.display = 'none';
     
     if (!clientId) {
         container.classList.remove('show');
@@ -1289,8 +1460,22 @@ function loadClientTasks() {
             loading.style.display = 'none';
             
             if (data.success && data.tasks && data.tasks.length > 0) {
+                // Mostra controlli per copia multipla
+                copyControls.style.display = 'block';
+                
+                // Filtra il cliente corrente dalla lista target
+                const targetSelect = document.getElementById('target_clients');
+                Array.from(targetSelect.options).forEach(option => {
+                    option.style.display = option.value === clientId ? 'none' : 'block';
+                });
+                
                 content.innerHTML = data.tasks.map(task => `
                     <div class="client-task-item ${task.ricorrente ? 'ricorrente' : ''} ${task.scaduto ? 'scaduto' : ''}">
+                        <div class="task-checkbox">
+                            <input type="checkbox" class="form-check-input task-checkbox-input" 
+                                   value="${task.id}" onchange="updateSelectedCount()" 
+                                   data-task='${JSON.stringify(task)}'>
+                        </div>
                         <div class="client-task-info">
                             <h5>${escapeHtml(task.descrizione)}</h5>
                             <div class="client-task-meta">
@@ -1314,6 +1499,8 @@ function loadClientTasks() {
                         </div>
                     </div>
                 `).join('');
+                
+                updateSelectedCount();
             } else {
                 noTasks.style.display = 'block';
             }
@@ -1458,6 +1645,96 @@ function submitTask() {
         // Ripristina il pulsante
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
+    });
+}
+
+// **NUOVO**: Funzioni per gestione selezione multipla task
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.task-checkbox-input:checked');
+    const count = checkboxes.length;
+    document.getElementById('selected_count').textContent = `${count} selezionati`;
+}
+
+function selectAllTasks() {
+    const checkboxes = document.querySelectorAll('.task-checkbox-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedCount();
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.task-checkbox-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedCount();
+}
+
+function copySelectedTasks() {
+    const selectedCheckboxes = document.querySelectorAll('.task-checkbox-input:checked');
+    const targetClientsSelect = document.getElementById('target_clients');
+    const selectedClients = Array.from(targetClientsSelect.selectedOptions).map(option => option.value);
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('Seleziona almeno un task da copiare');
+        return;
+    }
+    
+    if (selectedClients.length === 0) {
+        alert('Seleziona almeno un cliente di destinazione');
+        return;
+    }
+    
+    // Prepara i dati dei task selezionati
+    const tasksData = Array.from(selectedCheckboxes).map(checkbox => {
+        return JSON.parse(checkbox.dataset.task);
+    });
+    
+    const confirmMessage = `Confermi di voler copiare ${tasksData.length} task a ${selectedClients.length} client${selectedClients.length > 1 ? 'i' : 'e'}?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Mostra loading
+    const copyBtn = document.querySelector('[onclick="copySelectedTasks()"]');
+    const originalText = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copiando...';
+    copyBtn.disabled = true;
+    
+    // Prepara i dati per l'invio
+    const copyData = {
+        action: 'copy_tasks',
+        tasks: tasksData,
+        target_clients: selectedClients
+    };
+    
+    // Invia richiesta
+    fetch('', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(copyData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Task copiati con successo! ${data.copied_count} task creati.`);
+            // Ricarica i task del cliente corrente
+            loadClientTasks();
+        } else {
+            alert('Errore nella copia dei task: ' + (data.error || 'Errore sconosciuto'));
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        alert('Errore di comunicazione con il server');
+    })
+    .finally(() => {
+        copyBtn.innerHTML = originalText;
+        copyBtn.disabled = false;
     });
 }
 </script>
