@@ -1199,6 +1199,20 @@ foreach ($tasks as $task) {
     animation: slideDown 0.3s ease;
 }
 
+#copy_mode_button {
+    animation: slideDown 0.3s ease;
+}
+
+.copy-mode-active .client-task-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+}
+
+.copy-mode-active .task-checkbox {
+    display: flex !important;
+}
+
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -1535,7 +1549,14 @@ foreach ($tasks as $task) {
             <i class="fas fa-spinner fa-spin"></i> Caricamento task...
         </div>
         
-        <!-- Controlli per copia multipla -->
+        <!-- Pulsante per attivare modalità copia -->
+        <div id="copy_mode_button" style="display: none; margin-bottom: 15px; text-align: center;">
+            <button type="button" class="btn btn-info btn-sm" onclick="toggleCopyMode()">
+                <i class="fas fa-copy"></i> Abilita Copia Task
+            </button>
+        </div>
+        
+        <!-- Controlli per copia multipla (inizialmente nascosti) -->
         <div id="copy_controls" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
             <div class="row align-items-end">
                 <div class="col-md-3">
@@ -1571,6 +1592,11 @@ foreach ($tasks as $task) {
                     <div class="mt-2">
                         <span id="selected_count" class="badge bg-info">0 selezionati</span>
                     </div>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleCopyMode()">
+                            <i class="fas fa-times"></i> Annulla
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1593,11 +1619,13 @@ function loadClientTasks() {
     const loading = document.getElementById('loading_tasks');
     const noTasks = document.getElementById('no_tasks');
     const copyControls = document.getElementById('copy_controls');
+    const copyModeButton = document.getElementById('copy_mode_button');
     
     // Reset stato
     content.innerHTML = '';
     noTasks.style.display = 'none';
     copyControls.style.display = 'none';
+    copyModeButton.style.display = 'none';
     
     if (!clientId) {
         container.classList.remove('show');
@@ -1615,8 +1643,8 @@ function loadClientTasks() {
             loading.style.display = 'none';
             
             if (data.success && data.tasks && data.tasks.length > 0) {
-                // Mostra controlli per copia multipla
-                copyControls.style.display = 'block';
+                // Mostra il pulsante per attivare la modalità copia
+                copyModeButton.style.display = 'block';
                 
                 // Filtra il cliente corrente dalla lista target
                 const targetSelect = document.getElementById('target_clients');
@@ -1626,7 +1654,7 @@ function loadClientTasks() {
                 
                 content.innerHTML = data.tasks.map(task => `
                     <div class="client-task-item ${task.ricorrente ? 'ricorrente' : ''} ${task.scaduto ? 'scaduto' : ''}">
-                        <div class="task-checkbox">
+                        <div class="task-checkbox" style="display: none;">
                             <input type="checkbox" class="form-check-input task-checkbox-input" 
                                    value="${task.id}" onchange="updateSelectedCount()" 
                                    data-task='${JSON.stringify(task)}'>
@@ -1665,6 +1693,53 @@ function loadClientTasks() {
             console.error('Errore nel caricamento dei task:', error);
             alert('Errore nel caricamento dei task del cliente');
         });
+}
+
+// **NUOVO**: Funzione per attivare/disattivare la modalità copia
+function toggleCopyMode() {
+    const copyControls = document.getElementById('copy_controls');
+    const copyModeButton = document.getElementById('copy_mode_button');
+    const checkboxes = document.querySelectorAll('.task-checkbox');
+    
+    if (copyControls.style.display === 'none' || !copyControls.style.display) {
+        // Attiva modalità copia
+        copyControls.style.display = 'block';
+        copyModeButton.style.display = 'none';
+        
+        // Mostra tutte le checkbox
+        checkboxes.forEach(checkbox => {
+            checkbox.style.display = 'flex';
+        });
+        
+        // Cambia il layout degli item per fare spazio alle checkbox
+        const taskItems = document.querySelectorAll('.client-task-item');
+        taskItems.forEach(item => {
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.gap = '15px';
+        });
+        
+        updateSelectedCount();
+    } else {
+        // Disattiva modalità copia
+        copyControls.style.display = 'none';
+        copyModeButton.style.display = 'block';
+        
+        // Nascondi tutte le checkbox e deseleziona
+        checkboxes.forEach(checkbox => {
+            checkbox.style.display = 'none';
+            const input = checkbox.querySelector('input');
+            if (input) input.checked = false;
+        });
+        
+        // Ripristina il layout originale degli item
+        const taskItems = document.querySelectorAll('.client-task-item');
+        taskItems.forEach(item => {
+            item.style.display = 'block';
+            item.style.alignItems = '';
+            item.style.gap = '';
+        });
+    }
 }
 
 function escapeHtml(text) {
@@ -1879,6 +1954,8 @@ function copySelectedTasks() {
             alert(`Task copiati con successo! ${data.copied_count} task creati.`);
             // Ricarica i task del cliente corrente
             loadClientTasks();
+            // Disattiva la modalità copia
+            toggleCopyMode();
         } else {
             alert('Errore nella copia dei task: ' + (data.error || 'Errore sconosciuto'));
         }
