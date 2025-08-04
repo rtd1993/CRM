@@ -70,7 +70,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm border">
                 <div>
-                    <h4 class="mb-0 text-primary">
+                    <h4 class="mb-0 text-warning">
                         <i class="fas fa-envelope-open-text me-2"></i>Gestione Template Email
                     </h4>
                     <small class="text-muted">Crea e gestisci i template per le email</small>
@@ -108,7 +108,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                 </button>
                 <div class="d-flex align-items-center">
                     <div class="input-group" style="width: 300px;">
-                        <span class="input-group-text bg-primary text-white">
+                        <span class="input-group-text bg-warning text-white">
                             <i class="fas fa-search"></i>
                         </span>
                         <input type="text" class="form-control" id="searchTemplate" 
@@ -123,7 +123,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
         <!-- Lista Template (ora a tutta larghezza) -->
         <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);">
                     <h5 class="mb-0">
                         <i class="fas fa-list-alt me-2"></i>Template Esistenti
                     </h5>
@@ -142,7 +142,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                 <div class="border-bottom p-3 <?= $index % 2 == 0 ? 'bg-light' : 'bg-white' ?> template-item" data-template-name="<?= strtolower(htmlspecialchars($template['nome'])) ?>">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-2 text-primary fw-bold">
+                                            <h6 class="mb-2 text-warning fw-bold">
                                                 <i class="fas fa-file-alt me-2"></i>
                                                 <?= htmlspecialchars($template['nome']) ?>
                                             </h6>
@@ -166,7 +166,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
                                                     data-template-corpo="<?= htmlspecialchars($template['corpo']) ?>"
                                                     title="Modifica template"
                                                     style="background: none; border: none; font-size: 1.2em;">
-                                                <i class="fas fa-pen text-primary"></i>
+                                                <i class="fas fa-pen text-warning"></i>
                                             </button>
                                             <form method="POST" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questo template?')">
                                                 <input type="hidden" name="template_id" value="<?= $template['id'] ?>">
@@ -311,7 +311,7 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
 }
 .template-item:hover {
     background-color: #f8f9fa !important;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid #e67e22;
 }
 .card {
     border-radius: 12px;
@@ -322,17 +322,17 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
     padding: 1rem 1.5rem;
 }
 .form-control:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    border-color: #e67e22;
+    box-shadow: 0 0 0 0.2rem rgba(230, 126, 34, 0.25);
 }
 .btn-primary {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
     border: none;
 }
 .btn-primary:hover {
-    background: linear-gradient(135deg, #2980b9 0%, #1f4e79 100%);
+    background: linear-gradient(135deg, #d35400 0%, #c0392b 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
 }
 .btn-warning {
     background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);

@@ -178,22 +178,20 @@ if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
     }
 }
 
-// Carica lista clienti (ottimizzata - solo se necessario)
-$clienti = [];
-if (empty($filtro_cliente)) {
-    // Cache dei clienti per evitare query ripetute
-    $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
-}
-
-// Carica lista task con clienti associati (query ottimizzata)
-$where_conditions = ["1=1"]; // Base condition per semplificare la logica
-$params = [];
-
-// Gestione filtri
+// Gestione filtri (PRIMA di tutto)
 $filtro_cliente = $_GET['cliente'] ?? '';
 $filtro_scadenza = $_GET['scadenza'] ?? '';
 $filtro_ricorrenza = $_GET['ricorrenza'] ?? '';
 $search = $_GET['search'] ?? '';
+
+// Carica lista clienti (ottimizzata - solo se necessario)
+$clienti = [];
+// Carica sempre i clienti per i filtri
+$clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
+
+// Carica lista task con clienti associati (query ottimizzata)
+$where_conditions = ["1=1"]; // Base condition per semplificare la logica
+$params = [];
 
 // Query ottimizzata con calcolo statistiche integrate
 $sql = "SELECT tc.*, 
@@ -222,13 +220,6 @@ if (!empty($search)) {
 if (!empty($filtro_cliente)) {
     $where_conditions[] = "tc.cliente_id = ?";
     $params[] = intval($filtro_cliente);
-    
-    // Se stiamo filtrando per un cliente specifico, carica solo quel cliente
-    if (empty($clienti)) {
-        $stmt_cliente = $pdo->prepare("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti WHERE id = ?");
-        $stmt_cliente->execute([intval($filtro_cliente)]);
-        $clienti = $stmt_cliente->fetchAll();
-    }
 }
 
 if (!empty($filtro_scadenza)) {
@@ -259,15 +250,23 @@ if (!empty($filtro_ricorrenza)) {
     }
 }
 
-if (!empty($where_conditions)) {
+if (count($where_conditions) > 1) {  // > 1 perché la prima è sempre "1=1"
     $sql .= " WHERE " . implode(" AND ", $where_conditions);
 }
 
 $sql .= " ORDER BY tc.scadenza ASC, c.`Cognome_Ragione_sociale` ASC";
 
+// DEBUG: Log della query per diagnostica
+error_log("SQL Query: " . $sql);
+error_log("Params: " . print_r($params, true));
+error_log("Where conditions: " . print_r($where_conditions, true));
+
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tasks = $stmt->fetchAll();
+
+// DEBUG: Log del numero di task trovati
+error_log("Tasks found: " . count($tasks));
 
 // Calcola statistiche ottimizzate (usando i dati già caricati invece di loop separati)
 $stats = [
@@ -306,10 +305,6 @@ foreach ($tasks as $task) {
     }
 }
 
-// Carica lista completa clienti solo se necessario per i filtri
-if (empty($clienti)) {
-    $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
-}
 ?>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">

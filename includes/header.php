@@ -36,12 +36,12 @@ if (isset($_SESSION['user_id'])) {
             background: #f8f9fa;
         }
         header.crm-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            background: linear-gradient(135deg, #d35400 0%, #e67e22 50%, #d35400 100%);
             color: #fff;
             padding: 0;
             margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-bottom: 3px solid #3498db;
+            border-bottom: 3px solid #e67e22;
         }
         .crm-header .crm-title {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -71,11 +71,11 @@ if (isset($_SESSION['user_id'])) {
             color: #bdc3c7;
         }
         .crm-header .crm-user a {
-            color: #3498db !important;
+            color: #e67e22 !important;
             transition: color 0.2s ease;
         }
         .crm-header .crm-user a:hover {
-            color: #5dade2 !important;
+            color: #f39c12 !important;
         }
         .crm-header nav {
             background: rgba(0,0,0,0.1);
@@ -104,11 +104,11 @@ if (isset($_SESSION['user_id'])) {
             font-size: 0.9rem;
         }
         .crm-header .crm-menu a:hover, .crm-header .crm-menu a.active {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
             color: #fff;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 2px 8px rgba(230, 126, 34, 0.3);
         }
         .crm-header .crm-menu a:hover::before, .crm-header .crm-menu a.active::before {
             content: '';
@@ -148,8 +148,8 @@ if (isset($_SESSION['user_id'])) {
     <div class="container-fluid py-3 d-flex justify-content-between align-items-center">
         <div>
             <span class="crm-title">
-                <img src="logo.png" alt="Logo ASContabilmente" class="crm-logo">
-                ASContabilmente
+                <img src="logo.png" alt="Logo PratiKo" class="crm-logo">
+                PratiKo
             </span>
         </div>
         <div class="crm-user text-end">
