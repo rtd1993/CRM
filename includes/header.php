@@ -68,14 +68,16 @@ if (isset($_SESSION['user_id'])) {
         }
         .crm-header .crm-user {
             font-size: 0.95rem;
-            color: #bdc3c7;
+            color: #ffffff;
         }
         .crm-header .crm-user a {
-            color: #e67e22 !important;
+            color: #ffffff !important;
             transition: color 0.2s ease;
+            font-weight: bold;
         }
         .crm-header .crm-user a:hover {
-            color: #f39c12 !important;
+            color: #ecf0f1 !important;
+            text-decoration: none !important;
         }
         .crm-header nav {
             background: rgba(0,0,0,0.1);
@@ -159,7 +161,7 @@ if (isset($_SESSION['user_id'])) {
             </a>
             <span class="badge bg-primary text-white ms-2"><?= htmlspecialchars($ruolo_utente) ?></span>
             |
-            <a href="logout.php" style="color: #e74c3c; text-decoration: none; margin-left: 8px;"><b>Logout</b></a>
+            <a href="logout.php" style="color: #ffffff; text-decoration: none; margin-left: 8px;"><b>Logout</b></a>
         </div>
     </div>
     <nav>
