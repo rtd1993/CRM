@@ -806,8 +806,14 @@ foreach ($tasks as $task) {
 }
 
 @media (max-width: 1024px) {
-    .main-container {
+    .splitscreen-container {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .tasks-list-container,
+    .client-view-section.right-panel .client-tasks-list {
+        max-height: 400px;
     }
     
     .task-header {
@@ -850,7 +856,121 @@ foreach ($tasks as $task) {
     }
 }
 
-/* **NUOVO**: Stili per i filtri */
+/* **NUOVO**: Stili per layout splitscreen */
+.splitscreen-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+    min-height: 600px;
+}
+
+.left-panel,
+.right-panel {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 2px solid #e9ecef;
+    overflow: hidden;
+}
+
+.left-panel {
+    padding: 25px;
+    border-left: 4px solid #6f42c1;
+}
+
+.right-panel {
+    padding: 25px;
+    border-left: 4px solid #e83e8c;
+}
+
+.tasks-list-container {
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.tasks-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tasks-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb {
+    background: #6f42c1;
+    border-radius: 3px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb:hover {
+    background: #5a31a3;
+}
+
+/* Ottimizzazione task item per splitscreen */
+.splitscreen-container .task-item {
+    margin-bottom: 12px;
+    padding: 15px;
+}
+
+.splitscreen-container .task-title {
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.splitscreen-container .task-cliente {
+    font-size: 0.75em;
+    padding: 2px 8px;
+}
+
+.splitscreen-container .task-info {
+    gap: 10px;
+    font-size: 0.85em;
+    margin-top: 8px;
+}
+
+.splitscreen-container .task-actions {
+    margin-top: 10px;
+    gap: 5px;
+}
+
+.btn-xs {
+    padding: 4px 8px;
+    font-size: 0.75em;
+    margin: 0;
+    border-radius: 4px;
+}
+
+/* Stili specifici per pannello destro */
+.client-view-section.right-panel h3 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e83e8c;
+}
+
+.client-view-section.right-panel .client-tasks-list {
+    max-height: calc(100vh - 500px);
+    overflow-y: auto;
+}
+
+.client-view-section.right-panel .client-tasks-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.client-view-section.right-panel .client-tasks-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.client-view-section.right-panel .client-tasks-list::-webkit-scrollbar-thumb {
+    background: #e83e8c;
+    border-radius: 3px;
+}
+
+.client-view-section.right-panel .client-tasks-list::-webkit-scrollbar-thumb:hover {
+    background: #d63384;
+}
 .filters-section {
     background: #f8f9fa;
     border-radius: 10px;
@@ -916,17 +1036,18 @@ foreach ($tasks as $task) {
 
 .stats-row {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .stat-item {
     background: white;
-    padding: 15px;
+    padding: 12px;
     border-radius: 8px;
     text-align: center;
     border: 2px solid #e9ecef;
-    min-width: 90px;
+    min-width: 70px;
     transition: transform 0.2s ease;
 }
 
@@ -985,12 +1106,11 @@ foreach ($tasks as $task) {
     text-decoration: none;
 }
 
-/* **NUOVO**: Area visualizzazione cliente */
+/* Area visualizzazione cliente - ora integrata nel pannello destro */
 .client-view-section {
     background: #fff;
     border-radius: 10px;
     padding: 25px;
-    margin-top: 30px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     border: 2px solid #e9ecef;
 }
@@ -1110,15 +1230,46 @@ foreach ($tasks as $task) {
     
     .stats-row {
         justify-content: center;
+        gap: 8px;
     }
     
     .stat-item {
-        min-width: 80px;
+        min-width: 60px;
+        padding: 8px;
+    }
+    
+    .stat-item i {
+        font-size: 1.2em;
+    }
+    
+    .stat-number {
+        font-size: 1.4em;
     }
     
     .client-selector {
         flex-direction: column;
         align-items: stretch;
+    }
+    
+    .splitscreen-container .task-header-info {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .splitscreen-container .task-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .splitscreen-container .task-actions {
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+    
+    .tasks-list-container,
+    .client-view-section.right-panel .client-tasks-list {
+        max-height: 300px;
     }
 }
 
@@ -1178,186 +1329,190 @@ foreach ($tasks as $task) {
     </div>
 <?php endif; ?>
 
-<div class="main-container">
-    <!-- Pannello Lista Task a larghezza piena -->
-    <div class="tasks-panel" style="grid-column: 1 / -1;">
-        <!-- **NUOVO**: Sezione Filtri -->
-        <div class="filters-section">
-            <h4><i class="fas fa-filter"></i> Filtri</h4>
-            <form method="GET" class="filters-form">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="filter_search">Cerca</label>
-                        <input type="text" name="search" id="filter_search" 
-                               value="<?= htmlspecialchars($search) ?>" 
-                               placeholder="Cerca in descrizione o cliente...">
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter_cliente">Cliente</label>
-                        <select name="cliente" id="filter_cliente">
-                            <option value="">Tutti i clienti</option>
-                            <?php foreach ($clienti as $cliente): ?>
-                                <option value="<?= $cliente['id'] ?>" 
-                                        <?= ($filtro_cliente == $cliente['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter_scadenza">Scadenza</label>
-                        <select name="scadenza" id="filter_scadenza">
-                            <option value="">Tutte</option>
-                            <option value="scaduti" <?= ($filtro_scadenza === 'scaduti') ? 'selected' : '' ?>>Scaduti</option>
-                            <option value="oggi" <?= ($filtro_scadenza === 'oggi') ? 'selected' : '' ?>>Oggi</option>
-                            <option value="settimana" <?= ($filtro_scadenza === 'settimana') ? 'selected' : '' ?>>Entro 7 giorni</option>
-                            <option value="15giorni" <?= ($filtro_scadenza === '15giorni') ? 'selected' : '' ?>>Entro 15 giorni</option>
-                            <option value="mese" <?= ($filtro_scadenza === 'mese') ? 'selected' : '' ?>>Entro 30 giorni</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter_ricorrenza">Tipo</label>
-                        <select name="ricorrenza" id="filter_ricorrenza">
-                            <option value="">Tutti</option>
-                            <option value="ricorrenti" <?= ($filtro_ricorrenza === 'ricorrenti') ? 'selected' : '' ?>>Ricorrenti</option>
-                            <option value="oneshot" <?= ($filtro_ricorrenza === 'oneshot') ? 'selected' : '' ?>>One-shot</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-actions">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="fas fa-search"></i> Filtra
-                        </button>
-                        <a href="task_clienti.php" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-times"></i> Reset
-                        </a>
-                    </div>
-                </div>
-            </form>
+<!-- **NUOVO**: Sezione Filtri a larghezza piena -->
+<div class="filters-section" style="margin-bottom: 30px;">
+    <h4><i class="fas fa-filter"></i> Filtri</h4>
+    <form method="GET" class="filters-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="filter_search">Cerca</label>
+                <input type="text" name="search" id="filter_search" 
+                       value="<?= htmlspecialchars($search) ?>" 
+                       placeholder="Cerca in descrizione o cliente...">
+            </div>
             
-            <!-- Statistiche rapide -->
-            <div class="stats-row">
-                <div class="stat-item">
-                    <i class="fas fa-tasks"></i>
-                    <span class="stat-number"><?= $stats['totali'] ?></span>
-                    <span class="stat-label">Totali</span>
-                </div>
-                <div class="stat-item danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span class="stat-number"><?= $stats['scaduti'] ?></span>
-                    <span class="stat-label">Scaduti</span>
-                </div>
-                <div class="stat-item warning">
-                    <i class="fas fa-calendar-day"></i>
-                    <span class="stat-number"><?= $stats['oggi'] ?></span>
-                    <span class="stat-label">Oggi</span>
-                </div>
-                <div class="stat-item info">
-                    <i class="fas fa-calendar-week"></i>
-                    <span class="stat-number"><?= $stats['settimana'] ?></span>
-                    <span class="stat-label">7 giorni</span>
-                </div>
-                <div class="stat-item success">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="stat-number"><?= $stats['quindici_giorni'] ?></span>
-                    <span class="stat-label">15 giorni</span>
-                </div>
-                
-                <!-- Pulsante Crea Task -->
-                <div class="stat-item create-button">
-                    <button type="button" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;" onclick="openTaskModal()">
-                        <i class="fas fa-plus"></i> Nuovo Task
-                    </button>
-                </div>
+            <div class="filter-group">
+                <label for="filter_cliente">Cliente</label>
+                <select name="cliente" id="filter_cliente">
+                    <option value="">Tutti i clienti</option>
+                    <?php foreach ($clienti as $cliente): ?>
+                        <option value="<?= $cliente['id'] ?>" 
+                                <?= ($filtro_cliente == $cliente['id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter_scadenza">Scadenza</label>
+                <select name="scadenza" id="filter_scadenza">
+                    <option value="">Tutte</option>
+                    <option value="scaduti" <?= ($filtro_scadenza === 'scaduti') ? 'selected' : '' ?>>Scaduti</option>
+                    <option value="oggi" <?= ($filtro_scadenza === 'oggi') ? 'selected' : '' ?>>Oggi</option>
+                    <option value="settimana" <?= ($filtro_scadenza === 'settimana') ? 'selected' : '' ?>>Entro 7 giorni</option>
+                    <option value="15giorni" <?= ($filtro_scadenza === '15giorni') ? 'selected' : '' ?>>Entro 15 giorni</option>
+                    <option value="mese" <?= ($filtro_scadenza === 'mese') ? 'selected' : '' ?>>Entro 30 giorni</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter_ricorrenza">Tipo</label>
+                <select name="ricorrenza" id="filter_ricorrenza">
+                    <option value="">Tutti</option>
+                    <option value="ricorrenti" <?= ($filtro_ricorrenza === 'ricorrenti') ? 'selected' : '' ?>>Ricorrenti</option>
+                    <option value="oneshot" <?= ($filtro_ricorrenza === 'oneshot') ? 'selected' : '' ?>>One-shot</option>
+                </select>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search"></i> Filtra
+                </button>
+                <a href="task_clienti.php" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-times"></i> Reset
+                </a>
             </div>
         </div>
+    </form>
+    
+    <!-- Statistiche rapide -->
+    <div class="stats-row">
+        <div class="stat-item">
+            <i class="fas fa-tasks"></i>
+            <span class="stat-number"><?= $stats['totali'] ?></span>
+            <span class="stat-label">Totali</span>
+        </div>
+        <div class="stat-item danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span class="stat-number"><?= $stats['scaduti'] ?></span>
+            <span class="stat-label">Scaduti</span>
+        </div>
+        <div class="stat-item warning">
+            <i class="fas fa-calendar-day"></i>
+            <span class="stat-number"><?= $stats['oggi'] ?></span>
+            <span class="stat-label">Oggi</span>
+        </div>
+        <div class="stat-item info">
+            <i class="fas fa-calendar-week"></i>
+            <span class="stat-number"><?= $stats['settimana'] ?></span>
+            <span class="stat-label">7 giorni</span>
+        </div>
+        <div class="stat-item success">
+            <i class="fas fa-calendar-alt"></i>
+            <span class="stat-number"><?= $stats['quindici_giorni'] ?></span>
+            <span class="stat-label">15 giorni</span>
+        </div>
         
+        <!-- Pulsante Crea Task -->
+        <div class="stat-item create-button">
+            <button type="button" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;" onclick="openTaskModal()">
+                <i class="fas fa-plus"></i> Nuovo Task
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- **NUOVO**: Layout a due colonne splitscreen -->
+<div class="splitscreen-container">
+    <!-- Colonna di sinistra: Task Attivi -->
+    <div class="tasks-panel left-panel">
         <h3>
             <i class="fas fa-list"></i>
             Task Attivi (<?= count($tasks) ?>)
         </h3>
         
-        <?php if (empty($tasks)): ?>
-            <div class="empty-state">
-                <i class="fas fa-tasks"></i>
-                <h4>Nessun task presente</h4>
-                <p>Crea il primo task per iniziare!</p>
-            </div>
-        <?php else: ?>
-            <?php foreach ($tasks as $task_item): ?>
-                <?php
-                $is_ricorrente = !empty($task_item['ricorrenza']);
-                $is_scaduto = strtotime($task_item['scadenza']) < strtotime('today');
-                $scadenza_formatted = date('d/m/Y', strtotime($task_item['scadenza']));
-                
-                $ricorrenza_text = '';
-                if ($is_ricorrente) {
-                    $giorni = $task_item['ricorrenza'];
-                    if ($giorni % 365 == 0) {
-                        $ricorrenza_text = ($giorni / 365) . ' anni';
-                    } elseif ($giorni % 30 == 0) {
-                        $ricorrenza_text = ($giorni / 30) . ' mesi';
-                    } elseif ($giorni % 7 == 0) {
-                        $ricorrenza_text = ($giorni / 7) . ' settimane';
-                    } else {
-                        $ricorrenza_text = $giorni . ' giorni';
-                    }
-                }
-                ?>
-                
-                <div class="task-item <?= $is_ricorrente ? 'ricorrente' : '' ?> <?= $is_scaduto ? 'scaduto' : '' ?>">
-                    <div class="task-header-info">
-                        <h4 class="task-title"><?= htmlspecialchars($task_item['descrizione']) ?></h4>
-                        <?php if ($task_item['nome_cliente']): ?>
-                            <span class="task-cliente"><?= htmlspecialchars($task_item['nome_cliente']) ?></span>
-                        <?php endif; ?>
-                    </div>
+        <div class="tasks-list-container">
+            <?php if (empty($tasks)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-tasks"></i>
+                    <h4>Nessun task presente</h4>
+                    <p>Crea il primo task per iniziare!</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($tasks as $task_item): ?>
+                    <?php
+                    $is_ricorrente = !empty($task_item['ricorrenza']);
+                    $is_scaduto = strtotime($task_item['scadenza']) < strtotime('today');
+                    $scadenza_formatted = date('d/m/Y', strtotime($task_item['scadenza']));
                     
-                    <div class="task-info">
-                        <div class="task-scadenza">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span><?= $scadenza_formatted ?></span>
-                            <?php if ($is_scaduto): ?>
-                                <span style="color: #dc3545; font-weight: bold;">(Scaduto)</span>
+                    $ricorrenza_text = '';
+                    if ($is_ricorrente) {
+                        $giorni = $task_item['ricorrenza'];
+                        if ($giorni % 365 == 0) {
+                            $ricorrenza_text = ($giorni / 365) . ' anni';
+                        } elseif ($giorni % 30 == 0) {
+                            $ricorrenza_text = ($giorni / 30) . ' mesi';
+                        } elseif ($giorni % 7 == 0) {
+                            $ricorrenza_text = ($giorni / 7) . ' settimane';
+                        } else {
+                            $ricorrenza_text = $giorni . ' giorni';
+                        }
+                    }
+                    ?>
+                    
+                    <div class="task-item <?= $is_ricorrente ? 'ricorrente' : '' ?> <?= $is_scaduto ? 'scaduto' : '' ?>">
+                        <div class="task-header-info">
+                            <h4 class="task-title"><?= htmlspecialchars($task_item['descrizione']) ?></h4>
+                            <?php if ($task_item['nome_cliente']): ?>
+                                <span class="task-cliente"><?= htmlspecialchars($task_item['nome_cliente']) ?></span>
                             <?php endif; ?>
                         </div>
                         
-                        <?php if ($is_ricorrente): ?>
-                            <div class="task-ricorrenza">
-                                <i class="fas fa-redo-alt"></i>
-                                <span>Ogni <?= $ricorrenza_text ?></span>
+                        <div class="task-info">
+                            <div class="task-scadenza">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span><?= $scadenza_formatted ?></span>
+                                <?php if ($is_scaduto): ?>
+                                    <span style="color: #dc3545; font-weight: bold;">(Scaduto)</span>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <div class="task-actions">
-                        <a href="crea_task_clienti.php?edit=<?= $task_item['id'] ?>" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Modifica
-                        </a>
+                            
+                            <?php if ($is_ricorrente): ?>
+                                <div class="task-ricorrenza">
+                                    <i class="fas fa-redo-alt"></i>
+                                    <span>Ogni <?= $ricorrenza_text ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         
-                        <a href="?completa=<?= $task_item['id'] ?>" 
-                           class="btn btn-success" 
-                           onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')">
-                            <i class="fas fa-check"></i> Completa
-                        </a>
-                        
-                        <a href="?elimina=<?= $task_item['id'] ?>" 
-                           class="btn btn-danger" 
-                           onclick="return confirm('Sei sicuro di voler eliminare questo task?')">
-                            <i class="fas fa-trash"></i> Elimina
-                        </a>
+                        <div class="task-actions">
+                            <a href="crea_task_clienti.php?edit=<?= $task_item['id'] ?>" class="btn btn-warning btn-xs">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            
+                            <a href="?completa=<?= $task_item['id'] ?>" 
+                               class="btn btn-success btn-xs" 
+                               onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')"
+                               title="Completa">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            
+                            <a href="?elimina=<?= $task_item['id'] ?>" 
+                               class="btn btn-danger btn-xs" 
+                               onclick="return confirm('Sei sicuro di voler eliminare questo task?')"
+                               title="Elimina">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
-</div>
-
-<!-- **NUOVO**: Area Visualizzazione Task per Cliente -->
-<div class="client-view-section">
+    
+    <!-- Colonna di destra: Visualizza Task per Cliente -->
+    <div class="client-view-section right-panel">
     <h3><i class="fas fa-user-tag"></i> Visualizza Task per Cliente</h3>
     
     <div class="client-selector">
