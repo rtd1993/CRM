@@ -72,6 +72,35 @@
     animation: bounce 1s infinite;
 }
 
+/* Badge con numero di messaggi non letti */
+.chat-notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    animation: bounce 1s infinite;
+}
+
+/* Badge quando widget è aperto */
+.crm-chat-widget.open .chat-notification-badge {
+    top: 8px;
+    right: 12px;
+    position: relative;
+    display: inline-block !important;
+    margin-left: auto;
+    animation: none;
+}
+
 @keyframes bounce {
     0%, 20%, 50%, 80%, 100% {
         transform: translateY(0);
