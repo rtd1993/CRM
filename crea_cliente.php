@@ -49,11 +49,12 @@ $campi_db = [
     'Mail' => 'email',
     'PEC' => 'email',
     'User_Aruba' => 'text',
-    'Password' => 'text',
+    'Password' => 'password',
     'Scadenza_PEC' => 'date',
     'Rinnovo_Pec' => 'date',
     'SDI' => 'text',
-    'Link_cartella' => 'url'
+    'Link_cartella' => 'url',
+    'note' => 'textarea_large'
 ];
 
 // Gestione dell'inserimento
@@ -69,6 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $valore = $_POST[$campo];
+            
+            // Salta il campo note (verrà gestito separatamente)
+            if ($campo === 'note') {
+                continue;
+            }
             
             // Gestione dei tipi di dato
             if ($tipo === 'checkbox') {
@@ -127,6 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $welcome_content .= "Questa cartella contiene i file relativi al cliente.\n";
             
             file_put_contents($welcome_file, $welcome_content);
+        }
+        
+        // Gestione file note se presente
+        if (isset($_POST['note']) && !empty(trim($_POST['note']))) {
+            $note_content = trim($_POST['note']);
+            $note_file = $cartella_path . '/note_' . $codice_fiscale_clean . '.txt';
+            file_put_contents($note_file, $note_content);
         }
         
         // Aggiorna il valore del Link cartella
@@ -188,6 +201,9 @@ $sezioni = [
     ],
     'Contatti' => [
         'Telefono', 'Mail', 'PEC', 'User_Aruba', 'Password', 'Scadenza_PEC', 'Rinnovo_Pec', 'SDI'
+    ],
+    'Note' => [
+        'note'
     ]
 ];
 ?>
@@ -532,6 +548,14 @@ $sezioni = [
                                             rows="3"
                                             <?php echo $is_required ? 'required' : ''; ?>
                                         ></textarea>
+                                    <?php elseif ($tipo === 'textarea_large'): ?>
+                                        <textarea 
+                                            id="<?php echo $input_id; ?>" 
+                                            name="<?php echo $input_name; ?>" 
+                                            rows="8"
+                                            style="width: 100%; min-height: 150px; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; resize: vertical;"
+                                            placeholder="Inserisci qui le note relative al cliente..."
+                                        ></textarea>
                                     <?php elseif ($tipo === 'checkbox'): ?>
                                         <div class="checkbox-group">
                                             <input 
@@ -543,7 +567,7 @@ $sezioni = [
                                         </div>
                                     <?php else: ?>
                                         <input 
-                                            type="<?php echo $tipo; ?>" 
+                                            type="<?php echo $tipo === 'password' ? 'text' : $tipo; ?>" 
                                             id="<?php echo $input_id; ?>" 
                                             name="<?php echo $input_name; ?>"
                                             <?php echo $is_required ? 'required' : ''; ?>

@@ -1,5 +1,19 @@
 <?php
-// Enable error reporting for debugging (remove in production)
+// Enable error reporting for d$gruppi = [
+    'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
+    'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
+    'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
+    'Documenti' => ['Numero carta d'identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida per l'espatrio'],
+    'Fiscali' => ['Codice_ditta', 'Codice_ATECO', 'Descrizione_attivita', 'Camera_di_commercio', 'Dipendenti', 'Codice_inps', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail', 'Cassa_Edile', 'Numero_Cassa_Professionisti', 'Contabilita', 'Liquidazione_IVA', 'SDI'],
+    'Note' => ['note'],
+    'Altro' => ['Colore', 'Inserito_gestionale', 'Inizio_rapporto', 'Fine_rapporto', 'Link_cartella']
+];
+
+// Caricamento delle note dal file
+$codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
+$note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
+$note_content = file_exists($note_file) ? file_get_contents($note_file) : '';
+?>(remove in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -398,6 +412,7 @@ $section_icons = [
     'Sedi' => '🏢',
     'Documenti' => '📄',
     'Fiscali' => '💼',
+    'Note' => '📝',
     'Altro' => '📋'
 ];
 ?>
@@ -429,14 +444,26 @@ $section_icons = [
             <div class="info-grid">
                 <?php foreach ($campi as $campo): ?>
                     <?php 
-                    $valore = $cliente[$campo] ?? '';
+                    // Gestione speciale per il campo note (caricamento da file)
+                    if ($campo === 'note') {
+                        $valore = $note_content;
+                    } else {
+                        $valore = $cliente[$campo] ?? '';
+                    }
+                    
                     $is_empty = empty($valore);
                     $is_important = in_array($campo, ['Codice_fiscale', 'Partita_IVA', 'Mail', 'Telefono']);
                     ?>
                     <div class="info-field <?= $is_empty ? 'empty' : '' ?> <?= $is_important && !$is_empty ? 'highlight' : '' ?>">
                         <div class="info-label"><?= htmlspecialchars(format_label($campo)) ?></div>
                         <div class="info-value <?= $is_empty ? 'empty' : '' ?>">
-                            <?= $is_empty ? 'Non specificato' : htmlspecialchars($valore) ?>
+                            <?php if ($campo === 'note' && !$is_empty): ?>
+                                <div style="background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 8px; padding: 12px; white-space: pre-wrap; font-family: Arial, sans-serif; max-height: 200px; overflow-y: auto;">
+                                    <?= htmlspecialchars($valore) ?>
+                                </div>
+                            <?php else: ?>
+                                <?= $is_empty ? 'Non specificato' : htmlspecialchars($valore) ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>

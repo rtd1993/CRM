@@ -67,10 +67,11 @@ $campi_db = [
     'Mail' => 'email',
     'PEC' => 'email',
     'User_Aruba' => 'text',
-    'Password' => 'password',
+    'Password' => 'text',
     'Scadenza_PEC' => 'date',
     'Rinnovo_Pec' => 'date',
-    'SDI' => 'text'
+    'SDI' => 'text',
+    'note' => 'textarea_large'
 ];
 
 // Gestione dell'aggiornamento
@@ -82,6 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($campi_db as $campo => $tipo) {
             if (isset($_POST[$campo])) {
                 $valore = $_POST[$campo];
+                
+                // Salta il campo note (verrà gestito separatamente)
+                if ($campo === 'note') {
+                    continue;
+                }
                 
                 // Validazione in base al tipo
                 if ($tipo === 'email' && !empty($valore) && !filter_var($valore, FILTER_VALIDATE_EMAIL)) {
@@ -136,6 +142,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result) {
                 $success_message = "Cliente aggiornato con successo!";
                 
+                // Gestione file note se presente
+                if (isset($_POST['note'])) {
+                    $note_content = trim($_POST['note']);
+                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
+                    $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
+                    $note_file = $cartella_path . '/note_' . $codice_fiscale_clean . '.txt';
+                    
+                    // Crea la cartella se non esiste
+                    if (!is_dir($cartella_path)) {
+                        mkdir($cartella_path, 0755, true);
+                    }
+                    
+                    if (!empty($note_content)) {
+                        file_put_contents($note_file, $note_content);
+                    } else {
+                        // Se le note sono vuote, elimina il file se esiste
+                        if (file_exists($note_file)) {
+                            unlink($note_file);
+                        }
+                    }
+                }
+                
                 // Redirect dopo 2 secondi per mostrare il messaggio
                 header("refresh:2;url=info_cliente.php?id=$cliente_id");
                 
@@ -181,6 +209,9 @@ $sezioni = [
     ],
     'Contatti' => [
         'Telefono', 'Mail', 'PEC', 'User_Aruba', 'Password', 'Scadenza_PEC', 'Rinnovo_Pec', 'SDI'
+    ],
+    'Note' => [
+        'note'
     ]
 ];
 ?>
@@ -611,7 +642,16 @@ $sezioni = [
                                         
                                         <?php
                                         $tipo = $campi_db[$campo];
-                                        $valore = $cliente[$campo] ?? '';
+                                        
+                                        // Gestione speciale per il campo note (caricamento da file)
+                                        if ($campo === 'note') {
+                                            $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
+                                            $note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
+                                            $valore = file_exists($note_file) ? file_get_contents($note_file) : '';
+                                        } else {
+                                            $valore = $cliente[$campo] ?? '';
+                                        }
+                                        
                                         $input_id = htmlspecialchars($campo);
                                         $input_name = htmlspecialchars($campo);
                                         ?>
@@ -621,6 +661,15 @@ $sezioni = [
                                                 id="<?php echo $input_id; ?>" 
                                                 name="<?php echo $input_name; ?>" 
                                                 rows="3"
+                                                onchange="markChanged(this)"
+                                            ><?php echo htmlspecialchars($valore); ?></textarea>
+                                        <?php elseif ($tipo === 'textarea_large'): ?>
+                                            <textarea 
+                                                id="<?php echo $input_id; ?>" 
+                                                name="<?php echo $input_name; ?>" 
+                                                rows="8"
+                                                style="width: 100%; min-height: 150px; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; resize: vertical;"
+                                                placeholder="Inserisci qui le note relative al cliente..."
                                                 onchange="markChanged(this)"
                                             ><?php echo htmlspecialchars($valore); ?></textarea>
                                         <?php elseif ($tipo === 'checkbox'): ?>
