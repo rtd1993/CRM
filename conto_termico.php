@@ -23,7 +23,7 @@ if ($action === 'delete' && $id) {
 }
 
 // Carica lista clienti per il dropdown
-$clienti = $pdo->query("SELECT id, CONCAT(cognome_ragione_sociale, ' ', COALESCE(nome, '')) as nome_completo FROM clienti ORDER BY cognome_ragione_sociale, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALESCE(`Nome`, '')) as nome_completo FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`")->fetchAll();
 
 // Filtri di ricerca
 $search_cliente = $_GET['search_cliente'] ?? '';

@@ -29,7 +29,16 @@ try {
 }
 
 // Carica lista clienti
-$clienti = $pdo->query("SELECT id, CONCAT(cognome_ragione_sociale, ' ', COALESCE(nome, '')) as nome_completo FROM clienti ORDER BY cognome_ragione_sociale, nome")->fetchAll();
+try {
+    $clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALESCE(`Nome`, '')) as nome_completo FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`")->fetchAll();
+    // Debug temporaneo
+    if (empty($clienti)) {
+        $errors[] = "Nessun cliente trovato nel database. Controlla la tabella clienti.";
+    }
+} catch (Exception $e) {
+    $errors[] = "Errore nel caricamento clienti: " . $e->getMessage();
+    $clienti = [];
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validazione dati

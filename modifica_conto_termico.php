@@ -29,7 +29,7 @@ try {
 }
 
 // Carica lista clienti
-$clienti = $pdo->query("SELECT id, CONCAT(cognome_ragione_sociale, ' ', COALESCE(nome, '')) as nome_completo FROM clienti ORDER BY cognome_ragione_sociale, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALESCE(`Nome`, '')) as nome_completo FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validazione dati
