@@ -77,6 +77,87 @@ include __DIR__ . '/includes/header.php';
 
 $messaggio = "";
 
+// **NUOVO**: Gestione creazione task via POST (per il modale)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
+    try {
+        $cliente_id = intval($_POST['cliente_id'] ?? 0);
+        $descrizione = trim($_POST['descrizione'] ?? '');
+        $scadenza = $_POST['scadenza'] ?? '';
+        $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
+        $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
+        
+        // Validazione
+        if ($cliente_id <= 0) {
+            throw new Exception("Seleziona un cliente");
+        }
+        
+        if (empty($descrizione)) {
+            throw new Exception("La descrizione è obbligatoria");
+        }
+        
+        if (empty($scadenza)) {
+            throw new Exception("La data di scadenza è obbligatoria");
+        }
+        
+        // Converti ricorrenza in giorni
+        $ricorrenza_giorni = null;
+        if ($ricorrenza > 0) {
+            switch ($tipo_ricorrenza) {
+                case 'giorni':
+                    $ricorrenza_giorni = $ricorrenza;
+                    break;
+                case 'settimane':
+                    $ricorrenza_giorni = $ricorrenza * 7;
+                    break;
+                case 'mesi':
+                    $ricorrenza_giorni = $ricorrenza * 30;
+                    break;
+                case 'anni':
+                    $ricorrenza_giorni = $ricorrenza * 365;
+                    break;
+            }
+        }
+
+        // Crea il nuovo task
+        $stmt = $pdo->prepare("
+            INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
+            VALUES (?, ?, ?, ?)
+        ");
+        $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni]);
+        
+        if (!$result) {
+            throw new Exception("Errore nella creazione del task");
+        }
+        
+        // Invia notifica nella chat se l'utente è loggato
+        if (isset($_SESSION['user_id']) && isset($_SESSION['user_name'])) {
+            // Recupera nome cliente per la notifica
+            $stmt_cliente = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, Nome FROM clienti WHERE id = ?");
+            $stmt_cliente->execute([$cliente_id]);
+            $cliente_data = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
+            $nome_cliente = '';
+            if ($cliente_data) {
+                $nome_cliente = trim(($cliente_data['Nome'] ?? '') . ' ' . ($cliente_data['Cognome_Ragione_sociale'] ?? ''));
+            }
+            
+            $msg_notifica = $_SESSION['user_name'] . " ha creato un nuovo task: " . $descrizione . 
+                           ($nome_cliente ? " (Cliente: $nome_cliente)" : "");
+            $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
+            $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
+        }
+        
+        $messaggio = "Task creato con successo!";
+        
+        // Reindirizza per evitare re-submit
+        header("Location: task_clienti.php?success=" . urlencode($messaggio));
+        exit;
+        
+    } catch (Exception $e) {
+        $messaggio = "Errore: " . $e->getMessage();
+        error_log("Errore creazione task cliente: " . $e->getMessage());
+    }
+}
+
 // Gestione messaggi di successo dal redirect
 if (isset($_GET['success'])) {
     $messaggio = "Operazione completata con successo!";
@@ -256,17 +337,9 @@ if (count($where_conditions) > 1) {  // > 1 perché la prima è sempre "1=1"
 
 $sql .= " ORDER BY tc.scadenza ASC, c.`Cognome_Ragione_sociale` ASC";
 
-// DEBUG: Log della query per diagnostica
-error_log("SQL Query: " . $sql);
-error_log("Params: " . print_r($params, true));
-error_log("Where conditions: " . print_r($where_conditions, true));
-
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tasks = $stmt->fetchAll();
-
-// DEBUG: Log del numero di task trovati
-error_log("Tasks found: " . count($tasks));
 
 // Calcola statistiche ottimizzate (usando i dati già caricati invece di loop separati)
 $stats = [
@@ -919,6 +992,54 @@ foreach ($tasks as $task) {
         align-items: stretch;
     }
 }
+
+/* Stili per il modale task */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 15px 15px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #e67e22;
+    box-shadow: 0 0 0 0.2rem rgba(230, 126, 34, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #e67e22;
+    border-color: #e67e22;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
 </style>
 
 <?php if ($messaggio): ?>
@@ -1018,9 +1139,9 @@ foreach ($tasks as $task) {
                 
                 <!-- Pulsante Crea Task -->
                 <div class="stat-item create-button">
-                    <a href="crea_task_clienti.php" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;">
+                    <button type="button" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;" onclick="openTaskModal()">
                         <i class="fas fa-plus"></i> Nuovo Task
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1242,8 +1363,188 @@ document.addEventListener('DOMContentLoaded', function() {
         searchField.focus();
     }
 });
+
+// **NUOVO**: Funzione per aprire il modale task
+function openTaskModal() {
+    const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+    
+    // Reset form
+    document.getElementById('taskForm').reset();
+    document.getElementById('ricorrenza_section').style.display = 'none';
+    document.getElementById('tipo_ricorrenza_section').style.display = 'none';
+    document.getElementById('is_ricorrente').checked = false;
+    
+    // Imposta data di oggi come default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('scadenza').value = today;
+    
+    modal.show();
+}
+
+// Funzione per toggle ricorrenza
+function toggleRicorrenza() {
+    const isChecked = document.getElementById('is_ricorrente').checked;
+    const ricorrenzaSection = document.getElementById('ricorrenza_section');
+    const tipoRicorrenzaSection = document.getElementById('tipo_ricorrenza_section');
+    
+    if (isChecked) {
+        ricorrenzaSection.style.display = 'block';
+        tipoRicorrenzaSection.style.display = 'block';
+        document.getElementById('ricorrenza').value = '1';
+    } else {
+        ricorrenzaSection.style.display = 'none';
+        tipoRicorrenzaSection.style.display = 'none';
+        document.getElementById('ricorrenza').value = '';
+    }
+}
+
+// Funzione per submit del task
+function submitTask() {
+    const form = document.getElementById('taskForm');
+    const formData = new FormData(form);
+    
+    // Validazione client-side
+    const clienteId = formData.get('cliente_id');
+    const descrizione = formData.get('descrizione');
+    const scadenza = formData.get('scadenza');
+    
+    if (!clienteId) {
+        alert('Seleziona un cliente');
+        return;
+    }
+    
+    if (!descrizione.trim()) {
+        alert('Inserisci una descrizione');
+        return;
+    }
+    
+    if (!scadenza) {
+        alert('Seleziona una data di scadenza');
+        return;
+    }
+    
+    // Se non è ricorrente, rimuovi i valori di ricorrenza
+    if (!document.getElementById('is_ricorrente').checked) {
+        formData.set('ricorrenza', '0');
+    }
+    
+    // Mostra loading
+    const submitBtn = document.querySelector('[onclick="submitTask()"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creazione...';
+    submitBtn.disabled = true;
+    
+    // Submit via AJAX
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        // Se la risposta contiene un redirect o successo, ricarica la pagina
+        if (data.includes('success') || data.includes('Task creato')) {
+            location.reload();
+        } else {
+            // Gestisci errori
+            console.error('Errore nella creazione del task:', data);
+            alert('Errore nella creazione del task. Controlla i dati inseriti.');
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        alert('Errore di comunicazione con il server');
+    })
+    .finally(() => {
+        // Ripristina il pulsante
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
 </script>
 
+<!-- Modale per Nuovo Task -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: white;">
+                <h5 class="modal-title" id="taskModalLabel">
+                    <i class="fas fa-plus-circle"></i> Nuovo Task Cliente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm" method="POST">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="cliente_id" class="form-label">
+                                <i class="fas fa-user"></i> Cliente *
+                            </label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">-- Seleziona Cliente --</option>
+                                <?php foreach ($clienti as $cliente): ?>
+                                    <option value="<?= $cliente['id'] ?>">
+                                        <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <label for="descrizione" class="form-label">
+                                <i class="fas fa-tasks"></i> Descrizione *
+                            </label>
+                            <textarea class="form-control" id="descrizione" name="descrizione" rows="3" 
+                                      placeholder="Descrivi il task da completare..." required></textarea>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="scadenza" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Data Scadenza *
+                            </label>
+                            <input type="date" class="form-control" id="scadenza" name="scadenza" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_ricorrente" onchange="toggleRicorrenza()">
+                                <label class="form-check-label" for="is_ricorrente">
+                                    <i class="fas fa-sync-alt"></i> Task ricorrente
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="ricorrenza_section" style="display: none;">
+                            <label for="ricorrenza" class="form-label">
+                                <i class="fas fa-redo-alt"></i> Ogni
+                            </label>
+                            <input type="number" class="form-control" id="ricorrenza" name="ricorrenza" min="1" placeholder="1">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="tipo_ricorrenza_section" style="display: none;">
+                            <label for="tipo_ricorrenza" class="form-label">Unità di tempo</label>
+                            <select class="form-select" id="tipo_ricorrenza" name="tipo_ricorrenza">
+                                <option value="giorni">Giorni</option>
+                                <option value="settimane">Settimane</option>
+                                <option value="mesi">Mesi</option>
+                                <option value="anni">Anni</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Annulla
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitTask()">
+                    <i class="fas fa-save"></i> Crea Task
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

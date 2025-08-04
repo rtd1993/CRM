@@ -372,11 +372,6 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
 }
 </style>
 
-<div class="form-header">
-    <h2><?= $edit_mode ? '✏️ Modifica Task Cliente' : '➕ Crea Nuovo Task Cliente' ?></h2>
-    <p>Gestione task specifici per i clienti con scadenze e priorità</p>
-</div>
-
 <?php if ($success_message): ?>
     <div class="alert alert-success">
         <strong>✅ Successo!</strong> <?= htmlspecialchars($success_message) ?>
