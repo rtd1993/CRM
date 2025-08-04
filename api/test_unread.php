@@ -7,7 +7,7 @@ session_start();
 $_SESSION['user_id'] = 1;
 $_SESSION['user_name'] = 'Test User';
 
-require_once '../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 
 try {
     $chat_type = $_GET['chat_type'] ?? '';
