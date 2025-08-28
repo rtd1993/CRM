@@ -370,6 +370,25 @@ require_once __DIR__ . '/includes/header.php';
                      style="border: 2px solid rgba(102, 126, 234, 0.2); border-radius: 12px; padding: 0.8rem; font-size: 1rem; transition: all 0.3s ease;"
                      placeholder="Inserisci il titolo...">
           </div>
+          <div class="mb-4">
+              <label for="eventAssignedTo" class="form-label" style="font-weight: 600; color: var(--primary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-user me-2"></i>Assegnato a
+              </label>
+              <select class="form-control" id="eventAssignedTo" required
+                      style="border: 2px solid rgba(102, 126, 234, 0.2); border-radius: 12px; padding: 0.8rem; font-size: 1rem; transition: all 0.3s ease;">
+                <option value="">Seleziona un utente...</option>
+                <?php
+                try {
+                    $stmt = $pdo->query("SELECT id, nome, colore FROM utenti ORDER BY nome");
+                    while ($user = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo '<option value="' . $user['id'] . '" data-color="' . $user['colore'] . '">' . htmlspecialchars($user['nome']) . '</option>';
+                    }
+                } catch (Exception $e) {
+                    echo '<option value="">Errore nel caricamento utenti</option>';
+                }
+                ?>
+              </select>
+          </div>
           <div class="row">
               <div class="col-md-6 mb-4">
                   <label for="eventStart" class="form-label" style="font-weight: 600; color: var(--primary-color); margin-bottom: 0.5rem;">
@@ -420,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let eventTitleInput = document.getElementById('eventTitle');
     let eventStartInput = document.getElementById('eventStart');
     let eventEndInput = document.getElementById('eventEnd');
+    let eventAssignedToInput = document.getElementById('eventAssignedTo');
     let currentEvent = null; // For edit/delete
 
     // FullCalendar instance
@@ -452,6 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             eventForm.reset();
             eventIdInput.value = '';
             eventTitleInput.value = '';
+            eventAssignedToInput.value = '';
             // Default times: 09:00 - 10:00
             let start = info.startStr.substring(0,10) + 'T09:00';
             let end = info.startStr.substring(0,10) + 'T10:00';
@@ -471,7 +492,29 @@ document.addEventListener('DOMContentLoaded', function() {
             currentEvent = info.event;
             eventForm.reset();
             eventIdInput.value = currentEvent.id;
-            eventTitleInput.value = currentEvent.title;
+            
+            // Estrai il titolo originale rimuovendo "creato da [utente] - " e " (per [utente])"
+            let originalTitle = currentEvent.title;
+            let titleMatch = originalTitle.match(/^creato da .+ - (.+) \(per .+\)$/);
+            if (titleMatch) {
+                eventTitleInput.value = titleMatch[1]; // Solo il titolo puro
+            } else {
+                eventTitleInput.value = originalTitle; // Fallback per eventi vecchi
+            }
+            
+            // Prova a estrarre l'utente assegnato dal titolo
+            let userMatch = originalTitle.match(/\(per (.+)\)$/);
+            if (userMatch) {
+                let assignedUserName = userMatch[1];
+                // Trova l'utente nella select
+                for (let option of eventAssignedToInput.options) {
+                    if (option.text === assignedUserName) {
+                        eventAssignedToInput.value = option.value;
+                        break;
+                    }
+                }
+            }
+            
             // Format datetimes for input fields
             let start = currentEvent.start;
             let end = currentEvent.end ? currentEvent.end : currentEvent.start;
@@ -509,12 +552,27 @@ document.addEventListener('DOMContentLoaded', function() {
         let title = eventTitleInput.value.trim();
         let start = eventStartInput.value;
         let end = eventEndInput.value;
-        if (!title || !start || !end) return;
+        let assignedTo = document.getElementById('eventAssignedTo').value;
+        
+        if (!title || !start || !end || !assignedTo) {
+            alert('Tutti i campi sono obbligatori!');
+            return;
+        }
+
+        // Ottieni il nome dell'utente selezionato e il nome dell'utente che crea
+        let assignedToSelect = document.getElementById('eventAssignedTo');
+        let assignedToName = assignedToSelect.options[assignedToSelect.selectedIndex].text;
+        let userColor = assignedToSelect.options[assignedToSelect.selectedIndex].dataset.color;
+        
+        // Modifica il titolo per includere le informazioni degli utenti
+        let finalTitle = `creato da <?php echo $_SESSION['user_name']; ?> - ${title} (per ${assignedToName})`;
 
         let payload = {
-            title: title,
+            title: finalTitle,
             start: start,
-            end: end
+            end: end,
+            assignedTo: assignedTo,
+            color: userColor
         };
 
         fetch('/calendar_events.php', {

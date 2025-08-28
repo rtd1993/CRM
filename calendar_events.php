@@ -5,6 +5,18 @@ error_reporting(E_ALL);
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+
+// Verifica autenticazione per operazioni di scrittura
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    session_start();
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Non autenticato']);
+        exit;
+    }
+}
 
 // DEBUG: Log everything for troubleshooting
 function dbg_log($msg) {
@@ -51,12 +63,27 @@ switch ($_SERVER['REQUEST_METHOD']) {
             $events = $service->events->listEvents($calendarId, $params);
             $output = [];
             foreach ($events->getItems() as $event) {
-                $output[] = [
-                    'id' => $event->getId(),
+                $eventId = $event->getId();
+                
+                // Ottieni i metadati dell'evento dal database locale
+                $stmt = $pdo->prepare("SELECT event_color, assigned_to_user_id, created_by_user_id FROM calendar_events_meta WHERE google_event_id = ?");
+                $stmt->execute([$eventId]);
+                $meta = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                $eventData = [
+                    'id' => $eventId,
                     'title' => $event->getSummary(),
                     'start' => $event->start->dateTime ?: $event->start->date,
                     'end' => $event->end->dateTime ?: $event->end->date,
                 ];
+                
+                // Applica il colore se disponibile nei metadati
+                if ($meta && $meta['event_color']) {
+                    $eventData['backgroundColor'] = $meta['event_color'];
+                    $eventData['borderColor'] = $meta['event_color'];
+                }
+                
+                $output[] = $eventData;
             }
             dbg_log("GET result: " . json_encode($output));
             echo json_encode($output);
@@ -95,9 +122,40 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 'timeZone' => $timeZone
             ]
         ]);
+        
+        // Imposta il colore se fornito
+        if (isset($input['color']) && !empty($input['color'])) {
+            // Google Calendar usa ID colore predefiniti, convertiamo il colore hex in ID
+            $colorMap = [
+                '#007BFF' => '1', // Blu
+                '#28A745' => '11', // Verde
+                '#DC3545' => '4', // Rosso
+                '#FFC107' => '5', // Giallo
+                '#6F42C1' => '3', // Viola
+                '#FD7E14' => '6', // Arancione
+                '#20C997' => '10', // Teal
+                '#E83E8C' => '2', // Rosa
+            ];
+            
+            $colorId = $colorMap[$input['color']] ?? '1'; // Default blu
+            $event->setColorId($colorId);
+        }
+        
         dbg_log("POST event to insert: " . print_r($event, true));
         try {
             $createdEvent = $service->events->insert($calendarId, $event);
+            
+            // Salva i metadati dell'evento nel database locale
+            if (isset($input['assignedTo']) && isset($input['color'])) {
+                $stmt = $pdo->prepare("INSERT INTO calendar_events_meta (google_event_id, assigned_to_user_id, created_by_user_id, event_color) VALUES (?, ?, ?, ?)");
+                $stmt->execute([
+                    $createdEvent->getId(),
+                    $input['assignedTo'],
+                    $_SESSION['user_id'],
+                    $input['color']
+                ]);
+            }
+            
             $response = [
                 'id' => $createdEvent->getId(),
                 'title' => $createdEvent->getSummary(),
@@ -167,6 +225,11 @@ switch ($_SERVER['REQUEST_METHOD']) {
         if ($eventId) {
             try {
                 $service->events->delete($calendarId, $eventId);
+                
+                // Rimuovi anche i metadati dal database locale
+                $stmt = $pdo->prepare("DELETE FROM calendar_events_meta WHERE google_event_id = ?");
+                $stmt->execute([$eventId]);
+                
                 dbg_log("DELETE event deleted: $eventId");
                 echo json_encode(['status' => 'success']);
             } catch (Exception $e) {
