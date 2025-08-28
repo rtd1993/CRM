@@ -27,37 +27,37 @@ $clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALES
 
 // Filtri di ricerca
 $search_cliente = $_GET['search_cliente'] ?? '';
-$search_anno = $_GET['search_anno'] ?? '';
-$search_esito = $_GET['search_esito'] ?? '';
+$search_stato = $_GET['search_stato'] ?? '';
+$search_tipo = $_GET['search_tipo'] ?? '';
 
 // Query base
 $where_conditions = [];
 $params = [];
 
 if (!empty($search_cliente)) {
-    $where_conditions[] = "c.cognome_ragione_sociale LIKE ? OR c.nome LIKE ?";
+    $where_conditions[] = "(c.Cognome_Ragione_sociale LIKE ? OR c.Nome LIKE ?)";
     $params[] = "%$search_cliente%";
     $params[] = "%$search_cliente%";
 }
 
-if (!empty($search_anno)) {
-    $where_conditions[] = "ct.anno = ?";
-    $params[] = $search_anno;
+if (!empty($search_stato)) {
+    $where_conditions[] = "ct.stato = ?";
+    $params[] = $search_stato;
 }
 
-if (!empty($search_esito)) {
-    $where_conditions[] = "ct.esito LIKE ?";
-    $params[] = "%$search_esito%";
+if (!empty($search_tipo)) {
+    $where_conditions[] = "ct.tipo_intervento LIKE ?";
+    $params[] = "%$search_tipo%";
 }
 
 $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Query per recuperare i record
-$sql = "SELECT ct.*, CONCAT(c.cognome_ragione_sociale, ' ', COALESCE(c.nome, '')) as nome_cliente
+$sql = "SELECT ct.*, CONCAT(c.Cognome_Ragione_sociale, ' ', COALESCE(c.Nome, '')) as nome_cliente
         FROM conto_termico ct 
         LEFT JOIN clienti c ON ct.cliente_id = c.id 
         $where_clause
-        ORDER BY ct.anno DESC, c.cognome_ragione_sociale";
+        ORDER BY ct.data_presentazione DESC, c.Cognome_Ragione_sociale";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -104,21 +104,22 @@ include 'includes/header.php';
                                    placeholder="Nome o cognome cliente...">
                         </div>
                         <div class="col-md-3">
-                            <label for="search_anno" class="form-label">Anno</label>
-                            <select class="form-select" id="search_anno" name="search_anno">
-                                <option value="">Tutti gli anni</option>
-                                <?php for ($anno = date('Y'); $anno >= 2020; $anno--): ?>
-                                    <option value="<?= $anno ?>" <?= $search_anno == $anno ? 'selected' : '' ?>>
-                                        <?= $anno ?>
-                                    </option>
-                                <?php endfor; ?>
+                            <label for="search_stato" class="form-label">Stato</label>
+                            <select class="form-select" id="search_stato" name="search_stato">
+                                <option value="">Tutti gli stati</option>
+                                <option value="bozza" <?= $search_stato == 'bozza' ? 'selected' : '' ?>>Bozza</option>
+                                <option value="presentata" <?= $search_stato == 'presentata' ? 'selected' : '' ?>>Presentata</option>
+                                <option value="istruttoria" <?= $search_stato == 'istruttoria' ? 'selected' : '' ?>>In Istruttoria</option>
+                                <option value="accettata" <?= $search_stato == 'accettata' ? 'selected' : '' ?>>Accettata</option>
+                                <option value="respinta" <?= $search_stato == 'respinta' ? 'selected' : '' ?>>Respinta</option>
+                                <option value="liquidata" <?= $search_stato == 'liquidata' ? 'selected' : '' ?>>Liquidata</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="search_esito" class="form-label">Esito</label>
-                            <input type="text" class="form-control" id="search_esito" name="search_esito" 
-                                   value="<?= htmlspecialchars($search_esito) ?>" 
-                                   placeholder="Esito...">
+                            <label for="search_tipo" class="form-label">Tipo Intervento</label>
+                            <input type="text" class="form-control" id="search_tipo" name="search_tipo" 
+                                   value="<?= htmlspecialchars($_GET['search_tipo'] ?? '') ?>" 
+                                   placeholder="Tipo intervento...">
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
@@ -154,13 +155,12 @@ include 'includes/header.php';
                                     <tr>
                                         <th>ID</th>
                                         <th>Cliente</th>
-                                        <th>Anno</th>
-                                        <th>Esito</th>
-                                        <th>Prestazione</th>
-                                        <th>Incassato</th>
-                                        <th>Modello Stufa</th>
-                                        <th>Data Termine</th>
-                                        <th>Mese</th>
+                                        <th>Numero Pratica</th>
+                                        <th>Data Presentazione</th>
+                                        <th>Tipo Intervento</th>
+                                        <th>Importo Ammissibile</th>
+                                        <th>Contributo</th>
+                                        <th>Stato</th>
                                         <th width="150">Azioni</th>
                                     </tr>
                                 </thead>
@@ -175,30 +175,35 @@ include 'includes/header.php';
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge bg-info"><?= $record['anno'] ?></span>
+                                                <span class="badge bg-info"><?= htmlspecialchars($record['numero_pratica'] ?? '-') ?></span>
                                             </td>
                                             <td>
-                                                <?php if ($record['esito']): ?>
-                                                    <span class="badge bg-<?= strpos(strtolower($record['esito']), 'positiv') !== false ? 'success' : 
-                                                        (strpos(strtolower($record['esito']), 'negativ') !== false ? 'danger' : 'warning') ?>">
-                                                        <?= htmlspecialchars($record['esito']) ?>
-                                                    </span>
-                                                <?php endif; ?>
+                                                <?= $record['data_presentazione'] ? date('d/m/Y', strtotime($record['data_presentazione'])) : '-' ?>
                                             </td>
                                             <td>
-                                                <?= $record['prestazione'] ? '€ ' . number_format($record['prestazione'], 2, ',', '.') : '-' ?>
+                                                <?= htmlspecialchars($record['tipo_intervento'] ?? '-') ?>
                                             </td>
                                             <td>
-                                                <?= $record['incassato'] ? '€ ' . number_format($record['incassato'], 2, ',', '.') : '-' ?>
+                                                <?= $record['importo_ammissibile'] ? '€ ' . number_format($record['importo_ammissibile'], 2, ',', '.') : '-' ?>
                                             </td>
                                             <td>
-                                                <?= htmlspecialchars($record['modello_stufa'] ?? '-') ?>
+                                                <?= $record['contributo'] ? '€ ' . number_format($record['contributo'], 2, ',', '.') : '-' ?>
                                             </td>
                                             <td>
-                                                <?= $record['data_termine'] ? date('d/m/Y', strtotime($record['data_termine'])) : '-' ?>
-                                            </td>
-                                            <td>
-                                                <?= htmlspecialchars($record['mese'] ?? '-') ?>
+                                                <?php 
+                                                $stato_colors = [
+                                                    'bozza' => 'secondary',
+                                                    'presentata' => 'primary',
+                                                    'istruttoria' => 'warning',
+                                                    'accettata' => 'success',
+                                                    'respinta' => 'danger',
+                                                    'liquidata' => 'info'
+                                                ];
+                                                $color = $stato_colors[$record['stato']] ?? 'secondary';
+                                                ?>
+                                                <span class="badge bg-<?= $color ?>">
+                                                    <?= ucfirst($record['stato']) ?>
+                                                </span>
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
