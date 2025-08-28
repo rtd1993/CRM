@@ -418,7 +418,22 @@ $section_icons = [
 ?>
 
 <div class="client-summary">
-    <h3><?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A') ?></h3>
+    <h3>
+        <!-- Indicatore stato completezza -->
+        <span class="status-indicator" 
+              style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; 
+                     background-color: <?= ($cliente['completo'] ?? 0) ? '#28a745' : '#dc3545' ?>; 
+                     margin-right: 10px; box-shadow: 0 0 0 3px rgba(<?= ($cliente['completo'] ?? 0) ? '40, 167, 69' : '220, 53, 69' ?>, 0.2);"
+              title="<?= ($cliente['completo'] ?? 0) ? 'Cliente completo - Tutti i dati sono stati inseriti' : 'Cliente incompleto - Mancano informazioni' ?>"></span>
+        
+        <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A') ?>
+        
+        <?php if ($cliente['completo'] ?? 0): ?>
+            <small style="color: #28a745; font-weight: normal; margin-left: 10px;">✓ Completo</small>
+        <?php else: ?>
+            <small style="color: #dc3545; font-weight: normal; margin-left: 10px;">⚠ Incompleto</small>
+        <?php endif; ?>
+    </h3>
     <div class="client-summary-grid">
         <div class="client-summary-item">
             <strong>🆔 ID:</strong> <?= htmlspecialchars($cliente['id'] ?? 'N/A') ?>
@@ -453,6 +468,12 @@ $section_icons = [
                     
                     $is_empty = empty($valore);
                     $is_important = in_array($campo, ['Codice_fiscale', 'Partita_IVA', 'Mail', 'Telefono']);
+                    
+                    // Se il cliente è completo, mostra solo i campi non vuoti
+                    $cliente_completo = isset($cliente['completo']) && $cliente['completo'] == 1;
+                    if ($cliente_completo && $is_empty) {
+                        continue; // Salta questo campo se è vuoto e il cliente è completo
+                    }
                     ?>
                     <div class="info-field <?= $is_empty ? 'empty' : '' ?> <?= $is_important && !$is_empty ? 'highlight' : '' ?>">
                         <div class="info-label"><?= htmlspecialchars(format_label($campo)) ?></div>

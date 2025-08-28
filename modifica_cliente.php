@@ -71,7 +71,8 @@ $campi_db = [
     'Scadenza_PEC' => 'date',
     'Rinnovo_Pec' => 'date',
     'SDI' => 'text',
-    'note' => 'textarea_large'
+    'note' => 'textarea_large',
+    'completo' => 'checkbox'
 ];
 
 // Gestione dell'aggiornamento
@@ -185,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $sezioni = [
     'Dati Generali' => [
         'Inizio_rapporto', 'Fine_rapporto', 'Inserito_gestionale', 'Codice_ditta', 'Colore',
-        'Cognome_Ragione_sociale', 'Nome', 'Codice_fiscale', 'Partita_IVA', 'Qualifica'
+        'Cognome_Ragione_sociale', 'Nome', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'completo'
     ],
     'Soci e Sedi' => [
         'Soci_Amministratori', 'Sede_Legale', 'Sede_Operativa'

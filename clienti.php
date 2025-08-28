@@ -11,7 +11,7 @@ include __DIR__ . '/includes/header.php';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Query base
-$sql = "SELECT id, Cognome_Ragione_sociale AS cognome, Codice_ditta, Mail, PEC, Telefono, Data_di_scadenza, Scadenza_PEC, Codice_fiscale FROM clienti";
+$sql = "SELECT id, Cognome_Ragione_sociale AS cognome, Codice_ditta, Mail, PEC, Telefono, Data_di_scadenza, Scadenza_PEC, Codice_fiscale, completo FROM clienti";
 $params = [];
 
 // Ricerca
@@ -599,6 +599,13 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                 </label>
                             </td>
                             <td>
+                                <!-- Pallino di stato completezza -->
+                                <span class="status-indicator" 
+                                      style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; 
+                                             background-color: <?= $c['completo'] ? '#28a745' : '#dc3545' ?>; 
+                                             margin-right: 8px; box-shadow: 0 0 0 2px rgba(<?= $c['completo'] ? '40, 167, 69' : '220, 53, 69' ?>, 0.2);"
+                                      title="<?= $c['completo'] ? 'Cliente completo - Tutti i dati sono stati inseriti' : 'Cliente incompleto - Mancano informazioni' ?>"></span>
+                                
                                 <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" class="cliente-link">
                                     <?= htmlspecialchars($c['cognome']) ?>
                                 </a>
@@ -765,7 +772,7 @@ function printTable() {
     
     // Raccoglie i dati dalla tabella
     const rows = [];
-    const headers = ['#', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
+    const headers = ['#', 'Stato', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
     
     // Aggiungi le righe della tabella
     document.querySelectorAll('.clienti-table tbody tr').forEach((row, index) => {
@@ -773,14 +780,20 @@ function printTable() {
         if (cells.length > 1) { // Skip empty state row
             const rowData = [];
             rowData.push(index + 1); // Numero progressivo
-            rowData.push(cells[1].textContent.trim()); // Cliente
+            
+            // Stato completezza (legge il colore del pallino)
+            const statusIndicator = cells[1].querySelector('.status-indicator');
+            const isCompleto = statusIndicator && statusIndicator.style.backgroundColor.includes('28, 167, 69');
+            rowData.push(isCompleto ? 'Completo' : 'Incompleto'); // Stato
+            
+            rowData.push(cells[1].textContent.trim().replace(/^\s*/, '')); // Cliente (rimuove spazi iniziali)
             rowData.push(cells[2].textContent.trim()); // Codice Ditta
             rowData.push(cells[3].textContent.trim()); // Email
             rowData.push(cells[4].textContent.trim()); // PEC
             rowData.push(cells[5].textContent.trim()); // Telefono
             
             // Stato documenti
-            const alerts = cells[6].querySelectorAll('.badge');
+            const alerts = cells[7].querySelectorAll('.badge'); // Aggiornato indice colonna
             let docStatus = '';
             if (alerts.length > 0) {
                 const alertTexts = Array.from(alerts).map(alert => alert.textContent.trim());
@@ -917,21 +930,27 @@ function bulkPrint() {
     
     // Raccoglie i dati dei clienti selezionati
     const rows = [];
-    const headers = ['#', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
+    const headers = ['#', 'Stato', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
     
     selected.forEach((id, index) => {
         const row = document.querySelector(`input[value="${id}"]`).closest('tr');
         const cells = row.querySelectorAll('td');
         const rowData = [];
         rowData.push(index + 1); // Numero progressivo
-        rowData.push(cells[1].textContent.trim()); // Cliente
+        
+        // Stato completezza (legge il colore del pallino)
+        const statusIndicator = cells[1].querySelector('.status-indicator');
+        const isCompleto = statusIndicator && statusIndicator.style.backgroundColor.includes('28, 167, 69');
+        rowData.push(isCompleto ? 'Completo' : 'Incompleto'); // Stato
+        
+        rowData.push(cells[1].textContent.trim().replace(/^\s*/, '')); // Cliente (rimuove spazi iniziali)
         rowData.push(cells[2].textContent.trim()); // Codice Ditta
         rowData.push(cells[3].textContent.trim()); // Email
         rowData.push(cells[4].textContent.trim()); // PEC
         rowData.push(cells[5].textContent.trim()); // Telefono
         
         // Stato documenti
-        const alerts = cells[6].querySelectorAll('.badge');
+        const alerts = cells[7].querySelectorAll('.badge'); // Aggiornato indice colonna
         let docStatus = '';
         if (alerts.length > 0) {
             const alertTexts = Array.from(alerts).map(alert => alert.textContent.trim());
