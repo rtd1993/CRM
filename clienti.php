@@ -508,8 +508,8 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
         <button type="button" class="btn btn-outline-primary" onclick="toggleAdvancedFilters()">
             🔧 Filtri Avanzati
         </button>
-        <button type="button" class="btn btn-outline-success" onclick="exportToCSV()">
-            📊 Esporta CSV
+        <button type="button" class="btn btn-outline-success" onclick="printTable()">
+            �️ Stampa
         </button>
         <button type="button" class="btn btn-outline-warning" onclick="toggleBulkActions()">
             ☑️ Azioni Multiple
@@ -536,8 +536,8 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
         <h4>🔧 Azioni Multiple</h4>
         <p>Seleziona i clienti nella tabella e scegli un'azione da eseguire:</p>
         <div class="bulk-buttons">
-            <button type="button" class="btn btn-warning" onclick="bulkExport()">
-                📤 Esporta Selezionati
+            <button type="button" class="btn btn-warning" onclick="bulkPrint()">
+                �️ Stampa Selezionati
             </button>
             <button type="button" class="btn btn-danger" onclick="bulkDelete()">
                 🗑️ Elimina Selezionati
@@ -758,83 +758,299 @@ function updateSelectedCount() {
     document.getElementById('selected-count').textContent = selectedCount;
 }
 
-// Esporta in CSV
-function exportToCSV() {
-    const rows = [];
-    const headers = ['Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono'];
-    rows.push(headers.join(','));
+// Stampa tabella
+function printTable() {
+    // Crea una finestra di stampa con la tabella
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
     
-    document.querySelectorAll('.clienti-table tbody tr').forEach(row => {
+    // Raccoglie i dati dalla tabella
+    const rows = [];
+    const headers = ['#', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
+    
+    // Aggiungi le righe della tabella
+    document.querySelectorAll('.clienti-table tbody tr').forEach((row, index) => {
         const cells = row.querySelectorAll('td');
         if (cells.length > 1) { // Skip empty state row
             const rowData = [];
-            rowData.push('"' + cells[1].textContent.trim() + '"'); // Cliente
-            rowData.push('"' + cells[2].textContent.trim() + '"'); // Codice Ditta
-            rowData.push('"' + cells[3].textContent.trim() + '"'); // Email
-            rowData.push('"' + cells[4].textContent.trim() + '"'); // PEC
-            rowData.push('"' + cells[5].textContent.trim() + '"'); // Telefono
-            rows.push(rowData.join(','));
+            rowData.push(index + 1); // Numero progressivo
+            rowData.push(cells[1].textContent.trim()); // Cliente
+            rowData.push(cells[2].textContent.trim()); // Codice Ditta
+            rowData.push(cells[3].textContent.trim()); // Email
+            rowData.push(cells[4].textContent.trim()); // PEC
+            rowData.push(cells[5].textContent.trim()); // Telefono
+            
+            // Stato documenti
+            const alerts = cells[6].querySelectorAll('.badge');
+            let docStatus = '';
+            if (alerts.length > 0) {
+                const alertTexts = Array.from(alerts).map(alert => alert.textContent.trim());
+                docStatus = alertTexts.join(', ');
+            } else {
+                docStatus = 'OK';
+            }
+            rowData.push(docStatus);
+            
+            rows.push(rowData);
         }
     });
     
-    const csvContent = rows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    // Genera l'HTML per la stampa
+    const printHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Elenco Clienti - Stampa</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 20px;
+                    color: #333;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 10px;
+                }
+                .header h1 {
+                    color: #007bff;
+                    margin: 0;
+                }
+                .info {
+                    margin-bottom: 20px;
+                    font-size: 12px;
+                    color: #666;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-bottom: 20px;
+                    font-size: 11px;
+                }
+                th, td { 
+                    border: 1px solid #ddd; 
+                    padding: 8px; 
+                    text-align: left;
+                }
+                th { 
+                    background-color: #f8f9fa; 
+                    font-weight: bold;
+                    color: #495057;
+                }
+                tr:nth-child(even) { 
+                    background-color: #f9f9f9; 
+                }
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    font-size: 10px;
+                    color: #666;
+                    border-top: 1px solid #ddd;
+                    padding-top: 10px;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📋 Elenco Clienti</h1>
+            </div>
+            
+            <div class="info">
+                <strong>Data stampa:</strong> ${new Date().toLocaleDateString('it-IT', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}<br>
+                <strong>Totale clienti:</strong> ${rows.length}
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        ${headers.map(header => `<th>${header}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            ${row.map(cell => `<td>${cell}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            <div class="footer">
+                Stampato da Sistema CRM - © ${new Date().getFullYear()}
+            </div>
+        </body>
+        </html>
+    `;
     
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'clienti_' + new Date().toISOString().split('T')[0] + '.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Notifica successo
-        showNotification('📊 File CSV esportato con successo!', 'success');
-    }
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    
+    // Aspetta che il contenuto sia caricato e poi stampa
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+    
+    // Notifica successo
+    showNotification('�️ Finestra di stampa aperta!', 'success');
 }
 
 // Azioni multiple
-function bulkExport() {
+function bulkPrint() {
     const selected = getSelectedClients();
     if (selected.length === 0) {
         showNotification('⚠️ Seleziona almeno un cliente', 'warning');
         return;
     }
     
-    // Esporta solo i clienti selezionati
-    const rows = [];
-    const headers = ['Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono'];
-    rows.push(headers.join(','));
+    // Crea una finestra di stampa con i clienti selezionati
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
     
-    selected.forEach(id => {
+    // Raccoglie i dati dei clienti selezionati
+    const rows = [];
+    const headers = ['#', 'Cognome/Ragione Sociale', 'Codice Ditta', 'Email', 'PEC', 'Telefono', 'Documenti'];
+    
+    selected.forEach((id, index) => {
         const row = document.querySelector(`input[value="${id}"]`).closest('tr');
         const cells = row.querySelectorAll('td');
         const rowData = [];
-        rowData.push('"' + cells[1].textContent.trim() + '"');
-        rowData.push('"' + cells[2].textContent.trim() + '"');
-        rowData.push('"' + cells[3].textContent.trim() + '"');
-        rowData.push('"' + cells[4].textContent.trim() + '"');
-        rowData.push('"' + cells[5].textContent.trim() + '"');
-        rows.push(rowData.join(','));
+        rowData.push(index + 1); // Numero progressivo
+        rowData.push(cells[1].textContent.trim()); // Cliente
+        rowData.push(cells[2].textContent.trim()); // Codice Ditta
+        rowData.push(cells[3].textContent.trim()); // Email
+        rowData.push(cells[4].textContent.trim()); // PEC
+        rowData.push(cells[5].textContent.trim()); // Telefono
+        
+        // Stato documenti
+        const alerts = cells[6].querySelectorAll('.badge');
+        let docStatus = '';
+        if (alerts.length > 0) {
+            const alertTexts = Array.from(alerts).map(alert => alert.textContent.trim());
+            docStatus = alertTexts.join(', ');
+        } else {
+            docStatus = 'OK';
+        }
+        rowData.push(docStatus);
+        
+        rows.push(rowData);
     });
     
-    const csvContent = rows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    // Genera l'HTML per la stampa
+    const printHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Clienti Selezionati - Stampa</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 20px;
+                    color: #333;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #ffc107;
+                    padding-bottom: 10px;
+                }
+                .header h1 {
+                    color: #ffc107;
+                    margin: 0;
+                }
+                .info {
+                    margin-bottom: 20px;
+                    font-size: 12px;
+                    color: #666;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-bottom: 20px;
+                    font-size: 11px;
+                }
+                th, td { 
+                    border: 1px solid #ddd; 
+                    padding: 8px; 
+                    text-align: left;
+                }
+                th { 
+                    background-color: #fff3cd; 
+                    font-weight: bold;
+                    color: #856404;
+                }
+                tr:nth-child(even) { 
+                    background-color: #f9f9f9; 
+                }
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    font-size: 10px;
+                    color: #666;
+                    border-top: 1px solid #ddd;
+                    padding-top: 10px;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📋 Clienti Selezionati</h1>
+            </div>
+            
+            <div class="info">
+                <strong>Data stampa:</strong> ${new Date().toLocaleDateString('it-IT', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}<br>
+                <strong>Clienti selezionati:</strong> ${selected.length}
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        ${headers.map(header => `<th>${header}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            ${row.map(cell => `<td>${cell}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            <div class="footer">
+                Stampato da Sistema CRM - © ${new Date().getFullYear()}
+            </div>
+        </body>
+        </html>
+    `;
     
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'clienti_selezionati_' + new Date().toISOString().split('T')[0] + '.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification(`📊 Esportati ${selected.length} clienti selezionati!`, 'success');
-    }
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    
+    // Aspetta che il contenuto sia caricato e poi stampa
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+    
+    showNotification(`�️ Finestra di stampa aperta per ${selected.length} clienti selezionati!`, 'success');
 }
 
 function bulkDelete() {
