@@ -1,6 +1,6 @@
 <?php
 // Enable error reporting for d$gruppi = [
-    'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
+    'Anagrafica' => ['cognome_ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
     'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
     'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
     'Documenti' => ['Numero carta d'identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida per l'espatrio'],
