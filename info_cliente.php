@@ -51,7 +51,7 @@ function format_label($label) {
 }
 
 $gruppi = [
-    'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
+    'Anagrafica' => ['cognome_ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
     'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
     'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
     'Documenti' => ['Numero carta d’identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida per l’espatrio'],
@@ -426,7 +426,7 @@ $section_icons = [
                      margin-right: 10px; box-shadow: 0 0 0 3px rgba(<?= ($cliente['completo'] ?? 0) ? '40, 167, 69' : '220, 53, 69' ?>, 0.2);"
               title="<?= ($cliente['completo'] ?? 0) ? 'Cliente completo - Tutti i dati sono stati inseriti' : 'Cliente incompleto - Mancano informazioni' ?>"></span>
         
-        <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A') ?>
+        <?= htmlspecialchars($cliente['cognome_ragione_sociale'] ?? 'N/A') ?>
         
         <?php if ($cliente['completo'] ?? 0): ?>
             <small style="color: #28a745; font-weight: normal; margin-left: 10px;">✓ Completo</small>
