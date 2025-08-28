@@ -1,5 +1,5 @@
 <?php
-// Enable error reporting for d$gruppi = [
+// Enable error reporting for debuggi$gruppi = [
     'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
     'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
     'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
@@ -7,7 +7,7 @@
     'Fiscali' => ['Codice_ditta', 'Codice_ATECO', 'Descrizione_attivita', 'Camera_di_commercio', 'Dipendenti', 'Codice_inps', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail', 'Cassa_Edile', 'Numero_Cassa_Professionisti', 'Contabilita', 'Liquidazione_IVA', 'SDI'],
     'Note' => ['note'],
     'Altro' => ['Colore', 'Inserito_gestionale', 'Inizio_rapporto', 'Fine_rapporto', 'Link_cartella']
-]; (remove in production)
+];ve in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
