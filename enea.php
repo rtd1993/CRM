@@ -32,7 +32,7 @@ $where_conditions = [];
 $params = [];
 
 if (!empty($search_cliente)) {
-    $where_conditions[] = "(c.cognome_ragione_sociale LIKE ? OR c.nome LIKE ?)";
+    $where_conditions[] = "(c.`Cognome_Ragione_sociale` LIKE ? OR c.`Nome` LIKE ?)";
     $params[] = "%$search_cliente%";
     $params[] = "%$search_cliente%";
 }
@@ -52,11 +52,11 @@ if (!empty($search_stato)) {
 $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Query per recuperare i record
-$sql = "SELECT e.*, CONCAT(c.cognome_ragione_sociale, ' ', COALESCE(c.nome, '')) as nome_cliente
+$sql = "SELECT e.*, CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.`Nome`, '')) as nome_cliente
         FROM enea e 
         LEFT JOIN clienti c ON e.cliente_id = c.id 
         $where_clause
-        ORDER BY e.created_at DESC, c.cognome_ragione_sociale";
+        ORDER BY e.created_at DESC, c.`Cognome_Ragione_sociale`";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);

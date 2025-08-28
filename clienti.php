@@ -38,9 +38,9 @@ $entro30 = date('Y-m-d', strtotime('+30 days'));
 
 function has_doc_alert($row, $oggi, $entro30) {
     // Carta d'identità
-    if (!empty($row['Data di scadenza']) && $row['Data di scadenza'] <= $entro30) return true;
+    if (!empty($row['Data_di_scadenza']) && $row['Data_di_scadenza'] <= $entro30) return true;
     // PEC
-    if (!empty($row['Scadenza PEC']) && $row['Scadenza PEC'] <= $entro30) return true;
+    if (!empty($row['Scadenza_PEC']) && $row['Scadenza_PEC'] <= $entro30) return true;
     return false;
 }
 
@@ -608,7 +608,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                             </td>
                             <td>
                                 <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem;">
-                                    <?= htmlspecialchars($c['Codice ditta']) ?>
+                                    <?= htmlspecialchars($c['Codice_ditta']) ?>
                                 </code>
                             </td>
                             <td>
