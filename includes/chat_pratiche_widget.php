@@ -1,11 +1,12 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_login();
 // Carica i clienti direttamente in PHP per affidabilità
-$clienti = $pdo->query("SELECT id, `cognome_ragione_sociale` as cognome_ragione_sociale, nome FROM clienti ORDER BY `cognome_ragione_sociale`, nome")->fetchAll();
+$clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale` as cognome_ragione_sociale, Nome FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
 ?>
 <div class="crm-chat-widget" id="chat-pratiche-widget" data-tooltip="Chat Pratiche">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-pratiche-widget')">

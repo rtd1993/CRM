@@ -1,5 +1,8 @@
 <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'chat.php'])): ?>
-<link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">
+<?php
+require_once __DIR__ . '/config.php';
+?>
+<link rel="stylesheet" href="/assets/css/chat_widgets.css?v=<?= time() ?>">>
 
 <div class="crm-chat-widget" id="chat-widget" data-tooltip="Chat Globale">
     <div class="crm-chat-header" onclick="toggleChatWidget('chat-widget')">
