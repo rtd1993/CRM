@@ -403,39 +403,26 @@ include __DIR__ . '/includes/header.php';
                     `Data_di_scadenza` AS carta_scad,
                     PEC,
                     `Scadenza_PEC` AS pec_scad,
-                    `Numero patente` AS patente,
-                    `Scadenza patente` AS patente_scad,
-                    `Numero passaporto` AS passaporto,
-                    `Scadenza passaporto` AS passaporto_scad,
-                    `Certificato firma digitale` AS firma_digitale,
-                    `Scadenza firma digitale` AS firma_digitale_scad
+                    `Rinnovo_Pec` AS pec_rinnovo
                 FROM clienti
                 WHERE 
                     (`Data_di_scadenza` IS NOT NULL AND `Data_di_scadenza` BETWEEN ? AND ?)
                     OR
                     (`Scadenza_PEC` IS NOT NULL AND `Scadenza_PEC` BETWEEN ? AND ?)
                     OR
-                    (`Scadenza patente` IS NOT NULL AND `Scadenza patente` BETWEEN ? AND ?)
-                    OR
-                    (`Scadenza passaporto` IS NOT NULL AND `Scadenza passaporto` BETWEEN ? AND ?)
-                    OR
-                    (`Scadenza firma digitale` IS NOT NULL AND `Scadenza firma digitale` BETWEEN ? AND ?)
+                    (`Rinnovo_Pec` IS NOT NULL AND `Rinnovo_Pec` BETWEEN ? AND ?)
                 ORDER BY 
                     LEAST(
                         IFNULL(`Data_di_scadenza`, '9999-12-31'), 
                         IFNULL(`Scadenza_PEC`, '9999-12-31'),
-                        IFNULL(`Scadenza patente`, '9999-12-31'),
-                        IFNULL(`Scadenza passaporto`, '9999-12-31'),
-                        IFNULL(`Scadenza firma digitale`, '9999-12-31')
+                        IFNULL(`Rinnovo_Pec`, '9999-12-31')
                     ) ASC
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $da30giorni, $entro30, // Carta d'identità
                 $da30giorni, $entro30, // PEC
-                $da30giorni, $entro30, // Patente
-                $da30giorni, $entro30, // Passaporto
-                $da30giorni, $entro30  // Firma digitale
+                $da30giorni, $entro30  // Rinnovo PEC
             ]);
             $clienti_docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -462,34 +449,14 @@ include __DIR__ . '/includes/header.php';
                         'scadenza' => $row['pec_scad'],
                     ];
                 }
-                // Patente
-                if (!empty($row['patente']) && !empty($row['patente_scad'])) {
+                // Rinnovo PEC
+                if (!empty($row['PEC']) && !empty($row['pec_rinnovo'])) {
                     $documenti[] = [
                         'id' => $row['id'],
                         'cognome' => $row['cognome'],
-                        'tipo' => "Patente",
-                        'numero' => $row['patente'],
-                        'scadenza' => $row['patente_scad'],
-                    ];
-                }
-                // Passaporto
-                if (!empty($row['passaporto']) && !empty($row['passaporto_scad'])) {
-                    $documenti[] = [
-                        'id' => $row['id'],
-                        'cognome' => $row['cognome'],
-                        'tipo' => "Passaporto",
-                        'numero' => $row['passaporto'],
-                        'scadenza' => $row['passaporto_scad'],
-                    ];
-                }
-                // Firma digitale
-                if (!empty($row['firma_digitale']) && !empty($row['firma_digitale_scad'])) {
-                    $documenti[] = [
-                        'id' => $row['id'],
-                        'cognome' => $row['cognome'],
-                        'tipo' => "Firma Digitale",
-                        'numero' => $row['firma_digitale'],
-                        'scadenza' => $row['firma_digitale_scad'],
+                        'tipo' => "Rinnovo PEC",
+                        'numero' => $row['PEC'],
+                        'scadenza' => $row['pec_rinnovo'],
                     ];
                 }
             }
