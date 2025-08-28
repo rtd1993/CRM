@@ -1,19 +1,13 @@
 <?php
 // Enable error reporting for d$gruppi = [
-    'Anagrafica' => ['cognome_ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
+    'Anagrafica' => ['Cognome_Ragione_sociale', 'Nome', 'Data_di_nascita_costituzione', 'Luogo_di_nascita', 'Cittadinanza', 'Stato_civile', 'Codice_fiscale', 'Partita_IVA', 'Qualifica', 'Soci_Amministratori', 'Titolare'],
     'Contatti' => ['Telefono', 'Mail', 'PEC', 'Scadenza_PEC', 'Rinnovo_Pec', 'User_Aruba', 'Password'],
     'Sedi' => ['Sede_Legale', 'Sede_Operativa', 'Residenza'],
-    'Documenti' => ['Numero carta d'identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida per l'espatrio'],
+    'Documenti' => ['Numero_carta_d_identità', 'Rilasciata_dal_Comune_di', 'Data_di_rilascio', 'Valida_per_espatrio', 'Data_di_scadenza'],
     'Fiscali' => ['Codice_ditta', 'Codice_ATECO', 'Descrizione_attivita', 'Camera_di_commercio', 'Dipendenti', 'Codice_inps', 'Codice_inps_2', 'Codice_inail', 'PAT', 'Cod_PIN_Inail', 'Cassa_Edile', 'Numero_Cassa_Professionisti', 'Contabilita', 'Liquidazione_IVA', 'SDI'],
     'Note' => ['note'],
     'Altro' => ['Colore', 'Inserito_gestionale', 'Inizio_rapporto', 'Fine_rapporto', 'Link_cartella']
-];
-
-// Caricamento delle note dal file
-$codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
-$note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
-$note_content = file_exists($note_file) ? file_get_contents($note_file) : '';
-?>(remove in production)
+]; (remove in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -38,6 +32,12 @@ try {
         echo "<p>Cliente non trovato.</p></main></body></html>";
         exit;
     }
+    
+    // Caricamento delle note dal file
+    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
+    $note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
+    $note_content = file_exists($note_file) ? file_get_contents($note_file) : '';
+    
 } catch (Exception $e) {
     error_log("Errore database in info_cliente.php: " . $e->getMessage());
     echo "<p>Errore durante il caricamento del cliente.</p></main></body></html>";
@@ -426,7 +426,7 @@ $section_icons = [
                      margin-right: 10px; box-shadow: 0 0 0 3px rgba(<?= ($cliente['completo'] ?? 0) ? '40, 167, 69' : '220, 53, 69' ?>, 0.2);"
               title="<?= ($cliente['completo'] ?? 0) ? 'Cliente completo - Tutti i dati sono stati inseriti' : 'Cliente incompleto - Mancano informazioni' ?>"></span>
         
-        <?= htmlspecialchars($cliente['cognome_ragione_sociale'] ?? 'N/A') ?>
+        <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] ?? 'N/A') ?>
         
         <?php if ($cliente['completo'] ?? 0): ?>
             <small style="color: #28a745; font-weight: normal; margin-left: 10px;">✓ Completo</small>
