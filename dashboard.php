@@ -4,6 +4,56 @@ require_login();
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 
+// Funzione per recuperare eventi Google Calendar
+function getCalendarEvents($timeMin, $timeMax) {
+    try {
+        require_once __DIR__ . '/vendor/autoload.php';
+        
+        $calendarId = 'gestione.ascontabilmente@gmail.com';
+        putenv('GOOGLE_APPLICATION_CREDENTIALS=' . __DIR__ . '/google-calendar.json');
+        
+        $client = new Google_Client();
+        $client->useApplicationDefaultCredentials();
+        $client->addScope(Google_Service_Calendar::CALENDAR);
+        $service = new Google_Service_Calendar($client);
+        
+        $params = [
+            'timeMin' => $timeMin,
+            'timeMax' => $timeMax,
+            'singleEvents' => true,
+            'orderBy' => 'startTime'
+        ];
+        
+        $events = $service->events->listEvents($calendarId, $params);
+        $output = [];
+        
+        global $pdo;
+        foreach ($events->getItems() as $event) {
+            $eventId = $event->getId();
+            
+            // Ottieni i metadati dell'evento dal database locale
+            $stmt = $pdo->prepare("SELECT event_color, assigned_to_user_id, created_by_user_id FROM calendar_events_meta WHERE google_event_id = ?");
+            $stmt->execute([$eventId]);
+            $meta = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $eventData = [
+                'id' => $eventId,
+                'title' => $event->getSummary(),
+                'start' => $event->start->dateTime ?: $event->start->date,
+                'end' => $event->end->dateTime ?: $event->end->date,
+                'color' => $meta['event_color'] ?? '#007BFF'
+            ];
+            
+            $output[] = $eventData;
+        }
+        
+        return $output;
+    } catch (Exception $e) {
+        error_log("Errore recupero eventi calendario: " . $e->getMessage());
+        return [];
+    }
+}
+
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -69,11 +119,35 @@ include __DIR__ . '/includes/header.php';
     gap: 0.5rem;
 }
 
-.calendar-embed {
-    width: 100%;
-    height: 500px;
-    border: 1px solid #e1e5e9;
-    border-radius: 8px;
+.appointment-item {
+    transition: all 0.3s ease;
+}
+
+.appointment-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+}
+
+.appointments-today::-webkit-scrollbar,
+.appointments-week::-webkit-scrollbar {
+    width: 6px;
+}
+
+.appointments-today::-webkit-scrollbar-track,
+.appointments-week::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.appointments-today::-webkit-scrollbar-thumb,
+.appointments-week::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.appointments-today::-webkit-scrollbar-thumb:hover,
+.appointments-week::-webkit-scrollbar-thumb:hover {
+    background: #5a6fd8;
 }
 
 .scroll-content {
@@ -201,8 +275,9 @@ include __DIR__ . '/includes/header.php';
         gap: 1rem;
     }
     
-    .calendar-embed {
-        height: 350px;
+    .appointments-today,
+    .appointments-week {
+        max-height: 250px !important;
     }
     
     .scroll-content {
@@ -225,11 +300,98 @@ include __DIR__ . '/includes/header.php';
 </style>
 
 <div class="dashboard-container">
-    <!-- Calendario Google -->
+    <!-- Appuntamenti Oggi e Settimana -->
     <div class="calendar-section">
-        <h3 class="section-title">📅 Calendario Appuntamenti</h3>
-        <iframe src="https://calendar.google.com/calendar/embed?src=gestione.ascontabilmente%40gmail.com&ctz=Europe%2FRome"
-                class="calendar-embed" frameborder="0" scrolling="no"></iframe>
+        <h3 class="section-title">📅 Appuntamenti</h3>
+        
+        <div class="row">
+            <!-- Appuntamenti di Oggi -->
+            <div class="col-md-6">
+                <h4 class="mb-3" style="color: var(--primary-color); font-weight: 600;">
+                    <i class="fas fa-calendar-day me-2"></i>Oggi (<?= date('d/m/Y') ?>)
+                </h4>
+                <div class="appointments-today" style="max-height: 300px; overflow-y: auto;">
+                    <?php
+                    $oggi = date('Y-m-d');
+                    $oggiStart = $oggi . 'T00:00:00+02:00';
+                    $oggiEnd = $oggi . 'T23:59:59+02:00';
+                    $eventsToday = getCalendarEvents($oggiStart, $oggiEnd);
+                    
+                    if (empty($eventsToday)):
+                    ?>
+                        <div class="empty-state text-center py-3">
+                            <i class="fas fa-calendar-times" style="font-size: 2rem; color: #ccc; margin-bottom: 0.5rem;"></i>
+                            <p style="color: #999; margin: 0;">Nessun appuntamento oggi</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($eventsToday as $event): 
+                            $startTime = new DateTime($event['start']);
+                            $endTime = new DateTime($event['end']);
+                        ?>
+                            <div class="appointment-item mb-3 p-3" style="background: rgba(255,255,255,0.9); border-left: 4px solid <?= $event['color'] ?>; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1" style="color: #333; font-weight: 600;"><?= htmlspecialchars($event['title']) ?></h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <?= $startTime->format('H:i') ?> - <?= $endTime->format('H:i') ?>
+                                        </small>
+                                    </div>
+                                    <div class="appointment-color" style="width: 12px; height: 12px; background: <?= $event['color'] ?>; border-radius: 50%; margin-top: 4px;"></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <!-- Appuntamenti della Settimana -->
+            <div class="col-md-6">
+                <h4 class="mb-3" style="color: var(--primary-color); font-weight: 600;">
+                    <i class="fas fa-calendar-week me-2"></i>Questa Settimana
+                </h4>
+                <div class="appointments-week" style="max-height: 300px; overflow-y: auto;">
+                    <?php
+                    $inizioSettimana = date('Y-m-d', strtotime('monday this week')) . 'T00:00:00+02:00';
+                    $fineSettimana = date('Y-m-d', strtotime('sunday this week')) . 'T23:59:59+02:00';
+                    $eventsWeek = getCalendarEvents($inizioSettimana, $fineSettimana);
+                    
+                    if (empty($eventsWeek)):
+                    ?>
+                        <div class="empty-state text-center py-3">
+                            <i class="fas fa-calendar-times" style="font-size: 2rem; color: #ccc; margin-bottom: 0.5rem;"></i>
+                            <p style="color: #999; margin: 0;">Nessun appuntamento questa settimana</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($eventsWeek as $event): 
+                            $startTime = new DateTime($event['start']);
+                            $endTime = new DateTime($event['end']);
+                            $isToday = $startTime->format('Y-m-d') === $oggi;
+                        ?>
+                            <div class="appointment-item mb-2 p-2 <?= $isToday ? 'opacity-50' : '' ?>" style="background: rgba(255,255,255,0.9); border-left: 3px solid <?= $event['color'] ?>; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1" style="color: #333; font-weight: 600; font-size: 0.9rem;"><?= htmlspecialchars($event['title']) ?></h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            <?= $startTime->format('d/m') ?> alle <?= $startTime->format('H:i') ?>
+                                            <?= $isToday ? '(oggi)' : '' ?>
+                                        </small>
+                                    </div>
+                                    <div class="appointment-color" style="width: 10px; height: 10px; background: <?= $event['color'] ?>; border-radius: 50%; margin-top: 3px;"></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="/calendario.php" class="btn btn-primary" style="background: var(--primary-gradient); border: none; border-radius: 10px; padding: 0.6rem 1.5rem; font-weight: 600;">
+                <i class="fas fa-calendar me-2"></i>Apri Calendario Completo
+            </a>
+        </div>
     </div>
 
     <!-- Task in Scadenza -->
