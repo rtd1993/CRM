@@ -221,22 +221,20 @@ switch ($_SERVER['REQUEST_METHOD']) {
             
             // Aggiorna i metadati nel database locale se forniti
             if (isset($input['assignedTo']) && isset($input['color'])) {
-                $stmt = $pdo->prepare("UPDATE calendar_events_meta SET assigned_to_user_id = ?, event_color = ? WHERE google_event_id = ?");
+                // Usa INSERT ... ON DUPLICATE KEY UPDATE per gestire sia inserimento che aggiornamento
+                $stmt = $pdo->prepare("
+                    INSERT INTO calendar_events_meta (google_event_id, assigned_to_user_id, created_by_user_id, event_color) 
+                    VALUES (?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE 
+                    assigned_to_user_id = VALUES(assigned_to_user_id),
+                    event_color = VALUES(event_color)
+                ");
                 $stmt->execute([
+                    $input['id'],
                     $input['assignedTo'],
-                    $input['color'],
-                    $input['id']
+                    $_SESSION['user_id'],
+                    $input['color']
                 ]);
-                // Se non esiste, crealo
-                if ($stmt->rowCount() === 0) {
-                    $stmt = $pdo->prepare("INSERT INTO calendar_events_meta (google_event_id, assigned_to_user_id, created_by_user_id, event_color) VALUES (?, ?, ?, ?)");
-                    $stmt->execute([
-                        $input['id'],
-                        $input['assignedTo'],
-                        $_SESSION['user_id'],
-                        $input['color']
-                    ]);
-                }
             }
             
             $response = [
