@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $email = $_POST['email'] ?? '';
     $ruolo = $_POST['ruolo'] ?? '';
     $telegram_chat_id = $_POST['telegram_chat_id'] ?? '';
+    $colore = $_POST['colore'] ?? '#007BFF';
     $password = $_POST['password'] ?? '';
     
     // Gli utenti base possono modificare solo i propri dati
@@ -91,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
         $ruolo = $user_data['ruolo']; // Mantieni il ruolo esistente
     }
 
-    $stmt = $pdo->prepare("UPDATE utenti SET nome = ?, email = ?, ruolo = ?, telegram_chat_id = ? WHERE id = ?");
-    $ok = $stmt->execute([$nome, $email, $ruolo, $telegram_chat_id, $id]);
+    $stmt = $pdo->prepare("UPDATE utenti SET nome = ?, email = ?, ruolo = ?, telegram_chat_id = ?, colore = ? WHERE id = ?");
+    $ok = $stmt->execute([$nome, $email, $ruolo, $telegram_chat_id, $colore, $id]);
 
     // Solo admin/developer possono cambiare password di altri utenti
     if (!empty($password)) {
@@ -118,11 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     }
 }
 
-$stmt = $pdo->query("SELECT id, nome, email, ruolo, telegram_chat_id FROM utenti ORDER BY ruolo ASC, nome ASC");
+$stmt = $pdo->query("SELECT id, nome, email, ruolo, telegram_chat_id, colore FROM utenti ORDER BY ruolo ASC, nome ASC");
 $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Ottieni dati dell'utente loggato
-$stmt = $pdo->prepare("SELECT id, nome, email, ruolo, telegram_chat_id FROM utenti WHERE id = ?");
+$stmt = $pdo->prepare("SELECT id, nome, email, ruolo, telegram_chat_id, colore FROM utenti WHERE id = ?");
 $stmt->execute([$utente_loggato_id]);
 $utente_loggato = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -532,6 +533,251 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
         align-self: flex-end;
     }
 }
+
+/* Indicatore colore utente */
+.user-color-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+/* Modal System per Creazione Utente */
+.user-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.user-modal-content {
+    position: relative;
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    height: 90vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInFromTop 0.4s ease-out;
+    overflow: hidden;
+}
+
+.user-modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.user-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.user-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.user-modal-body {
+    height: calc(90vh - 100px);
+    overflow: hidden;
+}
+
+.user-modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive design per il modal */
+@media (max-width: 768px) {
+    .user-modal-content {
+        width: 95%;
+        height: 95vh;
+        margin: 2.5% auto;
+    }
+    
+    .user-modal-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .user-modal-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .user-modal-body {
+        height: calc(95vh - 80px);
+    }
+}
+
+/* Stili per la selezione colore */
+.color-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.color-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.color-option:hover:not(.disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+.color-option.selected {
+    border-color: #007BFF;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.color-option.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.color-option input[type="radio"] {
+    display: none;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-option:hover:not(.disabled) .color-swatch {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+.color-option.selected .color-swatch {
+    border-color: #007BFF;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+.color-check,
+.color-unavailable {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.color-unavailable {
+    color: #fff;
+}
+
+.color-name {
+    font-size: 11px;
+    text-align: center;
+    color: #666;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.color-option.selected .color-name {
+    color: #007BFF;
+    font-weight: 600;
+}
+
+.color-option.disabled .color-name {
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .color-selection-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+    
+    .color-swatch {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .color-name {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .color-selection-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    
+    .color-swatch {
+        width: 24px;
+        height: 24px;
+    }
+}
 </style>
 
 <?php if (isset($_GET['success'])): ?>
@@ -563,15 +809,11 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
     </div>
 <?php endif; ?>
 
-<div class="users-header">
-    <h2><?= $is_admin_or_dev ? '👥 Gestione Utenti' : '👤 Il Mio Profilo' ?></h2>
-    <p><?= $is_admin_or_dev ? 'Gestisci gli account utente del sistema' : 'Modifica i tuoi dati personali e cambia password' ?></p>
-</div>
 
 <?php if ($is_admin_or_dev): ?>
-<a href="create_user.php" class="create-user-btn">
+<button type="button" class="create-user-btn" onclick="openUserModal()">
     ➕ Crea nuovo utente
-</a>
+</button>
 <?php endif; ?>
 
 <div class="users-container">
@@ -594,7 +836,10 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
             </div>
             <div class="user-item <?= (!isset($_GET['edit_id']) || $_GET['edit_id'] == $utente_loggato['id']) ? 'selected' : '' ?>">
                 <a href="?edit_id=<?= $utente_loggato['id'] ?>" class="user-link">
-                    <div><?= htmlspecialchars($utente_loggato['nome']) ?></div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="user-color-indicator" style="background-color: <?= htmlspecialchars($utente_loggato['colore'] ?? '#007BFF') ?>;" title="Colore utente"></div>
+                        <div><?= htmlspecialchars($utente_loggato['nome']) ?></div>
+                    </div>
                     <div class="user-email"><?= htmlspecialchars($utente_loggato['email']) ?></div>
                 </a>
             </div>
@@ -613,7 +858,10 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                     <?php if ($u['id'] !== $utente_loggato_id): // Non mostrare se stesso nella lista altri utenti ?>
                     <div class="user-item <?= (isset($_GET['edit_id']) && $_GET['edit_id'] == $u['id']) ? 'selected' : '' ?>">
                         <a href="?edit_id=<?= $u['id'] ?>" class="user-link">
-                            <div><?= htmlspecialchars($u['nome']) ?></div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-color-indicator" style="background-color: <?= htmlspecialchars($u['colore'] ?? '#007BFF') ?>;" title="Colore utente"></div>
+                                <div><?= htmlspecialchars($u['nome']) ?></div>
+                            </div>
                             <div class="user-email"><?= htmlspecialchars($u['email']) ?></div>
                         </a>
                         <?php if ($is_admin_or_dev && $u['id'] !== $utente_loggato_id): ?>
@@ -668,6 +916,53 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                     <input type="text" name="telegram_chat_id" class="form-input" value="<?= htmlspecialchars($utente_selezionato['telegram_chat_id']) ?>" placeholder="Opzionale">
                 </div>
                 
+                <div class="form-group">
+                    <label class="form-label">🎨 Colore Utente:</label>
+                    <?php
+                    $colori_standard = [
+                        '#007BFF' => 'Blu',
+                        '#28A745' => 'Verde',
+                        '#DC3545' => 'Rosso',
+                        '#FFC107' => 'Giallo',
+                        '#6F42C1' => 'Viola',
+                        '#20C997' => 'Teal',
+                        '#FD7E14' => 'Arancione',
+                        '#E91E63' => 'Rosa',
+                        '#795548' => 'Marrone',
+                        '#6C757D' => 'Grigio'
+                    ];
+                    
+                    // Ottieni i colori già utilizzati dagli altri utenti
+                    $stmt_colori = $pdo->prepare("SELECT colore FROM utenti WHERE colore IS NOT NULL AND colore != '' AND id != ?");
+                    $stmt_colori->execute([$utente_selezionato['id']]);
+                    $colori_usati = array_column($stmt_colori->fetchAll(), 'colore');
+                    
+                    $colore_attuale = $utente_selezionato['colore'] ?? '#007BFF';
+                    ?>
+                    <div class="color-selection-grid">
+                        <?php foreach ($colori_standard as $colore => $nome): ?>
+                            <?php 
+                            $is_used = in_array($colore, $colori_usati);
+                            $is_current = $colore === $colore_attuale;
+                            ?>
+                            <label class="color-option <?= $is_used && !$is_current ? 'disabled' : '' ?> <?= $is_current ? 'selected' : '' ?>">
+                                <input type="radio" name="colore" value="<?= $colore ?>" 
+                                       <?= $is_current ? 'checked' : '' ?>
+                                       <?= $is_used && !$is_current ? 'disabled' : '' ?>>
+                                <div class="color-swatch" style="background-color: <?= $colore ?>;">
+                                    <?php if ($is_current): ?>
+                                        <span class="color-check">✓</span>
+                                    <?php endif; ?>
+                                    <?php if ($is_used && !$is_current): ?>
+                                        <span class="color-unavailable">✗</span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="color-name"><?= $nome ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
                 <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
                 <!-- Reset password e cambio password per admin/developer su altri utenti -->
                 <div class="form-group">
@@ -714,6 +1009,73 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
 }
 </style>
 <?php endif; ?>
+
+<!-- Modal per Creazione Utente -->
+<div id="userModal" class="user-modal">
+    <div class="user-modal-content">
+        <div class="user-modal-header">
+            <h3>
+                <i class="fas fa-user-plus me-2"></i>Crea Nuovo Utente
+            </h3>
+            <button type="button" class="user-close" onclick="closeUserModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="user-modal-body">
+            <iframe id="userModalFrame" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funzioni per gestire il modal Utente
+function openUserModal() {
+    const modal = document.getElementById('userModal');
+    const iframe = document.getElementById('userModalFrame');
+    
+    iframe.src = 'create_user.php?popup=1';
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Event listener per chiudere con ESC
+    document.addEventListener('keydown', handleUserEscape);
+}
+
+function closeUserModal() {
+    const modal = document.getElementById('userModal');
+    const iframe = document.getElementById('userModalFrame');
+    
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    iframe.src = '';
+    
+    // Rimuovi event listener ESC
+    document.removeEventListener('keydown', handleUserEscape);
+    
+    // Ricarica la pagina per mostrare il nuovo utente
+    window.location.reload();
+}
+
+function handleUserEscape(event) {
+    if (event.key === 'Escape') {
+        closeUserModal();
+    }
+}
+
+// Chiudi modal cliccando fuori dall'area del contenuto
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('userModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeUserModal();
+        }
+    });
+});
+
+// Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
+window.closeUserModal = closeUserModal;
+</script>
 
 </main>
 </body>
