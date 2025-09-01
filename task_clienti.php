@@ -112,12 +112,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                     
                     // Copia il task
                     $stmt_copy = $pdo->prepare("
-                        INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
-                        VALUES (?, ?, ?, ?, ?)
+                        INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
+                        VALUES (?, ?, ?, ?, ?, ?)
                     ");
                     
                     $result = $stmt_copy->execute([
                         $target_client_id,
+                        $task['titolo'] ?? substr($task['descrizione'], 0, 255),
                         $task['descrizione'],
                         $task['scadenza'],
                         $task['ricorrenza'],
@@ -207,13 +208,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
 
         // Crea il nuovo task
         $stmt = $pdo->prepare("
-            INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
+        $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
         
         if (!$result) {
-            throw new Exception("Errore nella creazione del task");
+            $errorInfo = $stmt->errorInfo();
+            error_log("Errore SQL INSERT task_clienti: " . print_r($errorInfo, true));
+            throw new Exception("Errore nella creazione del task: " . ($errorInfo[2] ?? 'Errore sconosciuto'));
         }
         
         // Invia notifica nella chat se l'utente è loggato
@@ -1495,7 +1498,7 @@ foreach ($tasks as $task) {
                     
                     <div class="task-item <?= $is_ricorrente ? 'ricorrente' : '' ?> <?= $is_scaduto ? 'scaduto' : '' ?>">
                         <div class="task-header-info">
-                            <h4 class="task-title"><?= htmlspecialchars($task_item['descrizione']) ?></h4>
+                            <h4 class="task-title"><?= htmlspecialchars($task_item['titolo'] ?? $task_item['descrizione']) ?></h4>
                             <?php if ($task_item['nome_cliente']): ?>
                                 <span class="task-cliente"><?= htmlspecialchars($task_item['nome_cliente']) ?></span>
                             <?php endif; ?>

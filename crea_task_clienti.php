@@ -87,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiorna la tabella task_clienti direttamente
             $stmt = $pdo->prepare("
                 UPDATE task_clienti 
-                SET cliente_id = ?, descrizione = ?, scadenza = ?, ricorrenza = ?, fatturabile = ? 
+                SET cliente_id = ?, titolo = ?, descrizione = ?, scadenza = ?, ricorrenza = ?, fatturabile = ? 
                 WHERE id = ?
             ");
-            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $task_id]);
+            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $task_id]);
             
             if (!$result) {
                 throw new Exception("Errore nell'aggiornamento del task");
@@ -116,10 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Nuovo task cliente
             $stmt = $pdo->prepare("
-                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
+            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
             
             if (!$result) {
                 throw new Exception("Errore nella creazione del task");
