@@ -50,6 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (empty($anno)) {
         $errors[] = "L'anno è obbligatorio";
+    } elseif (!preg_match('/^[0-9]{4}$/', $anno)) {
+        $errors[] = "L'anno deve essere formato da 4 cifre numeriche";
+    } elseif ($anno < 2020 || $anno > (date('Y') + 5)) {
+        $errors[] = "L'anno deve essere compreso tra 2020 e " . (date('Y') + 5);
     }
 
     // Se non ci sono errori, aggiorna nel database
@@ -186,14 +190,13 @@ if (!$is_popup) {
                                 <label for="anno" class="form-label">
                                     Anno <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="anno" name="anno" required>
-                                    <option value="">Seleziona anno...</option>
-                                    <?php for ($anno = date('Y'); $anno >= 2020; $anno--): ?>
-                                        <option value="<?= $anno ?>" 
-                                                <?= ($record['anno'] ?? '') == $anno ? 'selected' : '' ?>>
-                                            <?= $anno ?>
-                                        </option>
-                                    <?php endfor; ?>
+                                <input type="text" class="form-control" id="anno" name="anno" 
+                                       value="<?= htmlspecialchars($record['anno'] ?? date('Y')) ?>" 
+                                       required maxlength="4" minlength="4" pattern="[0-9]{4}"
+                                       placeholder="Es. <?= date('Y') ?>"
+                                       title="Inserire un anno valido di 4 cifre">
+                                <div class="form-text">Inserire l'anno come 4 cifre numeriche</div>
+                            </div>
                                 </select>
                             </div>
                         </div>
@@ -201,10 +204,30 @@ if (!$is_popup) {
                         <div class="row">
                             <!-- Esito -->
                             <div class="col-md-6 mb-3">
-                                <label for="esito" class="form-label">Esito</label>
-                                <input type="text" class="form-control" id="esito" name="esito" 
-                                       value="<?= htmlspecialchars($record['esito'] ?? '') ?>"
-                                       placeholder="Es: Positivo, Negativo, In attesa...">
+                                <label class="form-label">Esito</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="esito" id="esito_positivo" value="positivo"
+                                               <?= ($record['esito'] ?? '') == 'positivo' ? 'checked' : '' ?>>
+                                        <label class="form-check-label text-success" for="esito_positivo">
+                                            <i class="fas fa-check-circle me-1"></i>Positivo
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="esito" id="esito_negativo" value="negativo"
+                                               <?= ($record['esito'] ?? '') == 'negativo' ? 'checked' : '' ?>>
+                                        <label class="form-check-label text-danger" for="esito_negativo">
+                                            <i class="fas fa-times-circle me-1"></i>Negativo
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="esito" id="esito_attesa" value="in_attesa"
+                                               <?= ($record['esito'] ?? 'in_attesa') == 'in_attesa' ? 'checked' : '' ?>>
+                                        <label class="form-check-label text-warning" for="esito_attesa">
+                                            <i class="fas fa-clock me-1"></i>In Attesa
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Mese -->
@@ -375,4 +398,3 @@ if (!$is_popup) {
     echo '</body></html>';
 }
 ?>
-<?php include 'includes/chat_pratiche_widget.php'; ?>
