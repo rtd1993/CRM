@@ -93,10 +93,11 @@ include __DIR__ . '/includes/header.php';
 /* Classe speciale per sezioni a larghezza completa */
 .data-section.scadenze-section {
     max-width: none;
-    width: calc(100vw - 4rem);
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
+    width: 95vw;
+    margin: 0 auto;
     position: relative;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .calendar-section {
