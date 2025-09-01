@@ -60,7 +60,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
                 'ricorrente' => $is_ricorrente,
                 'scaduto' => $is_scaduto,
                 'nome_cliente' => $task['nome_cliente'],
-                'cliente_id' => $task['cliente_id']
+                'cliente_id' => $task['cliente_id'],
+                'fatturabile' => (bool)$task['fatturabile']
             ];
         }
         
@@ -111,15 +112,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                     
                     // Copia il task
                     $stmt_copy = $pdo->prepare("
-                        INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
+                        VALUES (?, ?, ?, ?, ?)
                     ");
                     
                     $result = $stmt_copy->execute([
                         $target_client_id,
                         $task['descrizione'],
                         $task['scadenza'],
-                        $task['ricorrenza']
+                        $task['ricorrenza'],
+                        $task['fatturabile']
                     ]);
                     
                     if ($result) {
@@ -166,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         $scadenza = $_POST['scadenza'] ?? '';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
         
         // Validazione
         if ($cliente_id <= 0) {
@@ -201,10 +204,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
 
         // Crea il nuovo task
         $stmt = $pdo->prepare("
-            INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni]);
+        $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
         
         if (!$result) {
             throw new Exception("Errore nella creazione del task");
@@ -1498,6 +1501,13 @@ foreach ($tasks as $task) {
                                     <span>Ogni <?= $ricorrenza_text ?></span>
                                 </div>
                             <?php endif; ?>
+                            
+                            <?php if ($task_item['fatturabile']): ?>
+                                <div class="task-fatturabile">
+                                    <i class="fas fa-euro-sign" style="color: #28a745;"></i>
+                                    <span style="color: #28a745; font-weight: bold;">Da fatturare</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="task-actions">
@@ -2018,6 +2028,15 @@ function copySelectedTasks() {
                                 <input class="form-check-input" type="checkbox" id="is_ricorrente" onchange="toggleRicorrenza()">
                                 <label class="form-check-label" for="is_ricorrente">
                                     <i class="fas fa-sync-alt"></i> Task ricorrente
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="fatturabile" name="fatturabile" value="1">
+                                <label class="form-check-label" for="fatturabile">
+                                    <i class="fas fa-euro-sign"></i> Da fatturare
                                 </label>
                             </div>
                         </div>

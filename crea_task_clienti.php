@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $scadenza = $_POST['scadenza'] ?? '';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
         
         // Validazione
         if ($cliente_id <= 0) {
@@ -85,10 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiorna la tabella task_clienti direttamente
             $stmt = $pdo->prepare("
                 UPDATE task_clienti 
-                SET cliente_id = ?, descrizione = ?, scadenza = ?, ricorrenza = ? 
+                SET cliente_id = ?, descrizione = ?, scadenza = ?, ricorrenza = ?, fatturabile = ? 
                 WHERE id = ?
             ");
-            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $task_id]);
+            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $task_id]);
             
             if (!$result) {
                 throw new Exception("Errore nell'aggiornamento del task");
@@ -114,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Nuovo task cliente
             $stmt = $pdo->prepare("
-                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza) 
-                VALUES (?, ?, ?, ?)
+                INSERT INTO task_clienti (cliente_id, descrizione, scadenza, ricorrenza, fatturabile) 
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni]);
+            $result = $stmt->execute([$cliente_id, $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
             
             if (!$result) {
                 throw new Exception("Errore nella creazione del task");
@@ -266,6 +267,26 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     align-items: end;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
 }
 
 .btn {
@@ -451,6 +472,19 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
                 </div>
             </div>
             <div class="help-text">Se il task deve ripetersi, specifica ogni quanto tempo (lascia 0 per task una tantum)</div>
+        </div>
+
+        <div class="form-group">
+            <label>💰 Fatturazione</label>
+            <div class="checkbox-group">
+                <input type="checkbox" 
+                       name="fatturabile" 
+                       id="fatturabile" 
+                       value="1"
+                       <?= $edit_mode && $task_data['fatturabile'] ? 'checked' : '' ?>>
+                <label for="fatturabile">Task da fatturare</label>
+            </div>
+            <div class="help-text">Seleziona se questo task deve essere incluso nella fatturazione</div>
         </div>
 
         <div class="btn-group">
