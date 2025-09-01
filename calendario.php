@@ -43,31 +43,38 @@ require_once __DIR__ . '/includes/header.php';
         }
 
         .calendar-container {
-            padding: 2rem 1rem;
+            padding: 1rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .calendar-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
+            border-radius: 15px;
             box-shadow: var(--card-shadow);
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
         .calendar-card:hover {
             box-shadow: var(--hover-shadow);
-            transform: translateY(-5px);
         }
 
         .calendar-header {
             background: var(--primary-gradient);
             color: white;
-            padding: 1.5rem;
-            border-radius: 20px 20px 0 0;
+            padding: 1rem 1.5rem;
+            border-radius: 15px 15px 0 0;
             text-align: center;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .calendar-header::before {
@@ -88,16 +95,28 @@ require_once __DIR__ . '/includes/header.php';
 
         .calendar-header h2 {
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 600;
             position: relative;
             z-index: 1;
         }
 
         .calendar-header .subtitle {
-            opacity: 0.9;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .calendar-body {
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #calendar {
+            flex: 1;
+            min-height: 0;
+        }
             position: relative;
             z-index: 1;
         }
@@ -202,6 +221,29 @@ require_once __DIR__ . '/includes/header.php';
         .fc-event-time {
             font-weight: 500 !important;
             opacity: 0.9 !important;
+        }
+
+        /* Stili personalizzati per la visualizzazione eventi */
+        .fc-event-content-custom {
+            line-height: 1.2 !important;
+        }
+
+        .fc-event-time {
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .fc-event-title-custom {
+            font-weight: 600 !important;
+            font-size: 0.85rem !important;
+            margin: 0.1rem 0 !important;
+        }
+
+        .fc-event-users {
+            font-size: 0.7rem !important;
+            opacity: 0.8 !important;
+            font-style: italic !important;
         }
 
         /* Stili per i giorni della settimana */
@@ -335,17 +377,12 @@ require_once __DIR__ . '/includes/header.php';
 </head>
 <body>
 <div class="container-fluid calendar-container">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-8">
-            <div class="calendar-card">
-                <div class="calendar-header">
-                    <h2>📅 Calendario Appuntamenti</h2>
-                    <div class="subtitle">Organizza i tuoi impegni con stile</div>
-                </div>
-                <div class="calendar-body">
-                    <div id="calendar"></div>
-                </div>
-            </div>
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <h2>📅 Calendario</h2>
+        </div>
+        <div class="calendar-body">
+            <div id="calendar"></div>
         </div>
     </div>
 </div>
@@ -449,9 +486,45 @@ document.addEventListener('DOMContentLoaded', function() {
         locale: 'it',
         selectable: true,
         editable: true,
-        height: 500,
+        height: 'auto',
         events: '/calendar_events.php',
         eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+        eventContent: function(arg) {
+            // Formato: orario, evento, (per "utente" da "utente")
+            let time = '';
+            if (arg.event.start) {
+                time = arg.event.start.toLocaleTimeString('it-IT', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
+            let title = arg.event.title;
+            let eventText = title;
+            
+            // Estrai le informazioni dal titolo se ha il formato attuale
+            let match = title.match(/^(.+) \(per (.+) da (.+)\)$/);
+            if (match) {
+                eventText = match[1];
+                let assignedTo = match[2];
+                let createdBy = match[3];
+                return {
+                    html: `<div class="fc-event-content-custom">
+                        <div class="fc-event-time">${time}</div>
+                        <div class="fc-event-title-custom">${eventText}</div>
+                        <div class="fc-event-users">(per "${assignedTo}" da "${createdBy}")</div>
+                    </div>`
+                };
+            } else {
+                // Formato semplice per eventi senza utenti
+                return {
+                    html: `<div class="fc-event-content-custom">
+                        <div class="fc-event-time">${time}</div>
+                        <div class="fc-event-title-custom">${eventText}</div>
+                    </div>`
+                };
+            }
+        },
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -486,6 +559,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 eventTitleInput.focus();
             }, 300);
         },
+        eventDrop: function(info) {
+            updateEventDateTime(info.event);
+        },
+        eventResize: function(info) {
+            updateEventDateTime(info.event);
+        },
         eventClick: function(info) {
             // Aggiorna il titolo della modale
             document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-calendar-edit me-2"></i>Modifica Appuntamento';
@@ -493,9 +572,9 @@ document.addEventListener('DOMContentLoaded', function() {
             eventForm.reset();
             eventIdInput.value = currentEvent.id;
             
-            // Estrai il titolo originale rimuovendo "creato da [utente] - " e " (per [utente])"
+            // Estrai il titolo originale rimuovendo " (per [utente] da [utente])"
             let originalTitle = currentEvent.title;
-            let titleMatch = originalTitle.match(/^creato da .+ - (.+) \(per .+\)$/);
+            let titleMatch = originalTitle.match(/^(.+) \(per .+ da .+\)$/);
             if (titleMatch) {
                 eventTitleInput.value = titleMatch[1]; // Solo il titolo puro
             } else {
@@ -503,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Prova a estrarre l'utente assegnato dal titolo
-            let userMatch = originalTitle.match(/\(per (.+)\)$/);
+            let userMatch = originalTitle.match(/\(per (.+) da .+\)$/);
             if (userMatch) {
                 let assignedUserName = userMatch[1];
                 // Trova l'utente nella select
@@ -545,6 +624,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     calendar.render();
 
+    // Funzione per aggiornare data/ora quando si sposta o ridimensiona un evento
+    function updateEventDateTime(event) {
+        let payload = {
+            id: event.id,
+            start: event.start.toISOString(),
+            end: event.end ? event.end.toISOString() : event.start.toISOString()
+        };
+
+        fetch('/calendar_events.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                alert('Errore nello spostamento: ' + data.error);
+                calendar.refetchEvents(); // Ripristina la posizione originale
+            }
+        })
+        .catch((error) => {
+            console.error('Errore:', error);
+            alert('Errore nella comunicazione col server');
+            calendar.refetchEvents(); // Ripristina la posizione originale
+        });
+    }
+
     // Submit form: crea/modifica evento
     eventForm.onsubmit = function(e) {
         e.preventDefault();
@@ -565,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let userColor = assignedToSelect.options[assignedToSelect.selectedIndex].dataset.color;
         
         // Modifica il titolo per includere le informazioni degli utenti
-        let finalTitle = `creato da <?php echo $_SESSION['user_name']; ?> - ${title} (per ${assignedToName})`;
+        let finalTitle = `${title} (per ${assignedToName} da <?php echo $_SESSION['user_name']; ?>)`;
 
         let payload = {
             title: finalTitle,
