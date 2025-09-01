@@ -90,6 +90,14 @@ include __DIR__ . '/includes/header.php';
     margin: 0 auto;
 }
 
+/* Classe speciale per sezioni a larghezza completa */
+.data-section.scadenze-section {
+    max-width: none;
+    width: calc(100vw - 4rem);
+    margin-left: calc(50% - 50vw + 2rem);
+    margin-right: calc(50% - 50vw + 2rem);
+}
+
 .calendar-section {
     grid-column: 1 / -1;
     background: white;
@@ -763,39 +771,36 @@ include __DIR__ . '/includes/header.php';
 }
 
 .scadenze-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0;
+    display: block;
     width: 100%;
 }
 
 .scadenze-subsection {
     background: white;
-    border-right: 1px solid #dee2e6;
-    min-height: 500px;
+    border-bottom: 1px solid #dee2e6;
+    min-height: 400px;
 }
 
 .scadenze-subsection:last-child {
-    border-right: none;
-    border-radius: 0 0 15px 0;
+    border-bottom: none;
+    border-radius: 0 0 15px 15px;
 }
 
 .scadenze-subsection:first-child {
-    border-radius: 0 0 0 15px;
+    border-radius: 0;
 }
 
 .subsection-title {
     background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
     color: white;
     margin: 0;
-    padding: 1rem 1.5rem;
+    padding: 1rem 2rem;
     font-size: 1.1rem;
     font-weight: 500;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.75rem;
-    text-align: center;
+    text-align: left;
     min-height: 60px;
 }
 
@@ -804,20 +809,20 @@ include __DIR__ . '/includes/header.php';
 }
 
 .scroll-content {
-    max-height: 450px;
+    max-height: 400px;
     overflow-y: auto;
     padding: 0;
 }
 
 .data-table.compact {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     width: 100%;
 }
 
 .data-table.compact th,
 .data-table.compact td {
-    padding: 0.6rem 0.8rem;
+    padding: 0.75rem 1rem;
     vertical-align: top;
 }
 
@@ -832,13 +837,13 @@ include __DIR__ . '/includes/header.php';
 
 .empty-state-mini {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 2rem;
     color: #6c757d;
 }
 
 .empty-state-mini .icon-mini {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
     opacity: 0.5;
 }
 
@@ -861,13 +866,9 @@ include __DIR__ . '/includes/header.php';
     color: #1976d2;
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 500;
     display: inline-block;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .general-task {
@@ -875,7 +876,7 @@ include __DIR__ . '/includes/header.php';
     color: #7b1fa2;
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
@@ -885,11 +886,6 @@ include __DIR__ . '/includes/header.php';
     color: #495057;
     text-decoration: none;
     font-weight: 500;
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
 }
 
 .task-description a:hover,
@@ -909,86 +905,28 @@ include __DIR__ . '/includes/header.php';
 }
 
 /* Responsive Design */
-@media (max-width: 1400px) {
-    .scadenze-container {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-    
-    .data-table.compact {
-        font-size: 0.8rem;
-    }
-    
-    .task-description a,
-    .client-name a {
-        max-width: 150px;
-    }
-}
-
-@media (max-width: 1024px) {
-    .scadenze-container {
-        grid-template-columns: 1fr 1fr;
-        gap: 0;
-    }
-    
-    .scadenze-subsection:nth-child(3) {
-        grid-column: 1 / -1;
-        border-right: none;
-        border-top: 1px solid #dee2e6;
-        border-radius: 0 0 15px 15px;
-    }
-    
-    .scadenze-subsection:nth-child(2) {
-        border-radius: 0;
-    }
-    
-    .scadenze-subsection:first-child {
-        border-radius: 0;
-    }
-}
-
 @media (max-width: 768px) {
-    .scadenze-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .scadenze-subsection {
-        border-right: none;
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0 !important;
-        min-height: 400px;
-    }
-    
-    .scadenze-subsection:last-child {
-        border-bottom: none;
-        border-radius: 0 0 15px 15px !important;
-    }
-    
     .scadenze-section .section-title {
         padding: 1rem 1.5rem;
         font-size: 1.3rem;
     }
     
     .subsection-title {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1.5rem;
         font-size: 1rem;
     }
     
     .data-table.compact {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
     
     .data-table.compact th,
     .data-table.compact td {
-        padding: 0.5rem 0.6rem;
+        padding: 0.5rem 0.75rem;
     }
     
     .scroll-content {
-        max-height: 350px;
-    }
-    
-    .task-description a,
-    .client-name a {
-        max-width: none;
+        max-height: 300px;
     }
 }
 
