@@ -1,17 +1,5 @@
 <?php
-require_once __DIR__ . '/includ// Gestione form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $cliente_id = intval($_POST['cliente_id'] ?? 0);
-        $descrizione = trim($_POST['descrizione'] ?? '');
-        $scadenza = $_POST['scadenza'] ?? '';
-        $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
-        $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
-        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
-        $assegnato_a = isset($_POST['assegnato_a']) && $_POST['assegnato_a'] !== '' ? intval($_POST['assegnato_a']) : null;
-        
-        // Validazione
-        if ($cliente_id <= 0) {
+require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
@@ -56,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
         $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
-        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        $assegnato_a = isset($_POST['assegnato_a']) && $_POST['assegnato_a'] !== '' ? intval($_POST['assegnato_a']) : null;
         
         // Validazione
         if ($cliente_id <= 0) {
