@@ -376,10 +376,16 @@ $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fisc
 $where_conditions = ["1=1"]; // Base condition per semplificare la logica
 $params = [];
 
-// Query ottimizzata con calcolo statistiche integrate
+// Determina i permessi dell'utente per task_clienti
+$user_role = $_SESSION['user_role'] ?? 'employee';
+$user_id = $_SESSION['user_id'] ?? 0;
+$can_see_all = in_array($user_role, ['admin', 'developer']);
+
+// Query ottimizzata con calcolo statistiche integrate e informazioni assegnazione
 $sql = "SELECT tc.*, 
         CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
         c.`Codice_fiscale` as codice_fiscale,
+        u.nome as nome_assegnato,
         CASE 
             WHEN tc.scadenza < CURDATE() THEN 'scaduto'
             WHEN tc.scadenza = CURDATE() THEN 'oggi'
@@ -388,9 +394,14 @@ $sql = "SELECT tc.*,
             ELSE 'futuro'
         END as categoria_scadenza
         FROM task_clienti tc 
-        LEFT JOIN clienti c ON tc.cliente_id = c.id";
+        LEFT JOIN clienti c ON tc.cliente_id = c.id
+        LEFT JOIN utenti u ON tc.assegnato_a = u.id";
 
-// I task sono già associati ai clienti nella tabella task_clienti
+// Filtro per ruolo utente - solo se non è admin/developer
+if (!$can_see_all) {
+    $where_conditions[] = "(tc.assegnato_a IS NULL OR tc.assegnato_a = ?)";
+    $params[] = $user_id;
+}
 
 if (!empty($search)) {
     $where_conditions[] = "(tc.descrizione LIKE ? OR c.`Cognome_Ragione_sociale` LIKE ? OR c.Nome LIKE ?)";

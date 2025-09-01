@@ -92,13 +92,32 @@ if (isset($_POST['complete_id'])) {
 
 // Ricerca
 $search = $_GET['search'] ?? '';
-$sql = "SELECT * FROM task WHERE scadenza >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+
+// Determina i permessi dell'utente
+$user_role = $_SESSION['user_role'] ?? 'employee';
+$user_id = $_SESSION['user_id'] ?? 0;
+$can_see_all = in_array($user_role, ['admin', 'developer']);
+
+// Query base con join per informazioni utente assegnato
+$sql = "SELECT t.*, u.nome as nome_assegnato 
+        FROM task t 
+        LEFT JOIN utenti u ON t.assegnato_a = u.id 
+        WHERE t.scadenza >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+
 $params = [];
+
+// Filtro per ruolo utente
+if (!$can_see_all) {
+    $sql .= " AND (t.assegnato_a IS NULL OR t.assegnato_a = ?)";
+    $params[] = $user_id;
+}
+
+// Filtro ricerca
 if ($search !== '') {
-    $sql .= " AND descrizione LIKE ?";
+    $sql .= " AND t.descrizione LIKE ?";
     $params[] = "%$search%";
 }
-$sql .= " ORDER BY scadenza ASC";
+$sql .= " ORDER BY t.scadenza ASC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -307,6 +326,28 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 /* Tooltip per pulsanti */
         .task-actions .btn {
             position: relative;
+        }
+        
+        .task-assignment {
+            text-align: center;
+        }
+        
+        .assigned-user {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .general-task {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
         }
         
         .task-actions .btn[data-tooltip]:hover::after {
@@ -539,6 +580,7 @@ foreach ($task_list as $task) {
                 <tr>
                     <th>Descrizione</th>
                     <th>Scadenza</th>
+                    <th>Assegnato a</th>
                     <th>Ricorrenza</th>
                     <th>Azioni</th>
                 </tr>
@@ -573,6 +615,13 @@ foreach ($task_list as $task) {
                             <br><small>⚡ Scade oggi</small>
                         <?php elseif ($diff_giorni < 5): ?>
                             <br><small>⏳ Scade tra <?= $diff_giorni ?> giorni</small>
+                        <?php endif; ?>
+                    </td>
+                    <td class="task-assignment">
+                        <?php if ($task['nome_assegnato']): ?>
+                            <span class="assigned-user">👤 <?= htmlspecialchars($task['nome_assegnato']) ?></span>
+                        <?php else: ?>
+                            <span class="general-task">🌐 Generale</span>
                         <?php endif; ?>
                     </td>
                     <td>

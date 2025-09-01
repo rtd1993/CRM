@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descrizione = $_POST['descrizione'] ?? '';
     $scadenza = $_POST['scadenza'] ?? '';
     $ricorrenza = isset($_POST['ricorrenza']) && $_POST['ricorrenza'] !== '' ? intval($_POST['ricorrenza']) : null;
+    $assegnato_a = isset($_POST['assegnato_a']) && $_POST['assegnato_a'] !== '' ? intval($_POST['assegnato_a']) : null;
     
     // Se c'è un campo hidden con l'ID, siamo in modalità modifica
     $edit_id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : null;
@@ -37,11 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($descrizione) && !empty($scadenza)) {
         if ($is_edit) {
             // Modifica task esistente
-            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ?, assegnato_a = ? WHERE id = ?");
             $stmt->bindValue(1, $descrizione);
             $stmt->bindValue(2, $scadenza);
             $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindValue(4, $edit_id);
+            $stmt->bindValue(4, $assegnato_a, is_null($assegnato_a) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(5, $edit_id);
             $stmt->execute();
             
             // Redirect alla lista task con messaggio di successo
@@ -49,10 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             // Crea nuovo task
-            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza, assegnato_a) VALUES (?, ?, ?, ?)");
             $stmt->bindValue(1, $descrizione);
             $stmt->bindValue(2, $scadenza);
             $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(4, $assegnato_a, is_null($assegnato_a) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->execute();
             
             // Redirect alla lista task con messaggio di successo
@@ -63,6 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errore = "Inserisci almeno descrizione e scadenza.";
     }
 }
+
+// Carica lista utenti per assegnazione
+$stmt_users = $pdo->prepare("SELECT id, nome FROM utenti ORDER BY nome");
+$stmt_users->execute();
+$utenti = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <style>
@@ -303,6 +311,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li><strong>90</strong> = Trimestrale</li>
                     <li><strong>365</strong> = Annuale</li>
                 </ul>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="assegnato_a">👤 Assegnato a</label>
+            <select id="assegnato_a" name="assegnato_a" class="form-control">
+                <option value="">🌐 Task generale (visibile a tutti)</option>
+                <?php foreach ($utenti as $utente): ?>
+                    <option value="<?= $utente['id'] ?>" 
+                            <?= ($task_data['assegnato_a'] ?? '') == $utente['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($utente['nome']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <div class="form-help">
+                Se non assegnato, il task sarà visibile a tutti. Se assegnato, solo l'utente specifico e admin/developer potranno vederlo.
             </div>
         </div>
 

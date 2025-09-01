@@ -1,5 +1,17 @@
 <?php
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includ// Gestione form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $cliente_id = intval($_POST['cliente_id'] ?? 0);
+        $descrizione = trim($_POST['descrizione'] ?? '');
+        $scadenza = $_POST['scadenza'] ?? '';
+        $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
+        $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        $assegnato_a = isset($_POST['assegnato_a']) && $_POST['assegnato_a'] !== '' ? intval($_POST['assegnato_a']) : null;
+        
+        // Validazione
+        if ($cliente_id <= 0) {
 require_login();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/header.php';
@@ -87,10 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiorna la tabella task_clienti direttamente
             $stmt = $pdo->prepare("
                 UPDATE task_clienti 
-                SET cliente_id = ?, titolo = ?, descrizione = ?, scadenza = ?, ricorrenza = ?, fatturabile = ? 
+                SET cliente_id = ?, titolo = ?, descrizione = ?, scadenza = ?, ricorrenza = ?, fatturabile = ?, assegnato_a = ? 
                 WHERE id = ?
             ");
-            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $task_id]);
+            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $assegnato_a, $task_id]);
             
             if (!$result) {
                 throw new Exception("Errore nell'aggiornamento del task");
@@ -116,10 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Nuovo task cliente
             $stmt = $pdo->prepare("
-                INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile, assegnato_a) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
+            $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile, $assegnato_a]);
             
             if (!$result) {
                 throw new Exception("Errore nella creazione del task");
@@ -163,6 +175,16 @@ try {
 } catch (Exception $e) {
     $error_message = "Errore nel caricamento dei clienti: " . $e->getMessage();
     $clienti = [];
+}
+
+// Carica lista utenti per assegnazione
+try {
+    $stmt_users = $pdo->prepare("SELECT id, nome FROM utenti ORDER BY nome");
+    $stmt_users->execute();
+    $utenti = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error_message = "Errore nel caricamento degli utenti: " . $e->getMessage();
+    $utenti = [];
 }
 
 // Determina ricorrenza per la modalità modifica
@@ -449,6 +471,20 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
                    required
                    value="<?= $edit_mode && $task_data ? htmlspecialchars($task_data['scadenza']) : '' ?>">
             <div class="help-text">Entro quando deve essere completato il task</div>
+        </div>
+
+        <div class="form-group">
+            <label for="assegnato_a">👤 Assegnato a</label>
+            <select id="assegnato_a" name="assegnato_a" class="form-control">
+                <option value="">🌐 Task generale (visibile a tutti)</option>
+                <?php foreach ($utenti as $utente): ?>
+                    <option value="<?= $utente['id'] ?>" 
+                            <?= ($edit_mode && $task_data && ($task_data['assegnato_a'] ?? '') == $utente['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($utente['nome']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <div class="help-text">Se non assegnato, il task sarà visibile a tutti. Se assegnato, solo l'utente specifico e admin/developer potranno vederlo.</div>
         </div>
 
         <div class="form-group">
