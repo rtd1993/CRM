@@ -176,29 +176,47 @@ switch ($_SERVER['REQUEST_METHOD']) {
         dbg_log("PUT raw input: $raw");
         $input = json_decode($raw, true);
         dbg_log("PUT parsed input: " . json_encode($input));
-        if (!$input || !isset($input['id'], $input['title'], $input['start'], $input['end'])) {
-            dbg_log("PUT Error: Parametri mancanti o input non valido");
+        if (!$input || !isset($input['id'])) {
+            dbg_log("PUT Error: ID mancante o input non valido");
             http_response_code(400);
-            echo json_encode(['error' => 'Parametri mancanti o input non valido', 'input' => $input]);
+            echo json_encode(['error' => 'ID mancante o input non valido', 'input' => $input]);
+            exit;
+        }
+        
+        // Se abbiamo solo id, start, end significa che stiamo spostando l'evento
+        $isDateTimeUpdate = isset($input['start'], $input['end']) && !isset($input['title']);
+        
+        if (!$isDateTimeUpdate && !isset($input['title'], $input['start'], $input['end'])) {
+            dbg_log("PUT Error: Parametri mancanti per aggiornamento completo");
+            http_response_code(400);
+            echo json_encode(['error' => 'Parametri mancanti per aggiornamento completo', 'input' => $input]);
             exit;
         }
         $timeZone = 'Europe/Rome';
 
-        // Fix formato data/ora
-        $start = ensureIso8601($input['start']);
-        $end = ensureIso8601($input['end']);
+        // Fix formato data/ora se fornite
+        $start = isset($input['start']) ? ensureIso8601($input['start']) : null;
+        $end = isset($input['end']) ? ensureIso8601($input['end']) : null;
 
         try {
             $event = $service->events->get($calendarId, $input['id']);
-            $event->setSummary($input['title']);
-            $event->setStart(new Google_Service_Calendar_EventDateTime([
-                'dateTime' => $start,
-                'timeZone' => $timeZone
-            ]));
-            $event->setEnd(new Google_Service_Calendar_EventDateTime([
-                'dateTime' => $end,
-                'timeZone' => $timeZone
-            ]));
+            
+            // Aggiorna il titolo solo se fornito (aggiornamento completo)
+            if (isset($input['title'])) {
+                $event->setSummary($input['title']);
+            }
+            
+            // Aggiorna sempre data/ora se fornite
+            if (isset($input['start']) && isset($input['end'])) {
+                $event->setStart(new Google_Service_Calendar_EventDateTime([
+                    'dateTime' => $start,
+                    'timeZone' => $timeZone
+                ]));
+                $event->setEnd(new Google_Service_Calendar_EventDateTime([
+                    'dateTime' => $end,
+                    'timeZone' => $timeZone
+                ]));
+            }
             dbg_log("PUT event to update: " . print_r($event, true));
             $updatedEvent = $service->events->update($calendarId, $event->getId(), $event);
             $response = [
