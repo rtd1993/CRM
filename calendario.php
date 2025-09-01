@@ -687,22 +687,30 @@ document.addEventListener('DOMContentLoaded', function() {
             color: userColor
         };
 
+        console.log('Invio payload POST:', payload);
         fetch('/calendar_events.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         .then(response => {
+            console.log('Risposta POST status:', response.status, response.statusText);
+            if (response.status === 401) {
+                alert('Sessione scaduta. Ricarica la pagina e riprova.');
+                return;
+            }
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Dati ricevuti POST:', data);
             if (data.error) {
                 alert('Errore: ' + data.error);
             } else {
                 // Successo - l'evento è stato creato
+                console.log('Evento creato con successo');
                 eventModal.hide();
                 calendar.refetchEvents();
             }
@@ -717,22 +725,30 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteBtn.onclick = function() {
         if (!eventIdInput.value) return;
         if (!confirm('Vuoi davvero eliminare questo evento?')) return;
+        console.log('Invio richiesta DELETE per ID:', eventIdInput.value);
         fetch('/calendar_events.php', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: eventIdInput.value })
         })
         .then(response => {
+            console.log('Risposta DELETE status:', response.status, response.statusText);
+            if (response.status === 401) {
+                alert('Sessione scaduta. Ricarica la pagina e riprova.');
+                return;
+            }
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Dati ricevuti DELETE:', data);
             if (data.error) {
                 alert('Errore: ' + data.error);
             } else {
                 // Successo - l'evento è stato eliminato
+                console.log('Evento eliminato con successo');
                 eventModal.hide();
                 calendar.refetchEvents();
             }
