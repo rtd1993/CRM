@@ -748,6 +748,8 @@ include __DIR__ . '/includes/header.php';
     padding: 0;
     margin-bottom: 2rem;
     overflow: hidden;
+    width: 100%;
+    max-width: none;
 }
 
 .scadenze-section .section-title {
@@ -762,30 +764,39 @@ include __DIR__ . '/includes/header.php';
 
 .scadenze-container {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0;
+    width: 100%;
 }
 
 .scadenze-subsection {
     background: white;
-    border-bottom: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    min-height: 500px;
 }
 
 .scadenze-subsection:last-child {
-    border-bottom: none;
-    border-radius: 0 0 15px 15px;
+    border-right: none;
+    border-radius: 0 0 15px 0;
+}
+
+.scadenze-subsection:first-child {
+    border-radius: 0 0 0 15px;
 }
 
 .subsection-title {
     background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
     color: white;
     margin: 0;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     font-size: 1.1rem;
     font-weight: 500;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
+    text-align: center;
+    min-height: 60px;
 }
 
 .subsection-icon {
@@ -793,30 +804,41 @@ include __DIR__ . '/includes/header.php';
 }
 
 .scroll-content {
-    max-height: 400px;
+    max-height: 450px;
     overflow-y: auto;
     padding: 0;
 }
 
 .data-table.compact {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    width: 100%;
 }
 
 .data-table.compact th,
 .data-table.compact td {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.8rem;
+    vertical-align: top;
+}
+
+.data-table.compact th {
+    background: #f8f9fa;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #dee2e6;
 }
 
 .empty-state-mini {
     text-align: center;
-    padding: 2rem;
+    padding: 3rem 1rem;
     color: #6c757d;
 }
 
 .empty-state-mini .icon-mini {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
     opacity: 0.5;
 }
 
@@ -839,8 +861,13 @@ include __DIR__ . '/includes/header.php';
     color: #1976d2;
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    display: inline-block;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .general-task {
@@ -848,62 +875,189 @@ include __DIR__ . '/includes/header.php';
     color: #7b1fa2;
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .scadenze-container {
-        grid-template-columns: 1fr;
-    }
+/* Ottimizzazioni per task description e client name */
+.task-description a,
+.client-name a {
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
 }
 
-@media (max-width: 768px) {
-    .scadenze-section .section-title {
-        padding: 1rem 1.5rem;
-        font-size: 1.3rem;
-    }
-    
-    .subsection-title {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
+.task-description a:hover,
+.client-name a:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+/* Status badges più compatti */
+.status-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .scadenze-container {
+        grid-template-columns: 1fr 1fr 1fr;
     }
     
     .data-table.compact {
         font-size: 0.8rem;
     }
     
-    .data-table.compact th,
-    .data-table.compact td {
-        padding: 0.5rem 0.75rem;
-    }
-    
-    .scroll-content {
-        max-height: 300px;
+    .task-description a,
+    .client-name a {
+        max-width: 150px;
     }
 }
 
-/* Animazioni */
+@media (max-width: 1024px) {
+    .scadenze-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+    }
+    
+    .scadenze-subsection:nth-child(3) {
+        grid-column: 1 / -1;
+        border-right: none;
+        border-top: 1px solid #dee2e6;
+        border-radius: 0 0 15px 15px;
+    }
+    
+    .scadenze-subsection:nth-child(2) {
+        border-radius: 0;
+    }
+    
+    .scadenze-subsection:first-child {
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .scadenze-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .scadenze-subsection {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0 !important;
+        min-height: 400px;
+    }
+    
+    .scadenze-subsection:last-child {
+        border-bottom: none;
+        border-radius: 0 0 15px 15px !important;
+    }
+    
+    .scadenze-section .section-title {
+        padding: 1rem 1.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .subsection-title {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .data-table.compact {
+        font-size: 0.75rem;
+    }
+    
+    .data-table.compact th,
+    .data-table.compact td {
+        padding: 0.5rem 0.6rem;
+    }
+    
+    .scroll-content {
+        max-height: 350px;
+    }
+    
+    .task-description a,
+    .client-name a {
+        max-width: none;
+    }
+}
+
+/* Animazioni e miglioramenti UX */
 .scadenze-subsection {
     transition: all 0.3s ease;
 }
 
 .scadenze-subsection:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: inset 0 0 0 2px rgba(0,123,255,0.1);
 }
 
-/* Miglioramenti per le tabelle nelle sottosezioni */
-.scadenze-subsection .data-table tbody tr:hover {
-    background-color: #f8f9fa;
-    transform: translateX(2px);
+.scadenze-subsection .data-table tbody tr {
     transition: all 0.2s ease;
 }
 
-.scadenze-subsection .status-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
+.scadenze-subsection .data-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: translateX(3px);
 }
+
+/* Scrollbar personalizzata per le sottosezioni */
+.scroll-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scroll-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.scroll-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.scroll-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Miglioramenti per la leggibilità delle date */
+.data-table.compact td:nth-child(3),
+.data-table.compact td:nth-child(4) {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Evidenziazione per elementi urgenti/scaduti */
+.status-overdue {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { background-color: #dc3545; }
+    50% { background-color: #c82333; }
+    100% { background-color: #dc3545; }
+}
+
+.status-urgent {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.status-normal {
+    background-color: #28a745;
+    color: white;
+}
+</style>
 </style>
 
 <script>
