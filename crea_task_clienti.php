@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
         $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
         
         // Validazione
         if ($cliente_id <= 0) {
@@ -59,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Converti ricorrenza in giorni
-        $ricorrenza_giorni = null;
+        $ricorrenza_giorni = 0;  // Default a 0 invece di null
         if ($ricorrenza > 0) {
             switch ($tipo_ricorrenza) {
                 case 'giorni':

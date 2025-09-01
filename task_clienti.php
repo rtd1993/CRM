@@ -170,6 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
         $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
         
+        // Debug log
+        error_log("Task creation: cliente_id=$cliente_id, descrizione=$descrizione, scadenza=$scadenza, ricorrenza=$ricorrenza, fatturabile=$fatturabile");
+        
         // Validazione
         if ($cliente_id <= 0) {
             throw new Exception("Seleziona un cliente");
@@ -184,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         }
         
         // Converti ricorrenza in giorni
-        $ricorrenza_giorni = null;
+        $ricorrenza_giorni = 0;  // Default a 0 invece di null
         if ($ricorrenza > 0) {
             switch ($tipo_ricorrenza) {
                 case 'giorni':
@@ -232,13 +235,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         
         $messaggio = "Task creato con successo!";
         
-        // Reindirizza per evitare re-submit
+        // Verifica se è una richiesta AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo json_encode(['success' => true, 'message' => $messaggio]);
+            exit;
+        }
+        
+        // Reindirizza per evitare re-submit (solo per richieste normali)
         header("Location: task_clienti.php?success=" . urlencode($messaggio));
         exit;
         
     } catch (Exception $e) {
         $messaggio = "Errore: " . $e->getMessage();
         error_log("Errore creazione task cliente: " . $e->getMessage());
+        
+        // Verifica se è una richiesta AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
     }
 }
 
@@ -1864,22 +1879,45 @@ function submitTask() {
     // Submit via AJAX
     fetch('', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(response => response.text())
     .then(data => {
+        console.log('Risposta server:', data);
+        
+        // Prova a parsare come JSON
+        try {
+            const jsonData = JSON.parse(data);
+            if (jsonData.success) {
+                alert(jsonData.message);
+                location.reload();
+                return;
+            } else if (jsonData.error) {
+                alert('Errore: ' + jsonData.error);
+                return;
+            }
+        } catch (e) {
+            // Non è JSON, continua con la gestione normale
+        }
+        
         // Se la risposta contiene un redirect o successo, ricarica la pagina
-        if (data.includes('success') || data.includes('Task creato')) {
+        if (data.includes('success') || data.includes('Task creato') || data.includes('</html>')) {
             location.reload();
         } else {
-            // Gestisci errori
-            console.error('Errore nella creazione del task:', data);
-            alert('Errore nella creazione del task. Controlla i dati inseriti.');
+            // Mostra l'errore specifico
+            if (data.trim()) {
+                alert('Errore: ' + data);
+            } else {
+                alert('Errore nella creazione del task. Controlla i dati inseriti.');
+            }
         }
     })
     .catch(error => {
         console.error('Errore:', error);
-        alert('Errore di comunicazione con il server');
+        alert('Errore di comunicazione con il server: ' + error.message);
     })
     .finally(() => {
         // Ripristina il pulsante
