@@ -10,7 +10,6 @@ require_once __DIR__ . '/includes/auth.php';
 
 // Verifica autenticazione per operazioni di scrittura
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    session_start();
     if (!isset($_SESSION['user_id'])) {
         http_response_code(401);
         echo json_encode(['error' => 'Non autenticato']);
