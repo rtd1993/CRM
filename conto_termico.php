@@ -71,9 +71,9 @@ include 'includes/header.php';
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-fire text-danger me-2"></i><?= $page_title ?></h2>
-                <a href="crea_conto_termico.php" class="btn btn-success">
+                <button type="button" class="btn btn-success" onclick="openContoTermicoModal()">
                     <i class="fas fa-plus me-1"></i>Nuovo Record
-                </a>
+                </button>
             </div>
 
             <?php if ($success_message): ?>
@@ -207,10 +207,10 @@ include 'includes/header.php';
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="modifica_conto_termico.php?id=<?= $record['id'] ?>" 
+                                                    <button type="button" onclick="openContoTermicoModal(<?= $record['id'] ?>)" 
                                                        class="btn btn-outline-primary" title="Modifica">
                                                         <i class="fas fa-edit"></i>
-                                                    </a>
+                                                    </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record?')">
@@ -255,7 +255,198 @@ include 'includes/header.php';
     background-color: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
 }
+
+/* Stili per Modal Conto Termico */
+.conto-termico-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.conto-termico-modal-content {
+    position: relative;
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInFromTop 0.4s ease-out;
+    overflow: hidden;
+}
+
+.conto-termico-modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.conto-termico-modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.conto-termico-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.conto-termico-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.conto-termico-modal-body {
+    height: calc(90vh - 100px);
+    overflow: hidden;
+}
+
+.conto-termico-modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive design per il modal */
+@media (max-width: 768px) {
+    .conto-termico-modal-content {
+        width: 95%;
+        height: 95vh;
+        margin: 2.5% auto;
+    }
+    
+    .conto-termico-modal-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .conto-termico-modal-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .conto-termico-modal-body {
+        height: calc(95vh - 80px);
+    }
+}
+</style>
+
+<!-- Modal per Conto Termico -->
+<div id="contoTermicoModal" class="conto-termico-modal">
+    <div class="conto-termico-modal-content">
+        <div class="conto-termico-modal-header">
+            <h3 id="contoTermicoModalTitle">
+                <i class="fas fa-fire me-2"></i>Gestione Conto Termico
+            </h3>
+            <button type="button" class="conto-termico-close" onclick="closeContoTermicoModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="conto-termico-modal-body">
+            <iframe id="contoTermicoModalFrame" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funzioni per gestire il modal Conto Termico
+function openContoTermicoModal(id = null) {
+    const modal = document.getElementById('contoTermicoModal');
+    const iframe = document.getElementById('contoTermicoModalFrame');
+    const title = document.getElementById('contoTermicoModalTitle');
+    
+    if (id) {
+        // Modalità modifica
+        iframe.src = `modifica_conto_termico.php?id=${id}&popup=1`;
+        title.innerHTML = '<i class="fas fa-edit me-2"></i>Modifica Conto Termico';
+    } else {
+        // Modalità creazione
+        iframe.src = 'crea_conto_termico.php?popup=1';
+        title.innerHTML = '<i class="fas fa-plus me-2"></i>Nuovo Conto Termico';
+    }
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Event listener per chiudere con ESC
+    document.addEventListener('keydown', handleContoTermicoEscape);
+}
+
+function closeContoTermicoModal() {
+    const modal = document.getElementById('contoTermicoModal');
+    const iframe = document.getElementById('contoTermicoModalFrame');
+    
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    iframe.src = '';
+    
+    // Rimuovi event listener ESC
+    document.removeEventListener('keydown', handleContoTermicoEscape);
+    
+    // Ricarica la pagina per mostrare le modifiche
+    window.location.reload();
+}
+
+function handleContoTermicoEscape(event) {
+    if (event.key === 'Escape') {
+        closeContoTermicoModal();
+    }
+}
+
+// Chiudi modal cliccando fuori dall'area del contenuto
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('contoTermicoModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeContoTermicoModal();
+        }
+    });
+});
+
+// Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
+window.closeContoTermicoModal = closeContoTermicoModal;
+</script>
 </style>
 
 <?php include 'includes/chat_widget.php'; ?>
-<?php include 'includes/chat_pratiche_widget.php'; ?>
