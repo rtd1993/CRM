@@ -94,8 +94,9 @@ include __DIR__ . '/includes/header.php';
 .data-section.scadenze-section {
     max-width: none;
     width: calc(100vw - 4rem);
-    margin-left: calc(50% - 50vw + 2rem);
-    margin-right: calc(50% - 50vw + 2rem);
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    position: relative;
 }
 
 .calendar-section {
