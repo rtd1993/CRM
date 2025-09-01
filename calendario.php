@@ -690,15 +690,21 @@ document.addEventListener('DOMContentLoaded', function() {
             color: userColor
         };
 
-        console.log('Invio payload POST:', payload);
+        // Se abbiamo un ID, stiamo modificando (PUT), altrimenti creando (POST)
+        let method = id ? 'PUT' : 'POST';
+        if (id) {
+            payload.id = id; // Aggiungi l'ID per le modifiche
+        }
+
+        console.log(`Invio payload ${method}:`, payload);
         fetch('/calendar_events.php', {
-            method: 'POST',
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
             credentials: 'same-origin'
         })
         .then(response => {
-            console.log('Risposta POST status:', response.status, response.statusText);
+            console.log(`Risposta ${method} status:`, response.status, response.statusText);
             if (response.status === 401) {
                 alert('Sessione scaduta. Ricarica la pagina e riprova.');
                 return;
@@ -709,18 +715,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            console.log('Dati ricevuti POST:', data);
+            console.log(`Dati ricevuti ${method}:`, data);
             if (data.error) {
                 alert('Errore: ' + data.error);
             } else {
-                // Successo - l'evento è stato creato
-                console.log('Evento creato con successo');
+                // Successo
+                console.log(`Evento ${id ? 'modificato' : 'creato'} con successo`);
                 eventModal.hide();
                 calendar.refetchEvents();
             }
         })
         .catch((error) => {
-            console.error('Errore nella creazione evento:', error);
+            console.error(`Errore nella ${id ? 'modifica' : 'creazione'} evento:`, error);
             alert('Errore nella comunicazione col server');
         });
     };
