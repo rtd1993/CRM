@@ -1902,22 +1902,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// **NUOVO**: Funzione per aprire il modale task
-function openTaskModal() {
-    const modal = new bootstrap.Modal(document.getElementById('taskModal'));
-    
-    // Reset form
-    document.getElementById('taskForm').reset();
-    document.getElementById('ricorrenza_section').style.display = 'none';
-    document.getElementById('tipo_ricorrenza_section').style.display = 'none';
-    document.getElementById('is_ricorrente').checked = false;
-    
-    // Imposta data di oggi come default
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('scadenza').value = today;
-    
-    modal.show();
-}
+// **NUOVO**: Funzione per aprire il modale task (sostituita con popup)
+// Rimossa - ora usa openTaskClientModal() per popup esterno
 
 // Funzione per toggle ricorrenza
 function toggleRicorrenza() {
@@ -2114,97 +2100,6 @@ function copySelectedTasks() {
     });
 }
 </script>
-
-<!-- Modale per Nuovo Task -->
-<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: white;">
-                <h5 class="modal-title" id="taskModalLabel">
-                    <i class="fas fa-plus-circle"></i> Nuovo Task Cliente
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="taskForm" method="POST">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="cliente_id" class="form-label">
-                                <i class="fas fa-user"></i> Cliente *
-                            </label>
-                            <select class="form-select" id="cliente_id" name="cliente_id" required>
-                                <option value="">-- Seleziona Cliente --</option>
-                                <?php foreach ($clienti as $cliente): ?>
-                                    <option value="<?= $cliente['id'] ?>">
-                                        <?= htmlspecialchars($cliente['Cognome_Ragione_sociale'] . ' ' . ($cliente['Nome'] ?? '')) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-12 mb-3">
-                            <label for="descrizione" class="form-label">
-                                <i class="fas fa-tasks"></i> Descrizione *
-                            </label>
-                            <textarea class="form-control" id="descrizione" name="descrizione" rows="3" 
-                                      placeholder="Descrivi il task da completare..." required></textarea>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="scadenza" class="form-label">
-                                <i class="fas fa-calendar-alt"></i> Data Scadenza *
-                            </label>
-                            <input type="date" class="form-control" id="scadenza" name="scadenza" required>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_ricorrente" onchange="toggleRicorrenza()">
-                                <label class="form-check-label" for="is_ricorrente">
-                                    <i class="fas fa-sync-alt"></i> Task ricorrente
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="fatturabile" name="fatturabile" value="1">
-                                <label class="form-check-label" for="fatturabile">
-                                    <i class="fas fa-euro-sign"></i> Da fatturare
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3" id="ricorrenza_section" style="display: none;">
-                            <label for="ricorrenza" class="form-label">
-                                <i class="fas fa-redo-alt"></i> Ogni
-                            </label>
-                            <input type="number" class="form-control" id="ricorrenza" name="ricorrenza" min="1" placeholder="1">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3" id="tipo_ricorrenza_section" style="display: none;">
-                            <label for="tipo_ricorrenza" class="form-label">Unità di tempo</label>
-                            <select class="form-select" id="tipo_ricorrenza" name="tipo_ricorrenza">
-                                <option value="giorni">Giorni</option>
-                                <option value="settimane">Settimane</option>
-                                <option value="mesi">Mesi</option>
-                                <option value="anni">Anni</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i> Annulla
-                </button>
-                <button type="button" class="btn btn-primary" onclick="submitTask()">
-                    <i class="fas fa-save"></i> Crea Task
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal per task clienti -->
 <div id="taskClientModal" class="modal">
