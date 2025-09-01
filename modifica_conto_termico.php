@@ -497,9 +497,7 @@ document.querySelectorAll('input[type="number"][step="0.01"]').forEach(input => 
 </style>
 
 <?php 
-if (!$is_popup) {
-    include 'includes/chat_widget.php';
-} else {
+if ($is_popup) {
     echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>';
     echo '</body></html>';
 }
