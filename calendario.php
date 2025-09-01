@@ -637,15 +637,21 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(r => r.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 alert('Errore nello spostamento: ' + data.error);
                 calendar.refetchEvents(); // Ripristina la posizione originale
             }
+            // Se non c'è errore, lo spostamento è andato a buon fine
         })
         .catch((error) => {
-            console.error('Errore:', error);
+            console.error('Errore nello spostamento:', error);
             alert('Errore nella comunicazione col server');
             calendar.refetchEvents(); // Ripristina la posizione originale
         });
@@ -686,16 +692,25 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(r => r.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 alert('Errore: ' + data.error);
             } else {
+                // Successo - l'evento è stato creato
                 eventModal.hide();
                 calendar.refetchEvents();
             }
         })
-        .catch(() => alert('Errore nella comunicazione col server.'));
+        .catch((error) => {
+            console.error('Errore nella creazione evento:', error);
+            alert('Errore nella comunicazione col server');
+        });
     };
 
     // Elimina evento
@@ -707,16 +722,25 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: eventIdInput.value })
         })
-        .then(r => r.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 alert('Errore: ' + data.error);
             } else {
+                // Successo - l'evento è stato eliminato
                 eventModal.hide();
                 calendar.refetchEvents();
             }
         })
-        .catch(() => alert('Errore nella comunicazione col server.'));
+        .catch((error) => {
+            console.error('Errore nella eliminazione evento:', error);
+            alert('Errore nella comunicazione col server');
+        });
     };
 
     // Reset currentEvent all'apertura della modale
