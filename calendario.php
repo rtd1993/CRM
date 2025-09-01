@@ -487,7 +487,9 @@ document.addEventListener('DOMContentLoaded', function() {
         selectable: true,
         editable: true,
         height: 'auto',
-        events: '/calendar_events.php',
+        events: {
+            url: '/calendar_events.php'
+        },
         eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
         eventContent: function(arg) {
             // Formato: orario, evento, (per "utente" da "utente")
@@ -635,7 +637,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/calendar_events.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'
         })
         .then(response => {
             if (!response.ok) {
@@ -691,7 +694,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/calendar_events.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'
         })
         .then(response => {
             console.log('Risposta POST status:', response.status, response.statusText);
@@ -729,7 +733,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/calendar_events.php', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: eventIdInput.value })
+            body: JSON.stringify({ id: eventIdInput.value }),
+            credentials: 'same-origin'
         })
         .then(response => {
             console.log('Risposta DELETE status:', response.status, response.statusText);
