@@ -867,6 +867,76 @@ foreach ($tasks as $task) {
     }
 }
 
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 0;
+    border: none;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.modal iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 15px;
+}
+
 @media (max-width: 768px) {
     .task-header-info {
         flex-direction: column;
@@ -1462,7 +1532,7 @@ foreach ($tasks as $task) {
         
         <!-- Pulsante Crea Task -->
         <div class="stat-item create-button">
-            <button type="button" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;" onclick="openTaskModal()">
+            <button type="button" class="btn btn-primary" style="margin: 0; padding: 12px 20px; border-radius: 8px;" onclick="openTaskClientModal()">
                 <i class="fas fa-plus"></i> Nuovo Task
             </button>
         </div>
@@ -1537,12 +1607,24 @@ foreach ($tasks as $task) {
                                     <span style="color: #28a745; font-weight: bold;">Da fatturare</span>
                                 </div>
                             <?php endif; ?>
+                            
+                            <?php if ($task_item['nome_assegnato']): ?>
+                                <div class="task-assegnato">
+                                    <i class="fas fa-user" style="color: #6c757d;"></i>
+                                    <span style="color: #6c757d;">Assegnato a: <?= htmlspecialchars($task_item['nome_assegnato']) ?></span>
+                                </div>
+                            <?php else: ?>
+                                <div class="task-generale">
+                                    <i class="fas fa-globe" style="color: #17a2b8;"></i>
+                                    <span style="color: #17a2b8;">Task generale</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="task-actions">
-                            <a href="crea_task_clienti.php?edit=<?= $task_item['id'] ?>" class="btn btn-warning btn-xs">
+                            <button class="btn btn-warning btn-xs" onclick="openTaskClientModal(<?= $task_item['id'] ?>)">
                                 <i class="fas fa-edit"></i>
-                            </a>
+                            </button>
                             
                             <a href="?completa=<?= $task_item['id'] ?>" 
                                class="btn btn-success btn-xs" 
@@ -1707,9 +1789,9 @@ function loadClientTasks() {
                             </div>
                         </div>
                         <div class="task-actions">
-                            <a href="crea_task_clienti.php?edit=${task.id}" class="btn btn-warning btn-sm" title="Modifica">
+                            <button class="btn btn-warning btn-sm" onclick="openTaskClientModal(${task.id})" title="Modifica">
                                 <i class="fas fa-edit"></i>
-                            </a>
+                            </button>
                             <a href="?completa=${task.id}" class="btn btn-success btn-sm" 
                                onclick="return confirm('Confermi il completamento del task?')" title="Completa">
                                 <i class="fas fa-check"></i>
@@ -2124,7 +2206,69 @@ function copySelectedTasks() {
     </div>
 </div>
 
+<!-- Modal per task clienti -->
+<div id="taskClientModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeTaskClientModal()">&times;</span>
+        <iframe id="taskClientModalFrame" src=""></iframe>
+    </div>
+</div>
+
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Funzioni per gestire il modal dei task clienti
+function openTaskClientModal(taskId = null) {
+    const modal = document.getElementById('taskClientModal');
+    const iframe = document.getElementById('taskClientModalFrame');
+    
+    if (taskId) {
+        iframe.src = 'crea_task_clienti_popup.php?edit=' + taskId;
+    } else {
+        iframe.src = 'crea_task_clienti_popup.php';
+    }
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeTaskClientModal() {
+    const modal = document.getElementById('taskClientModal');
+    const iframe = document.getElementById('taskClientModalFrame');
+    
+    modal.style.display = 'none';
+    iframe.src = '';
+    document.body.style.overflow = 'auto';
+}
+
+// Chiudi modal cliccando fuori
+window.onclick = function(event) {
+    const taskModal = document.getElementById('taskModal');
+    const taskClientModal = document.getElementById('taskClientModal');
+    
+    if (event.target === taskModal && taskModal) {
+        closeTaskModal();
+    }
+    if (event.target === taskClientModal) {
+        closeTaskClientModal();
+    }
+}
+
+// Chiudi modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const taskModal = document.getElementById('taskModal');
+        const taskClientModal = document.getElementById('taskClientModal');
+        
+        if (taskModal && taskModal.style.display === 'block') {
+            closeTaskModal();
+        }
+        if (taskClientModal && taskClientModal.style.display === 'block') {
+            closeTaskClientModal();
+        }
+    }
+});
+</script>
 </body>
 </html>

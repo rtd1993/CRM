@@ -377,6 +377,76 @@ $task_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
             z-index: 1000;
         }
 
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            border: none;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .modal iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 15px;
+        }
+
 .alert {
     padding: 1rem 1.5rem;
     border-radius: 8px;
@@ -559,7 +629,7 @@ foreach ($task_list as $task) {
 
 
 <div class="task-controls">
-    <a href="crea_task.php" class="btn btn-primary">➕ Crea nuovo task</a>
+    <button class="btn btn-primary" onclick="openTaskModal()">➕ Crea nuovo task</button>
     <form method="get" class="search-form">
         <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
         <button type="submit" class="btn btn-primary">🔍 Cerca</button>
@@ -571,7 +641,7 @@ foreach ($task_list as $task) {
         <i>📋</i>
         <h3>Nessun task trovato</h3>
         <p>Non ci sono task per il periodo selezionato.</p>
-        <a href="crea_task.php" class="btn btn-primary">➕ Crea il primo task</a>
+        <button class="btn btn-primary" onclick="openTaskModal()">➕ Crea il primo task</button>
     </div>
 <?php else: ?>
     <div class="task-table">
@@ -634,7 +704,7 @@ foreach ($task_list as $task) {
                     <td class="task-actions">
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
-                            <a href="crea_task.php?edit=<?= $task['id'] ?>" class="btn btn-primary btn-sm" data-tooltip="Modifica questo task">✏️ Modifica</a>
+                            <button class="btn btn-primary btn-sm" onclick="openTaskModal(<?= $task['id'] ?>)" data-tooltip="Modifica questo task">✏️ Modifica</button>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task ricorrente? Sarà ricreato con la prossima scadenza.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà ricreato con la prossima scadenza">✅ Completato</button>
@@ -645,7 +715,7 @@ foreach ($task_list as $task) {
                             </form>
                         <?php else: ?>
                             <!-- Task non ricorrente -->
-                            <a href="crea_task.php?edit=<?= $task['id'] ?>" class="btn btn-primary btn-sm" data-tooltip="Modifica questo task">✏️ Modifica</a>
+                            <button class="btn btn-primary btn-sm" onclick="openTaskModal(<?= $task['id'] ?>)" data-tooltip="Modifica questo task">✏️ Modifica</button>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task? Sarà eliminato definitivamente.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà eliminato definitivamente">✅ Completato</button>
@@ -663,11 +733,58 @@ foreach ($task_list as $task) {
     </div>
 <?php endif; ?>
 
+<!-- Modal per task -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeTaskModal()">&times;</span>
+        <iframe id="taskModalFrame" src=""></iframe>
+    </div>
+</div>
+
 <script>
 // Auto-refresh della pagina ogni 5 minuti per aggiornare le scadenze
 setTimeout(() => {
     location.reload();
 }, 300000);
+
+// Funzioni per gestire il modal
+function openTaskModal(taskId = null) {
+    const modal = document.getElementById('taskModal');
+    const iframe = document.getElementById('taskModalFrame');
+    
+    if (taskId) {
+        iframe.src = 'crea_task_popup.php?edit=' + taskId;
+    } else {
+        iframe.src = 'crea_task_popup.php';
+    }
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeTaskModal() {
+    const modal = document.getElementById('taskModal');
+    const iframe = document.getElementById('taskModalFrame');
+    
+    modal.style.display = 'none';
+    iframe.src = '';
+    document.body.style.overflow = 'auto';
+}
+
+// Chiudi modal cliccando fuori
+window.onclick = function(event) {
+    const modal = document.getElementById('taskModal');
+    if (event.target === modal) {
+        closeTaskModal();
+    }
+}
+
+// Chiudi modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeTaskModal();
+    }
+});
 </script>
 
 </main>
