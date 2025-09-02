@@ -72,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $valore = $_POST[$campo];
             
-            // Salta il campo note (verrà gestito separatamente)
-            if ($campo === 'note') {
+            // Salta il campo note e Link_cartella (verranno gestiti separatamente)
+            if ($campo === 'note' || $campo === 'Link_cartella') {
                 continue;
             }
             
@@ -106,53 +106,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Validazione obbligatoria per il codice fiscale
+                // Validazione base: almeno Cognome/Ragione sociale è necessario
         $codice_fiscale = $_POST['Codice_fiscale'] ?? '';
         $cognome = $_POST['Cognome_Ragione_sociale'] ?? '';
+        $nome = $_POST['Nome'] ?? '';
         
-        if (empty($codice_fiscale) || trim($codice_fiscale) === '') {
-            throw new Exception("Il Codice Fiscale è obbligatorio.");
-        }
-        
-        // Creazione cartella e link
-        $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
-        $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
-        $link_cartella = 'drive.php?path=' . urlencode($codice_fiscale_clean);
-        
-        // Crea la cartella se non esiste
-        if (!is_dir($cartella_path)) {
-            if (!mkdir($cartella_path, 0755, true)) {
-                throw new Exception("Impossibile creare la cartella per il cliente");
-            }
-            
-            // Crea file di benvenuto nella cartella
-            $welcome_file = $cartella_path . '/README.txt';
-            $cognome = $_POST['Cognome_Ragione_sociale'] ?? '';
-            $welcome_content = "Cartella cliente: " . $codice_fiscale . "\n";
-            $welcome_content .= "Cognome/Ragione sociale: " . $cognome . "\n";
-            $welcome_content .= "Creata il: " . date('d/m/Y H:i:s') . "\n\n";
-            $welcome_content .= "Questa cartella contiene i file relativi al cliente.\n";
-            
-            file_put_contents($welcome_file, $welcome_content);
-        }
-        
-        // Gestione file note se presente
-        if (isset($_POST['note']) && !empty(trim($_POST['note']))) {
-            $note_content = trim($_POST['note']);
-            $note_file = $cartella_path . '/note_' . $codice_fiscale_clean . '.txt';
-            file_put_contents($note_file, $note_content);
-        }
-        
-        // Aggiorna il valore del Link cartella
-        $idx = array_search('`Link_cartella`', $updates);
-        if ($idx !== false) {
-            $values[$idx] = $link_cartella;
-        } else {
-            $updates[] = "`Link_cartella`";
-            $values[] = $link_cartella;
+        if (empty($cognome) || trim($cognome) === '') {
+            throw new Exception("Il campo Cognome/Ragione sociale è obbligatorio.");
         }
         
         if (!empty($updates)) {
+            // Prima inserisce il record per ottenere l'ID
             $sql = "INSERT INTO clienti (" . implode(', ', $updates) . ") VALUES (" . implode(', ', array_fill(0, count($values), '?')) . ")";
             
             $stmt = $pdo->prepare($sql);
@@ -160,6 +124,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($result) {
                 $nuovo_cliente_id = $pdo->lastInsertId();
+                
+                // Creazione cartella con formato ID_COGNOME.NOME
+                $cognome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cognome);
+                $nome_clean = !empty($nome) ? preg_replace('/[^A-Za-z0-9]/', '', $nome) : '';
+                
+                // Formato cartella: ID_COGNOME.NOME (se nome è vuoto, solo ID_COGNOME)
+                if (!empty($nome_clean)) {
+                    $folder_name = $nuovo_cliente_id . '_' . $cognome_clean . '.' . $nome_clean;
+                } else {
+                    $folder_name = $nuovo_cliente_id . '_' . $cognome_clean;
+                }
+                
+                $cartella_path = __DIR__ . '/local_drive/' . $folder_name;
+                $link_cartella = 'drive.php?path=' . urlencode($folder_name);
+                
+                // Crea la cartella se non esiste
+                if (!is_dir($cartella_path)) {
+                    if (!mkdir($cartella_path, 0755, true)) {
+                        throw new Exception("Impossibile creare la cartella per il cliente");
+                    }
+                    
+                    // Crea file di benvenuto nella cartella
+                    $welcome_file = $cartella_path . '/README.txt';
+                    $welcome_content = "Cartella cliente ID: " . $nuovo_cliente_id . "\n";
+                    $welcome_content .= "Cognome/Ragione sociale: " . $cognome . "\n";
+                    if (!empty($nome)) {
+                        $welcome_content .= "Nome: " . $nome . "\n";
+                    }
+                    if (!empty($codice_fiscale)) {
+                        $welcome_content .= "Codice fiscale: " . $codice_fiscale . "\n";
+                    }
+                    $welcome_content .= "Creata il: " . date('d/m/Y H:i:s') . "\n\n";
+                    $welcome_content .= "Questa cartella contiene i file relativi al cliente.\n";
+                    
+                    file_put_contents($welcome_file, $welcome_content);
+                }
+                
+                // Gestione file note se presente
+                if (isset($_POST['note']) && !empty(trim($_POST['note']))) {
+                    $note_content = trim($_POST['note']);
+                    $note_file = $cartella_path . '/note_' . $folder_name . '.txt';
+                    file_put_contents($note_file, $note_content);
+                }
+                
+                // Aggiorna il record con il link alla cartella
+                $update_sql = "UPDATE clienti SET Link_cartella = ? WHERE id = ?";
+                $update_stmt = $pdo->prepare($update_sql);
+                $update_stmt->execute([$link_cartella, $nuovo_cliente_id]);
+                
                 $success_message = "Cliente creato con successo!";
                 
                 // Redirect dopo 2 secondi per mostrare il messaggio
@@ -530,7 +543,7 @@ $sezioni = [
                             <?php if (isset($campi_db[$campo])): ?>
                                 <div class="form-group">
                                     <?php
-                                    $is_required = in_array($campo, ['Codice_fiscale']);
+                                    $is_required = in_array($campo, []); // Nessun campo obbligatorio
                                     ?>
                                     <label for="<?php echo htmlspecialchars($campo); ?>" <?php echo $is_required ? 'class="required"' : ''; ?>>
                                         <?php echo htmlspecialchars($campo); ?>
