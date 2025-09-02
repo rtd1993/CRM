@@ -463,14 +463,19 @@ $stats = [
     'quindici_giorni' => 0,
     'ricorrenti' => 0,
     'oneshot' => 0,
-    'fatturabili' => 0
+    'fatturabili' => 0,
+    'scaduti_fatturabili' => 0,
+    'oggi_fatturabili' => 0,
+    'settimana_fatturabili' => 0,
+    'quindici_giorni_fatturabili' => 0
 ];
 
 foreach ($tasks as $task) {
     $stats['totali']++;
     
     // Conteggio task fatturabili
-    if (!empty($task['fatturabile']) && $task['fatturabile'] == 1) {
+    $is_fatturabile = !empty($task['fatturabile']) && $task['fatturabile'] == 1;
+    if ($is_fatturabile) {
         $stats['fatturabili']++;
     }
     
@@ -478,15 +483,19 @@ foreach ($tasks as $task) {
     switch ($task['categoria_scadenza']) {
         case 'scaduto':
             $stats['scaduti']++;
+            if ($is_fatturabile) $stats['scaduti_fatturabili']++;
             break;
         case 'oggi':
             $stats['oggi']++;
+            if ($is_fatturabile) $stats['oggi_fatturabili']++;
             break;
         case 'settimana':
             $stats['settimana']++;
+            if ($is_fatturabile) $stats['settimana_fatturabili']++;
             break;
         case 'quindici_giorni':
             $stats['quindici_giorni']++;
+            if ($is_fatturabile) $stats['quindici_giorni_fatturabili']++;
             break;
     }
     
@@ -1524,21 +1533,41 @@ foreach ($tasks as $task) {
             <i class="fas fa-exclamation-triangle"></i>
             <span class="stat-number"><?= $stats['scaduti'] ?></span>
             <span class="stat-label">Scaduti</span>
+            <?php if ($stats['scaduti_fatturabili'] > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 2px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $stats['scaduti_fatturabili'] ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         <div class="stat-item warning">
             <i class="fas fa-calendar-day"></i>
             <span class="stat-number"><?= $stats['oggi'] ?></span>
             <span class="stat-label">Oggi</span>
+            <?php if ($stats['oggi_fatturabili'] > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 2px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $stats['oggi_fatturabili'] ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         <div class="stat-item info">
             <i class="fas fa-calendar-week"></i>
             <span class="stat-number"><?= $stats['settimana'] ?></span>
             <span class="stat-label">7 giorni</span>
+            <?php if ($stats['settimana_fatturabili'] > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 2px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $stats['settimana_fatturabili'] ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         <div class="stat-item success">
             <i class="fas fa-calendar-alt"></i>
             <span class="stat-number"><?= $stats['quindici_giorni'] ?></span>
             <span class="stat-label">15 giorni</span>
+            <?php if ($stats['quindici_giorni_fatturabili'] > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 2px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $stats['quindici_giorni_fatturabili'] ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         
         <!-- Pulsante Crea Task -->

@@ -615,18 +615,27 @@ $overdue_tasks = 0;
 $urgent_tasks = 0;
 $recurring_tasks = 0;
 $billable_tasks = 0;
+$overdue_billable = 0;
+$urgent_billable = 0;
 
 foreach ($task_list as $task) {
     $scadenza = strtotime($task['scadenza']);
     $oggi = time();
     $diff_giorni = floor(($scadenza - $oggi) / 86400);
     
-    if ($diff_giorni < 0) $overdue_tasks++;
-    elseif ($diff_giorni < 5) $urgent_tasks++;
+    $is_billable = !empty($task['fatturabile']) && $task['fatturabile'] == 1;
+    
+    if ($diff_giorni < 0) {
+        $overdue_tasks++;
+        if ($is_billable) $overdue_billable++;
+    } elseif ($diff_giorni < 5) {
+        $urgent_tasks++;
+        if ($is_billable) $urgent_billable++;
+    }
     
     if (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) $recurring_tasks++;
     
-    if (!empty($task['fatturabile']) && $task['fatturabile'] == 1) $billable_tasks++;
+    if ($is_billable) $billable_tasks++;
 }
 ?>
 
@@ -664,12 +673,22 @@ foreach ($task_list as $task) {
             <i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 1.5em; margin-bottom: 8px;"></i>
             <div style="font-size: 1.8em; font-weight: bold; color: #dc3545;"><?= $overdue_tasks ?></div>
             <div style="font-size: 0.9em; color: #666;">Scaduti</div>
+            <?php if ($overdue_billable > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 4px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $overdue_billable ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         
         <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
             <i class="fas fa-clock" style="color: #ffc107; font-size: 1.5em; margin-bottom: 8px;"></i>
             <div style="font-size: 1.8em; font-weight: bold; color: #ffc107;"><?= $urgent_tasks ?></div>
             <div style="font-size: 0.9em; color: #666;">Urgenti</div>
+            <?php if ($urgent_billable > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 4px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $urgent_billable ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         
         <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
