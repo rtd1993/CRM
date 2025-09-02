@@ -38,6 +38,29 @@ class ChatSystem {
             console.error('❌ Errore inizializzazione Chat System:', error);
         }
     }
+            
+            // Inizializza Socket.IO
+            await this.initSocket();
+            
+            // Crea footer chat
+            this.createChatFooter();
+            
+            // Carica sessioni chat salvate
+            await this.loadChatSessions();
+            
+            // Inizializza contatori notifiche
+            await this.loadNotifications();
+            
+            // Se Socket.IO non è disponibile, usa polling per notifiche
+            if (!this.socket) {
+                this.startNotificationPolling();
+            }
+            
+            console.log('✅ Chat System inizializzato');
+        } catch (error) {
+            console.error('❌ Errore inizializzazione Chat System:', error);
+        }
+    }
     
     startNotificationPolling() {
         // Polling ogni 30 secondi per le notifiche
@@ -209,10 +232,10 @@ class ChatSystem {
                     ${chatData.name}
                 </div>
                 <div class="chat-header-controls">
-                    <button class="chat-header-btn" onclick="chatSystem.minimizeChat('${windowId}')" title="Minimizza">
+                    <button class="chat-header-btn" onclick="event.stopPropagation(); chatSystem.minimizeChat('${windowId}')" title="Minimizza">
                         <i class="fas fa-minus"></i>
                     </button>
-                    <button class="chat-header-btn" onclick="chatSystem.closeChat('${windowId}')" title="Chiudi">
+                    <button class="chat-header-btn" onclick="event.stopPropagation(); chatSystem.closeChat('${windowId}')" title="Chiudi">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -262,7 +285,7 @@ class ChatSystem {
     
     async loadChatMessages(chatId, windowId) {
         try {
-            const response = await fetch(`/api/chat_messages.php?chat_id=${chatId}&limit=50`);
+            const response = await fetch(`api/chat_messages.php?chat_id=${chatId}&limit=50`);
             const messages = await response.json();
             
             const chatBody = document.getElementById(`chat-body-${windowId}`);
