@@ -218,13 +218,13 @@ include 'includes/header.php';
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a href="modifica_enea.php?id=<?= $record['id'] ?>" 
-                                                       class="btn btn-outline-primary" title="Modifica">
-                                                        <i class="fas fa-edit"></i>
+                                                       class="btn btn-outline-primary" title="Aggiorna pratica">
+                                                        <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </a>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
-                                                       class="btn btn-outline-danger" title="Elimina"
+                                                       class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record ENEA?')">
-                                                        <i class="fas fa-trash"></i>
+                                                        <i class="fas fa-trash me-1"></i>Elimina pratica
                                                     </a>
                                                 </div>
                                             </td>
