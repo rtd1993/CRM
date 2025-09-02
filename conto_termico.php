@@ -212,9 +212,9 @@ include 'includes/header.php';
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
-                                                       class="btn btn-outline-danger" title="Elimina record"
+                                                       class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record?')">
-                                                        <i class="fas fa-trash"></i>
+                                                        <i class="fas fa-trash me-1"></i>Elimina pratica
                                                     </a>
                                                 </div>
                                             </td>
