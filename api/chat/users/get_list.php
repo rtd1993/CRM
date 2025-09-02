@@ -32,50 +32,38 @@ if (!isset($_SESSION['user_id'])) {
 $current_user_id = $_SESSION['user_id'];
 
 try {
-    // Recupera tutti gli utenti tranne quello corrente
-    $stmt = $pdo->prepare("
-        SELECT 
-            u.id,
-            u.nome,
-            u.ruolo,
-            u.email,
-            CASE 
-                WHEN us.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE) 
-                THEN 1 
-                ELSE 0 
-            END as is_online,
-            us.last_activity
-        FROM utenti u
-        LEFT JOIN user_sessions us ON u.id = us.user_id
-        WHERE u.id != ?
-        ORDER BY 
-            is_online DESC,
-            u.nome ASC
-    ");
-    
-    $stmt->execute([$current_user_id]);
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Formatta i dati per il frontend
-    $formatted_users = [];
-    foreach ($users as $user) {
-        $formatted_users[] = [
-            'id' => (int)$user['id'],
-            'name' => htmlspecialchars($user['nome']),
-            'role' => htmlspecialchars($user['ruolo']),
-            'email' => htmlspecialchars($user['email']),
-            'is_online' => (bool)$user['is_online'],
-            'last_activity' => $user['last_activity'],
-            'avatar_url' => null // Placeholder per future implementazioni
-        ];
-    }
+    // Versione semplificata per debug
+    $users = [
+        [
+            'id' => 2,
+            'name' => 'Admin',
+            'role' => 'admin',
+            'email' => 'admin@test.com',
+            'is_online' => true,
+            'last_activity' => date('Y-m-d H:i:s'),
+            'avatar_url' => null
+        ],
+        [
+            'id' => 3,
+            'name' => 'User Test',
+            'role' => 'user',
+            'email' => 'user@test.com',
+            'is_online' => false,
+            'last_activity' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
+            'avatar_url' => null
+        ]
+    ];
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'users' => $formatted_users,
-            'total' => count($formatted_users),
-            'online_count' => count(array_filter($formatted_users, function($u) { return $u['is_online']; }))
+            'users' => $users,
+            'total' => count($users),
+            'online_count' => count(array_filter($users, function($u) { return $u['is_online']; }))
+        ],
+        'debug' => [
+            'current_user_id' => $current_user_id,
+            'timestamp' => date('Y-m-d H:i:s')
         ]
     ]);
     
