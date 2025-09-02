@@ -112,7 +112,7 @@ include 'includes/header.php';
                             <label for="search_stato" class="form-label">Stato</label>
                             <select class="form-select" id="search_stato" name="search_stato">
                                 <option value="">Tutti gli stati</option>
-                                <option value="SI" <?= $search_stato == 'SI' ? 'selected' : '' ?>>Completato</option>
+                                <option value="OK" <?= $search_stato == 'OK' ? 'selected' : '' ?>>Completato</option>
                                 <option value="NO" <?= $search_stato == 'NO' ? 'selected' : '' ?>>Non fatto</option>
                                 <option value="PENDING" <?= $search_stato == 'PENDING' ? 'selected' : '' ?>>In attesa</option>
                             </select>
@@ -170,7 +170,7 @@ include 'includes/header.php';
                                         ];
                                         $completati = 0;
                                         foreach ($campi_doc as $campo) {
-                                            if ($record[$campo] === 'SI') $completati++;
+                                            if ($record[$campo] === 'OK') $completati++;
                                         }
                                         $percentuale = round(($completati / count($campi_doc)) * 100);
                                         ?>
@@ -198,8 +198,8 @@ include 'includes/header.php';
                                                 <div class="d-flex flex-wrap gap-1">
                                                     <?php foreach ($campi_doc as $campo): ?>
                                                         <?php
-                                                        $badge_class = $record[$campo] === 'SI' ? 'success' : ($record[$campo] === 'NO' ? 'danger' : 'secondary');
-                                                        $icon = $record[$campo] === 'SI' ? 'check' : ($record[$campo] === 'NO' ? 'times' : 'clock');
+                                                        $badge_class = $record[$campo] === 'OK' ? 'success' : ($record[$campo] === 'NO' ? 'danger' : 'warning');
+                                                        $icon = $record[$campo] === 'OK' ? 'check' : ($record[$campo] === 'NO' ? 'times' : 'clock');
                                                         ?>
                                                         <span class="badge bg-<?= $badge_class ?>" title="<?= ucfirst(str_replace('_', ' ', $campo)) ?>">
                                                             <i class="fas fa-<?= $icon ?>"></i>
