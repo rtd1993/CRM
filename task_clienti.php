@@ -361,6 +361,39 @@ if (isset($_GET['elimina']) && is_numeric($_GET['elimina'])) {
     }
 }
 
+// Gestione fatturato task
+if (isset($_GET['fatturato']) && is_numeric($_GET['fatturato'])) {
+    try {
+        $task_id = intval($_GET['fatturato']);
+        
+        // Prima verifica che il task sia fatturabile
+        $stmt_check = $pdo->prepare("SELECT fatturabile, descrizione FROM task_clienti WHERE id = ?");
+        $stmt_check->execute([$task_id]);
+        $task_data = $stmt_check->fetch();
+        
+        if ($task_data && $task_data['fatturabile'] == 1) {
+            // Segna il task come fatturato (impostando fatturabile a 0)
+            $stmt = $pdo->prepare("UPDATE task_clienti SET fatturabile = 0 WHERE id = ?");
+            if ($stmt->execute([$task_id])) {
+                $messaggio = "Task segnato come fatturato con successo!";
+                
+                // Log dell'operazione
+                $log_entry = sprintf(
+                    "[%s] TASK FATTURATO: %s | Utente: %s\n",
+                    date('d/m/Y H:i:s'),
+                    $task_data['descrizione'],
+                    $_SESSION['user_name']
+                );
+                file_put_contents(__DIR__ . '/logs/task_fatturati.txt', $log_entry, FILE_APPEND | LOCK_EX);
+            }
+        } else {
+            $messaggio = "Errore: Il task non è fatturabile o non esiste!";
+        }
+    } catch (Exception $e) {
+        $messaggio = "Errore nella marcatura come fatturato: " . $e->getMessage();
+    }
+}
+
 // Gestione filtri (PRIMA di tutto)
 $filtro_cliente = $_GET['cliente'] ?? '';
 $filtro_scadenza = $_GET['scadenza'] ?? '';
@@ -1666,6 +1699,15 @@ foreach ($tasks as $task) {
                                 <i class="fas fa-edit"></i>
                             </button>
                             
+                            <?php if (!empty($task_item['fatturabile']) && $task_item['fatturabile'] == 1): ?>
+                                <a href="?fatturato=<?= $task_item['id'] ?>" 
+                                   class="btn btn-info btn-xs" 
+                                   onclick="return confirm('Confermi che questo task è stato fatturato?')"
+                                   title="Segna come fatturato">
+                                    <i class="fas fa-euro-sign"></i>
+                                </a>
+                            <?php endif; ?>
+                            
                             <a href="?completa=<?= $task_item['id'] ?>" 
                                class="btn btn-success btn-xs" 
                                onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')"
@@ -1832,6 +1874,10 @@ function loadClientTasks() {
                             <button class="btn btn-warning btn-sm" onclick="openTaskClientModal(${task.id})" title="Modifica">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            ${task.fatturabile ? `<a href="?fatturato=${task.id}" class="btn btn-info btn-sm" 
+                                                     onclick="return confirm('Confermi che questo task è stato fatturato?')" title="Segna come fatturato">
+                                                     <i class="fas fa-euro-sign"></i>
+                                                   </a>` : ''}
                             <a href="?completa=${task.id}" class="btn btn-success btn-sm" 
                                onclick="return confirm('Confermi il completamento del task?')" title="Completa">
                                 <i class="fas fa-check"></i>

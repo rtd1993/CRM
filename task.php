@@ -90,6 +90,47 @@ if (isset($_POST['complete_id'])) {
     }
 }
 
+// Gestione fatturato task
+if (isset($_POST['fatturato_id'])) {
+    $id = intval($_POST['fatturato_id']);
+    try {
+        // Prima verifica che il task sia fatturabile
+        $stmt_check = $pdo->prepare("SELECT fatturabile, descrizione FROM task WHERE id = ?");
+        $stmt_check->execute([$id]);
+        $task_data = $stmt_check->fetch();
+        
+        if ($task_data && $task_data['fatturabile'] == 1) {
+            // Segna il task come fatturato (impostando fatturabile a 0)
+            $stmt = $pdo->prepare("UPDATE task SET fatturabile = 0 WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            // Log dell'operazione
+            $log_entry = sprintf(
+                "[%s] TASK FATTURATO: %s | Utente: %s\n",
+                date('d/m/Y H:i:s'),
+                $task_data['descrizione'],
+                $user_name
+            );
+            
+            $log_dir = __DIR__ . '/logs/';
+            if (!is_dir($log_dir)) {
+                mkdir($log_dir, 0755, true);
+            }
+            file_put_contents($log_dir . 'task_fatturati.txt', $log_entry, FILE_APPEND | LOCK_EX);
+            
+            header("Location: task.php?fatturato=1");
+            exit;
+        } else {
+            header("Location: task.php?error=Il task non è fatturabile o non esiste");
+            exit;
+        }
+    } catch (Exception $e) {
+        error_log("Errore fatturazione task: " . $e->getMessage());
+        header("Location: task.php?error=Errore durante la marcatura come fatturato");
+        exit;
+    }
+}
+
 // Ricerca
 $search = $_GET['search'] ?? '';
 
@@ -759,6 +800,12 @@ foreach ($task_list as $task) {
                         <?php if ($is_recurring): ?>
                             <!-- Task ricorrente -->
                             <button class="btn btn-primary btn-sm" onclick="openTaskModal(<?= $task['id'] ?>)" data-tooltip="Modifica questo task">✏️ Modifica</button>
+                            <?php if (!empty($task['fatturabile']) && $task['fatturabile'] == 1): ?>
+                                <form method="post" style="display:inline;" onsubmit="return confirm('Confermi che questo task è stato fatturato?');">
+                                    <input type="hidden" name="fatturato_id" value="<?= $task['id'] ?>">
+                                    <button type="submit" class="btn btn-info btn-sm" data-tooltip="Segna come fatturato">💰 Fatturato</button>
+                                </form>
+                            <?php endif; ?>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task ricorrente? Sarà ricreato con la prossima scadenza.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà ricreato con la prossima scadenza">✅ Completato</button>
@@ -770,6 +817,12 @@ foreach ($task_list as $task) {
                         <?php else: ?>
                             <!-- Task non ricorrente -->
                             <button class="btn btn-primary btn-sm" onclick="openTaskModal(<?= $task['id'] ?>)" data-tooltip="Modifica questo task">✏️ Modifica</button>
+                            <?php if (!empty($task['fatturabile']) && $task['fatturabile'] == 1): ?>
+                                <form method="post" style="display:inline;" onsubmit="return confirm('Confermi che questo task è stato fatturato?');">
+                                    <input type="hidden" name="fatturato_id" value="<?= $task['id'] ?>">
+                                    <button type="submit" class="btn btn-info btn-sm" data-tooltip="Segna come fatturato">💰 Fatturato</button>
+                                </form>
+                            <?php endif; ?>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Completare questo task? Sarà eliminato definitivamente.');">
                                 <input type="hidden" name="complete_id" value="<?= $task['id'] ?>">
                                 <button type="submit" class="btn btn-success btn-sm" data-tooltip="Il task sarà eliminato definitivamente">✅ Completato</button>
