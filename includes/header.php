@@ -25,16 +25,10 @@ if (isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <title><?= SITE_NAME ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <!-- Chat Footer System CSS -->
-    <link rel="stylesheet" href="/assets/css/chat-footer.css">
     <!-- Bootstrap CDN for modern style -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php'])): ?>
-    <!-- Socket.IO Library via CDN with cache busting -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js?v=<?= time() ?>"></script>
-    <?php endif; ?>
     <style>
         body {
             background: #f8f9fa;
@@ -193,16 +187,5 @@ if (isset($_SESSION['user_id'])) {
         </ul>
     </nav>
 </header>
-
-<div id="crm-chat-container">
-    <!-- Rimosso vecchio sistema chat widget -->
-    <!-- <?php // include __DIR__ . '/chat_pratiche_widget.php'; ?> -->
-    <!-- <?php // include __DIR__ . '/chat_widget.php'; ?> -->
-</div>
-
-<?php if (!in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php'])): ?>
-<!-- New Chat Footer System -->
-<script src="/assets/js/chat-system.js?v=<?= time() ?>"></script>
-<?php endif; ?>
 
 <main style="padding: 20px;">

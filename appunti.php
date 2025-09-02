@@ -33,21 +33,39 @@ include __DIR__ . '/includes/header.php';
     <button type="submit">Salva Appunto</button>
 </form>
 
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
-   const socket = io('<?= getSocketIOUrl() ?>');
-
-
     function inviaAppunto(e) {
         e.preventDefault();
         const testo = document.getElementById("testo").value.trim();
         if (testo) {
-            socket.emit('nuovo appunto', {
-                utente_id: <?= $utente_id ?>,
-                utente_nome: <?= json_encode($utente_nome) ?>,
-                pratica_id: <?= $pratica_id ?>,
-                testo: testo
+            // Invia appunto via AJAX normale
+            fetch('api/salva_appunto.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    utente_id: <?= $utente_id ?>,
+                    utente_nome: <?= json_encode($utente_nome) ?>,
+                    pratica_id: <?= $pratica_id ?>,
+                    testo: testo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("testo").value = "";
+                    // Ricarica la pagina per mostrare il nuovo appunto
+                    location.reload();
+                } else {
+                    alert('Errore nel salvare l\'appunto');
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                alert('Errore di connessione');
             });
+        }
             document.getElementById("testo").value = '';
         }
     }
