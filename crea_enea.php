@@ -264,7 +264,7 @@ if (!$is_popup) {
                                                 <option value="PENDING" <?= ($_POST[$campo] ?? 'PENDING') == 'PENDING' ? 'selected' : '' ?>>
                                                     <i class="fas fa-clock"></i> In Attesa
                                                 </option>
-                                                <option value="SI" <?= ($_POST[$campo] ?? '') == 'SI' ? 'selected' : '' ?>>
+                                                <option value="OK" <?= ($_POST[$campo] ?? '') == 'OK' ? 'selected' : '' ?>>
                                                     ✅ Completato
                                                 </option>
                                                 <option value="NO" <?= ($_POST[$campo] ?? '') == 'NO' ? 'selected' : '' ?>>

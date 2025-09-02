@@ -314,7 +314,7 @@ if (!$is_popup) {
                                                 <option value="PENDING" <?= ($record[$campo] ?? 'PENDING') == 'PENDING' ? 'selected' : '' ?>>
                                                     🟡 In Attesa
                                                 </option>
-                                                <option value="SI" <?= ($record[$campo] ?? '') == 'SI' ? 'selected' : '' ?>>
+                                                <option value="OK" <?= ($record[$campo] ?? '') == 'OK' ? 'selected' : '' ?>>
                                                     ✅ Completato
                                                 </option>
                                                 <option value="NO" <?= ($record[$campo] ?? '') == 'NO' ? 'selected' : '' ?>>
