@@ -208,11 +208,11 @@ include 'includes/header.php';
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <button type="button" onclick="openContoTermicoModal(<?= $record['id'] ?>)" 
-                                                       class="btn btn-outline-primary" title="Modifica">
-                                                        <i class="fas fa-edit"></i>
+                                                       class="btn btn-outline-primary" title="Aggiorna pratica">
+                                                        <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
-                                                       class="btn btn-outline-danger" title="Elimina"
+                                                       class="btn btn-outline-danger" title="Elimina record"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record?')">
                                                         <i class="fas fa-trash"></i>
                                                     </a>
@@ -399,7 +399,7 @@ function openContoTermicoModal(id = null) {
     if (id) {
         // Modalità modifica
         iframe.src = `modifica_conto_termico.php?id=${id}&popup=1`;
-        title.innerHTML = '<i class="fas fa-edit me-2"></i>Modifica Conto Termico';
+        title.innerHTML = '<i class="fas fa-edit me-2"></i>Aggiorna Conto Termico';
     } else {
         // Modalità creazione
         iframe.src = 'crea_conto_termico.php?popup=1';
