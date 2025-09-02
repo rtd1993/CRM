@@ -462,11 +462,17 @@ $stats = [
     'settimana' => 0,
     'quindici_giorni' => 0,
     'ricorrenti' => 0,
-    'oneshot' => 0
+    'oneshot' => 0,
+    'fatturabili' => 0
 ];
 
 foreach ($tasks as $task) {
     $stats['totali']++;
+    
+    // Conteggio task fatturabili
+    if (!empty($task['fatturabile']) && $task['fatturabile'] == 1) {
+        $stats['fatturabili']++;
+    }
     
     // Usa la categoria pre-calcolata nel SQL
     switch ($task['categoria_scadenza']) {
@@ -1508,6 +1514,11 @@ foreach ($tasks as $task) {
             <i class="fas fa-tasks"></i>
             <span class="stat-number"><?= $stats['totali'] ?></span>
             <span class="stat-label">Totali</span>
+            <?php if ($stats['fatturabili'] > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 2px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $stats['fatturabili'] ?> da fatturare
+                </div>
+            <?php endif; ?>
         </div>
         <div class="stat-item danger">
             <i class="fas fa-exclamation-triangle"></i>
