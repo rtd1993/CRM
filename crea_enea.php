@@ -3,20 +3,9 @@ require_once 'includes/auth.php';
 require_once 'includes/db.php';
 require_login();
 
-$page_title = "Nuovo Record ENEA";<div class="<?= $is_popup ? 'popup-container' : 'container-fluid mt-4' ?>">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-plus-circle text-success me-2"></i><?= $page_title ?>
-                    </h4>
-                    <?php if (!$is_popup): ?>
-                    <a href="enea.php" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Torna all'elenco
-                    </a>
-                    <?php endif; ?>
-                </div> [];
+$page_title = "Nuovo Record ENEA";
+
+$errors = [];
 $success_message = '';
 
 // Carica lista clienti
