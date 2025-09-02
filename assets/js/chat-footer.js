@@ -166,6 +166,8 @@ class ChatFooterSystem {
      */
     async loadInitialData() {
         try {
+            this.log('Caricamento dati iniziali...');
+            
             // Carica chat private esistenti
             await this.loadPrivateChats();
             
@@ -175,8 +177,22 @@ class ChatFooterSystem {
             // Carica contatori non letti
             await this.updateUnreadCounts();
             
+            this.log('Dati iniziali caricati con successo');
+            
         } catch (error) {
             this.log('Errore caricamento dati iniziali:', error);
+            
+            // Se è un errore di autenticazione, nascondi il widget
+            if (error.message && error.message.includes('401')) {
+                this.log('Utente non autenticato, nascondo widget');
+                if (this.elements.widget) {
+                    this.elements.widget.style.display = 'none';
+                }
+                return;
+            }
+            
+            // Per altri errori, mostra un messaggio ma continua
+            this.showError('Errore caricamento chat. Riprovo tra poco...');
         }
     }
     
@@ -809,6 +825,51 @@ class ChatFooterSystem {
         if (this.config.debug) {
             console.log('[ChatFooter]', ...args);
         }
+    }
+    
+    /**
+     * Mostra messaggio di errore
+     */
+    showError(message) {
+        this.log('ERROR:', message);
+        
+        // Trova o crea un contenitore per gli errori
+        let errorContainer = document.getElementById('chatErrorContainer');
+        if (!errorContainer) {
+            errorContainer = document.createElement('div');
+            errorContainer.id = 'chatErrorContainer';
+            errorContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #dc3545;
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-size: 14px;
+                max-width: 300px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            document.body.appendChild(errorContainer);
+        }
+        
+        errorContainer.textContent = message;
+        errorContainer.style.opacity = '1';
+        
+        // Nascondi automaticamente dopo 5 secondi
+        setTimeout(() => {
+            if (errorContainer) {
+                errorContainer.style.opacity = '0';
+                setTimeout(() => {
+                    if (errorContainer && errorContainer.parentNode) {
+                        errorContainer.parentNode.removeChild(errorContainer);
+                    }
+                }, 300);
+            }
+        }, 5000);
     }
     
     /**
