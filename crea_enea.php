@@ -93,7 +93,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ev_atto_notorio
             ]);
 
-            $success_message = "Record ENEA creato con successo!";
+            // Ottieni l'ID del record appena inserito
+            $enea_id = $pdo->lastInsertId();
+            
+            // Crea cartella ENEA nel Drive del cliente
+            try {
+                // Recupera i dati del cliente per il codice fiscale
+                $cliente_stmt = $pdo->prepare("SELECT Codice_fiscale FROM clienti WHERE id = ?");
+                $cliente_stmt->execute([$cliente_id]);
+                $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($cliente_data && !empty($cliente_data['Codice_fiscale'])) {
+                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Codice_fiscale']);
+                    $base_path = '/var/www/CRM/local_drive';
+                    $cliente_path = $base_path . '/' . $codice_fiscale_clean;
+                    
+                    // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
+                    $folder_name = 'ENEA_' . $anno_fiscale;
+                    if (!empty($descrizione)) {
+                        // Pulisci la descrizione per nome cartella
+                        $desc_clean = preg_replace('/[^A-Za-z0-9\s]/', '', $descrizione);
+                        $desc_clean = preg_replace('/\s+/', '_', trim($desc_clean));
+                        $folder_name .= '_' . $desc_clean;
+                    }
+                    
+                    $enea_folder_path = $cliente_path . '/' . $folder_name;
+                    
+                    // Crea la cartella ENEA se non esiste
+                    if (!is_dir($enea_folder_path)) {
+                        if (mkdir($enea_folder_path, 0755, true)) {
+                            // Crea file README nella cartella ENEA
+                            $readme_content = "Cartella ENEA - Cliente: " . $cliente_data['Codice_fiscale'] . "\n";
+                            $readme_content .= "Anno Fiscale: " . $anno_fiscale . "\n";
+                            $readme_content .= "Tipo Detrazione: " . $tipo_detrazione . "\n";
+                            if (!empty($descrizione)) $readme_content .= "Descrizione: " . $descrizione . "\n";
+                            $readme_content .= "Creata il: " . date('d/m/Y H:i:s') . "\n\n";
+                            $readme_content .= "Documenti da caricare:\n";
+                            $readme_content .= "- Copia Fattura Fornitore\n";
+                            $readme_content .= "- Schede Tecniche\n";
+                            $readme_content .= "- Visura Catastale\n";
+                            $readme_content .= "- Firma Notorio\n";
+                            $readme_content .= "- Firma Delega Ag. Entr.\n";
+                            $readme_content .= "- Firma Delega ENEA\n";
+                            $readme_content .= "- Consenso\n";
+                            $readme_content .= "- Ev. Atto Notorio\n";
+                            
+                            file_put_contents($enea_folder_path . '/README.txt', $readme_content);
+                            
+                            error_log("Cartella ENEA creata: $enea_folder_path per cliente $cliente_id");
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Errore creazione cartella ENEA per cliente $cliente_id: " . $e->getMessage());
+                // Non interrompere il flusso per errori di cartella
+            }
+
+            $success_message = "Record ENEA creato con successo! Cartella documenti preparata.";
             
             // Se è in modalità popup, chiudi il modal
             if (isset($_GET['popup'])) {
@@ -347,7 +403,8 @@ if (!$is_popup) {
                             </div>
                         </div>
 
-                        <!-- Documenti e Firme -->
+                        <!-- Documenti e Firme - Nascosto in creazione, impostati automaticamente in PENDING -->
+                        <?php /* 
                         <div class="card mb-4">
                             <div class="card-header bg-warning text-dark">
                                 <h5 class="mb-0"><i class="fas fa-file-signature me-2"></i>Documenti e Firme</h5>
@@ -377,7 +434,7 @@ if (!$is_popup) {
                                                     ✅ Completato
                                                 </option>
                                                 <option value="NO" <?= ($_POST[$campo] ?? '') == 'NO' ? 'selected' : '' ?>>
-                                                    ❌ Non Fatto
+                                                    ❌ Non Richiesto
                                                 </option>
                                             </select>
                                         </div>
@@ -385,6 +442,7 @@ if (!$is_popup) {
                                 </div>
                             </div>
                         </div>
+                        */ ?>
 
                         <div class="d-flex justify-content-between">
                             <a href="enea.php" class="btn btn-secondary">

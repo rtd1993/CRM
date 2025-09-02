@@ -52,7 +52,7 @@ if (!empty($search_stato)) {
 $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Query per recuperare i record
-$sql = "SELECT e.*, CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.`Nome`, '')) as nome_cliente
+$sql = "SELECT e.*, CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.`Nome`, '')) as nome_cliente, c.Codice_fiscale
         FROM enea e 
         LEFT JOIN clienti c ON e.cliente_id = c.id 
         $where_clause
@@ -113,7 +113,7 @@ include 'includes/header.php';
                             <select class="form-select" id="search_stato" name="search_stato">
                                 <option value="">Tutti gli stati</option>
                                 <option value="OK" <?= $search_stato == 'OK' ? 'selected' : '' ?>>Completato</option>
-                                <option value="NO" <?= $search_stato == 'NO' ? 'selected' : '' ?>>Non fatto</option>
+                                <option value="NO" <?= $search_stato == 'NO' ? 'selected' : '' ?>>Non richiesto</option>
                                 <option value="PENDING" <?= $search_stato == 'PENDING' ? 'selected' : '' ?>>In attesa</option>
                             </select>
                         </div>
@@ -173,6 +173,19 @@ include 'includes/header.php';
                                             if ($record[$campo] === 'OK') $completati++;
                                         }
                                         $percentuale = round(($completati / count($campi_doc)) * 100);
+                                        
+                                        // Calcola percorso cartella ENEA
+                                        $enea_folder_relative = '';
+                                        if (!empty($record['Codice_fiscale'])) {
+                                            $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $record['Codice_fiscale']);
+                                            $folder_name = 'ENEA_' . $record['anno_fiscale'];
+                                            if (!empty($record['descrizione'])) {
+                                                $desc_clean = preg_replace('/[^A-Za-z0-9\s]/', '', $record['descrizione']);
+                                                $desc_clean = preg_replace('/\s+/', '_', trim($desc_clean));
+                                                $folder_name .= '_' . $desc_clean;
+                                            }
+                                            $enea_folder_relative = $codice_fiscale_clean . '/' . $folder_name;
+                                        }
                                         ?>
                                         <tr>
                                             <td><strong>#<?= $record['id'] ?></strong></td>
@@ -221,6 +234,12 @@ include 'includes/header.php';
                                                        class="btn btn-outline-primary" title="Aggiorna pratica">
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
+                                                    <?php if (!empty($enea_folder_relative)): ?>
+                                                        <button type="button" onclick="openEneaFolder('<?= $enea_folder_relative ?>')" 
+                                                           class="btn btn-outline-info" title="Apri cartella documenti">
+                                                            <i class="fas fa-folder-open me-1"></i>Documenti
+                                                        </button>
+                                                    <?php endif; ?>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record ENEA?')">
@@ -466,4 +485,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
 window.closeEneaModal = closeEneaModal;
+
+// Funzione per aprire la cartella documenti ENEA
+function openEneaFolder(folderPath) {
+    const driveUrl = `drive.php?path=${encodeURIComponent(folderPath)}`;
+    window.open(driveUrl, '_blank');
+}
 </script>

@@ -24,6 +24,34 @@ try {
         header('Location: enea.php');
         exit;
     }
+    
+    // Determina il percorso della cartella ENEA per i pulsanti upload
+    $enea_folder_path = '';
+    $enea_folder_relative = '';
+    if (!empty($record['cliente_id'])) {
+        try {
+            $cliente_stmt = $pdo->prepare("SELECT Codice_fiscale FROM clienti WHERE id = ?");
+            $cliente_stmt->execute([$record['cliente_id']]);
+            $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($cliente_data && !empty($cliente_data['Codice_fiscale'])) {
+                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Codice_fiscale']);
+                
+                // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
+                $folder_name = 'ENEA_' . $record['anno_fiscale'];
+                if (!empty($record['descrizione'])) {
+                    $desc_clean = preg_replace('/[^A-Za-z0-9\s]/', '', $record['descrizione']);
+                    $desc_clean = preg_replace('/\s+/', '_', trim($desc_clean));
+                    $folder_name .= '_' . $desc_clean;
+                }
+                
+                $enea_folder_path = '/var/www/CRM/local_drive/' . $codice_fiscale_clean . '/' . $folder_name;
+                $enea_folder_relative = $codice_fiscale_clean . '/' . $folder_name;
+            }
+        } catch (Exception $e) {
+            error_log("Errore nel determinare percorso cartella ENEA: " . $e->getMessage());
+        }
+    }
 } catch (Exception $e) {
     $errors[] = "Errore nel caricamento del record: " . $e->getMessage();
 }
@@ -420,17 +448,31 @@ if (!$is_popup) {
                                     foreach ($documenti as $campo => $label): ?>
                                         <div class="col-md-3 mb-3">
                                             <label for="<?= $campo ?>" class="form-label"><?= $label ?></label>
-                                            <select class="form-select documento-select" id="<?= $campo ?>" name="<?= $campo ?>">
-                                                <option value="PENDING" <?= ($record[$campo] ?? 'PENDING') == 'PENDING' ? 'selected' : '' ?>>
-                                                    🟡 In Attesa
-                                                </option>
-                                                <option value="OK" <?= ($record[$campo] ?? '') == 'OK' ? 'selected' : '' ?>>
-                                                    ✅ Completato
-                                                </option>
-                                                <option value="NO" <?= ($record[$campo] ?? '') == 'NO' ? 'selected' : '' ?>>
-                                                    ❌ Non Fatto
-                                                </option>
-                                            </select>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <select class="form-select documento-select flex-grow-1" id="<?= $campo ?>" name="<?= $campo ?>">
+                                                    <option value="PENDING" <?= ($record[$campo] ?? 'PENDING') == 'PENDING' ? 'selected' : '' ?>>
+                                                        🟡 In Attesa
+                                                    </option>
+                                                    <option value="OK" <?= ($record[$campo] ?? '') == 'OK' ? 'selected' : '' ?>>
+                                                        ✅ Completato
+                                                    </option>
+                                                    <option value="NO" <?= ($record[$campo] ?? '') == 'NO' ? 'selected' : '' ?>>
+                                                        ❌ Non Richiesto
+                                                    </option>
+                                                </select>
+                                                <?php if (!empty($enea_folder_relative)): ?>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            onclick="openUploadModal('<?= $label ?>', '<?= $enea_folder_relative ?>', '<?= $campo ?>')"
+                                                            title="Carica <?= $label ?>">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                            onclick="openFolderInDrive('<?= $enea_folder_relative ?>')"
+                                                            title="Apri cartella">
+                                                        <i class="fas fa-folder-open"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -510,6 +552,89 @@ document.querySelectorAll('.documento-select').forEach(select => {
 
 // Inizializza al caricamento
 document.addEventListener('DOMContentLoaded', updateProgressIndicator);
+
+// Funzioni per gestione upload documenti ENEA
+function openUploadModal(documentName, folderPath, fieldName) {
+    // Apri il modal di upload del drive puntando alla cartella ENEA
+    const uploadUrl = `upload.php?path=${encodeURIComponent(folderPath)}&document=${encodeURIComponent(documentName)}&field=${fieldName}&enea_id=<?= $id ?>`;
+    
+    // Crea un modal popup per l'upload
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Carica ${documentName}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <iframe src="${uploadUrl}" style="width: 100%; height: 400px; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // Rimuovi il modal quando viene chiuso
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+}
+
+function openFolderInDrive(folderPath) {
+    // Apri la cartella ENEA nel drive
+    const driveUrl = `drive.php?path=${encodeURIComponent(folderPath)}`;
+    window.open(driveUrl, '_blank');
+}
+
+// Funzione per aggiornare automaticamente lo stato del documento dopo upload
+function updateDocumentStatus(fieldName, status = 'OK') {
+    const select = document.getElementById(fieldName);
+    if (select) {
+        select.value = status;
+        updateProgressIndicator();
+        
+        // Salva automaticamente la modifica
+        const form = document.getElementById('eneaForm');
+        if (form) {
+            const formData = new FormData(form);
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Mostra notifica di successo
+                    showNotification('Documento aggiornato con successo!', 'success');
+                }
+            }).catch(error => {
+                console.error('Errore aggiornamento documento:', error);
+            });
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Rimuovi automaticamente dopo 3 secondi
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
 </script>
 
 <style>
