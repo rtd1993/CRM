@@ -4,6 +4,7 @@
  * Data: 2025-09-02
  */
 
+
 class ChatFooterSystem {
     constructor() {
         this.isInitialized = false;

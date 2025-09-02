@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     return;
 }
 
+
 // Carica lista clienti per chat pratiche
 try {
     $stmt = $pdo->prepare("SELECT id, Cognome_Ragione_sociale AS nome FROM clienti ORDER BY Cognome_Ragione_sociale ASC");
