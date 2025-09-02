@@ -70,9 +70,9 @@ include 'includes/header.php';
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-file-contract text-success me-2"></i><?= $page_title ?></h2>
-                <a href="crea_enea.php" class="btn btn-success">
+                <button type="button" onclick="openEneaModal()" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i>Nuovo Record ENEA
-                </a>
+                </button>
             </div>
 
             <?php if ($success_message): ?>
@@ -217,10 +217,10 @@ include 'includes/header.php';
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="modifica_enea.php?id=<?= $record['id'] ?>" 
+                                                    <button type="button" onclick="openEneaModal(<?= $record['id'] ?>)" 
                                                        class="btn btn-outline-primary" title="Aggiorna pratica">
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
-                                                    </a>
+                                                    </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record ENEA?')">
@@ -275,7 +275,198 @@ include 'includes/header.php';
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Stili per il modal ENEA */
+.enea-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.enea-modal-content {
+    position: relative;
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInFromTop 0.4s ease-out;
+    overflow: hidden;
+}
+
+.enea-modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.enea-modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.enea-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.enea-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.enea-modal-body {
+    height: calc(90vh - 100px);
+    overflow: hidden;
+}
+
+.enea-modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive design per il modal */
+@media (max-width: 768px) {
+    .enea-modal-content {
+        width: 95%;
+        height: 95vh;
+        margin: 2.5% auto;
+    }
+    
+    .enea-modal-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .enea-modal-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .enea-modal-body {
+        height: calc(95vh - 80px);
+    }
+}
 </style>
+
+<!-- Modal per ENEA -->
+<div id="eneaModal" class="enea-modal">
+    <div class="enea-modal-content">
+        <div class="enea-modal-header">
+            <h3 id="eneaModalTitle">
+                <i class="fas fa-file-contract me-2"></i>Gestione ENEA
+            </h3>
+            <button type="button" class="enea-close" onclick="closeEneaModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="enea-modal-body">
+            <iframe id="eneaModalFrame" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funzioni per gestire il modal ENEA
+function openEneaModal(id = null) {
+    const modal = document.getElementById('eneaModal');
+    const iframe = document.getElementById('eneaModalFrame');
+    const title = document.getElementById('eneaModalTitle');
+    
+    if (id) {
+        // Modalità modifica
+        iframe.src = `modifica_enea.php?id=${id}&popup=1`;
+        title.innerHTML = '<i class="fas fa-edit me-2"></i>Aggiorna ENEA';
+    } else {
+        // Modalità creazione
+        iframe.src = 'crea_enea.php?popup=1';
+        title.innerHTML = '<i class="fas fa-plus me-2"></i>Nuovo ENEA';
+    }
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Event listener per chiudere con ESC
+    document.addEventListener('keydown', handleEneaEscape);
+}
+
+function closeEneaModal() {
+    const modal = document.getElementById('eneaModal');
+    const iframe = document.getElementById('eneaModalFrame');
+    
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    iframe.src = '';
+    
+    // Rimuovi event listener ESC
+    document.removeEventListener('keydown', handleEneaEscape);
+    
+    // Ricarica la pagina per mostrare le modifiche
+    window.location.reload();
+}
+
+function handleEneaEscape(event) {
+    if (event.key === 'Escape') {
+        closeEneaModal();
+    }
+}
+
+// Chiudi modal cliccando fuori dall'area del contenuto
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('eneaModal');
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeEneaModal();
+        }
+    });
+});
+
+// Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
+window.closeEneaModal = closeEneaModal;
+</script>
 
 <?php include 'includes/chat_widget.php'; ?>
 <?php include 'includes/chat_pratiche_widget.php'; ?>

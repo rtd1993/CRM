@@ -3,9 +3,20 @@ require_once 'includes/auth.php';
 require_once 'includes/db.php';
 require_login();
 
-$page_title = "Nuovo Record ENEA";
-
-$errors = [];
+$page_title = "Nuovo Record ENEA";<div class="<?= $is_popup ? 'popup-container' : 'container-fluid mt-4' ?>">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle text-success me-2"></i><?= $page_title ?>
+                    </h4>
+                    <?php if (!$is_popup): ?>
+                    <a href="enea.php" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Torna all'elenco
+                    </a>
+                    <?php endif; ?>
+                </div> [];
 $success_message = '';
 
 // Carica lista clienti
@@ -78,6 +89,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $success_message = "Record ENEA creato con successo!";
             
+            // Se è in modalità popup, chiudi il modal
+            if (isset($_GET['popup'])) {
+                echo "<script>
+                    if (parent && parent.closeEneaModal) {
+                        setTimeout(() => parent.closeEneaModal(), 1000);
+                    }
+                </script>";
+            }
+            
             // Reset form
             $_POST = [];
         } catch (Exception $e) {
@@ -86,7 +106,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-include 'includes/header.php';
+// Modalità popup - non includere header
+$is_popup = isset($_GET['popup']);
+if (!$is_popup) {
+    include 'includes/header.php';
+} else {
+    // Header minimale per popup
+    echo '<!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>' . $page_title . '</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <style>
+            body { 
+                margin: 0; 
+                padding: 20px; 
+                background: #f8f9fa;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .popup-container {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>';
+}
 ?>
 
 <div class="container-fluid mt-4">
@@ -316,5 +366,11 @@ textarea.form-control {
 }
 </style>
 
-<?php include 'includes/chat_widget.php'; ?>
-<?php include 'includes/chat_pratiche_widget.php'; ?>
+<?php 
+if ($is_popup) {
+    echo '</body></html>';
+} else {
+    include 'includes/chat_widget.php';
+    include 'includes/chat_pratiche_widget.php';
+}
+?>
