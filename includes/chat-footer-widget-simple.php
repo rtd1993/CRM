@@ -227,7 +227,7 @@ $user_name = $_SESSION['user_name'];
 </div>
 
 <!-- Modal per selezione utente (Chat Private) -->
-<div id="userSelectionModal" class="modal fade" tabindex="-1" aria-hidden="true">
+<div id="userSelectionModal" class="modal fade" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header">
@@ -235,7 +235,7 @@ $user_name = $_SESSION['user_name'];
                     <i class="fas fa-user-plus"></i>
                     Nuova Chat Privata
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
                 <p class="mb-3">Seleziona un utente con cui iniziare una chat privata:</p>
