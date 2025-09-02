@@ -22,7 +22,7 @@ $_SESSION['user_role'] = 'admin';
             padding: 20px;
             margin-bottom: 20px;
         }
-        
+
         .api-test-btn {
             margin: 5px;
         }
@@ -75,7 +75,7 @@ $_SESSION['user_role'] = 'admin';
     </div>
 
     <!-- Chat Widget -->
-    <?php include 'includes/chat-footer-widget.php'; ?>
+    <?php include 'includes/chat-footer-widget-simple.php'; ?>
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
