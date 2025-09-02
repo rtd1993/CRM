@@ -95,9 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $note ?: null,
                 $id
             ]);
-                $mese ?: null,
-                $id
-            ]);
 
             $success_message = "Record aggiornato con successo!";
             
