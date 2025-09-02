@@ -234,20 +234,20 @@ $clienti = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Appunti cliente -->
+    <!-- Chat Pratiche -->
     <div class="chat-section">
-        <h3>Appunti Cliente</h3>
-        <label class="select-label">👤 Seleziona Cliente:</label>
-        <select id="cliente-select" class="cliente-select" onchange="caricaAppunti()">
-            <option value="">-- Seleziona un cliente --</option>
+        <h3>Chat Pratiche</h3>
+        <label class="select-label">👤 Seleziona Cliente/Pratica:</label>
+        <select id="cliente-select" class="cliente-select" onchange="caricaPraticaChat()">
+            <option value="">-- Seleziona una pratica --</option>
             <?php foreach ($clienti as $c): ?>
                 <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
             <?php endforeach; ?>
         </select>
         <div id="appunti-cronologia" class="chat-cronologia"></div>
         <div class="chat-input-group">
-            <input type="text" id="appunto-input" class="chat-input" placeholder="Scrivi un appunto...">
-            <button id="appunto-invia" class="chat-button">📝 Salva</button>
+            <input type="text" id="appunto-input" class="chat-input" placeholder="Scrivi un messaggio sulla pratica...">
+            <button id="appunto-invia" class="chat-button">� Invia</button>
         </div>
     </div>
 </div>
@@ -321,11 +321,25 @@ socket.on("chat message", data => {
 
 // Carica cronologia iniziale
 fetch("api/chat_cronologia.php")
-.then(res => res.json())
-.then(data => {
-    data.forEach(m => aggiornaChat(m.nome, m.messaggio));
+.then(res => {
+    if (!res.ok) {
+        throw new Error('Errore HTTP: ' + res.status);
+    }
+    return res.json();
 })
-.catch(err => console.error('Errore caricamento cronologia:', err));
+.then(data => {
+    const area = document.getElementById("chat-cronologia");
+    if (data.length === 0) {
+        area.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nessun messaggio nella chat globale</p>';
+    } else {
+        data.forEach(m => aggiornaChat(m.nome, m.messaggio));
+    }
+})
+.catch(err => {
+    console.error('Errore caricamento cronologia:', err);
+    document.getElementById("chat-cronologia").innerHTML = 
+        '<p style="text-align: center; color: #dc3545;">❌ Errore nel caricamento dei messaggi: ' + err.message + '</p>';
+});
 
 // === CHAT PRATICHE / APPUNTI ===
 function aggiornaAppunti(mittente, messaggio) {
@@ -350,36 +364,41 @@ function aggiornaAppunti(mittente, messaggio) {
     }, 10);
 }
 
-function caricaAppunti() {
+function caricaPraticaChat() {
     const select = document.getElementById("cliente-select");
     const id = select.value;
     
     if (!id) {
         document.getElementById("appunti-cronologia").innerHTML = 
-            '<p style="text-align: center; color: #6c757d; font-style: italic;">Seleziona un cliente per visualizzare gli appunti</p>';
+            '<p style="text-align: center; color: #6c757d; font-style: italic;">Seleziona una pratica per visualizzare i messaggi</p>';
         return;
     }
     
     // Mostra loading
     document.getElementById("appunti-cronologia").innerHTML = 
-        '<p style="text-align: center; color: #6c757d;"><span class="status-indicator"></span> Caricamento appunti...</p>';
+        '<p style="text-align: center; color: #6c757d;"><span class="status-indicator"></span> Caricamento messaggi pratica...</p>';
     
     fetch("api/chat_pratica_cronologia.php?pratica_id=" + id)
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Errore HTTP: ' + res.status);
+        }
+        return res.json();
+    })
     .then(data => {
         const area = document.getElementById("appunti-cronologia");
         area.innerHTML = "";
         
         if (data.length === 0) {
-            area.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nessun appunto per questo cliente</p>';
+            area.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nessun messaggio per questa pratica</p>';
         } else {
             data.forEach(m => aggiornaAppunti(m.nome, m.messaggio));
         }
     })
     .catch(err => {
-        console.error('Errore caricamento appunti:', err);
+        console.error('Errore caricamento messaggi pratica:', err);
         document.getElementById("appunti-cronologia").innerHTML = 
-            '<p style="text-align: center; color: #dc3545;">Errore nel caricamento degli appunti</p>';
+            '<p style="text-align: center; color: #dc3545;">❌ Errore nel caricamento dei messaggi: ' + err.message + '</p>';
     });
 }
 
@@ -398,21 +417,21 @@ function inviaAppunto() {
     const msg = input.value.trim();
     
     if (!id) {
-        alert("⚠️ Seleziona prima un cliente");
+        alert("⚠️ Seleziona prima una pratica");
         return;
     }
     
     if (!msg) {
-        alert("⚠️ Scrivi un appunto");
+        alert("⚠️ Scrivi un messaggio");
         return;
     }
     
     // Disabilita temporaneamente il pulsante
     const button = document.getElementById("appunto-invia");
     button.disabled = true;
-    button.innerHTML = '⏳ Salvo...';
+    button.innerHTML = '⏳ Invio...';
 
-    socket.emit("nuovo appunto", {
+    socket.emit("messaggio pratica", {
         utente_id: <?= $user_id ?>,
         utente_nome: "<?= addslashes($user_name) ?>",
         pratica_id: id,
@@ -425,11 +444,11 @@ function inviaAppunto() {
     // Riattiva il pulsante
     setTimeout(() => {
         button.disabled = false;
-        button.innerHTML = '📝 Salva';
+        button.innerHTML = '� Invia';
     }, 1000);
 }
 
-socket.on("appunto aggiunto", data => {
+socket.on("messaggio pratica inviato", data => {
     const selezionato = document.getElementById("cliente-select").value;
     if (selezionato == data.pratica_id) {
         aggiornaAppunti(data.utente_nome, data.testo);
