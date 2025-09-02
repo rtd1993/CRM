@@ -1007,6 +1007,4 @@ setTimeout(() => {
 }, 900000);
 </script>
 
-</main>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
