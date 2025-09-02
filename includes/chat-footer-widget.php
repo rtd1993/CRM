@@ -480,9 +480,46 @@ window.chatConfig = {
     debug: <?= json_encode(isset($_GET['debug'])) ?>
 };
 
+// Debug immediato
+console.log('🚀 Chat Config caricato:', window.chatConfig);
+
+// Test elementi DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Verifica elementi DOM:');
+    const elementos = [
+        'chatFooterWidget',
+        'chatToggleBtn', 
+        'chatPanel',
+        'globalChatItem'
+    ];
+    
+    elementos.forEach(id => {
+        const el = document.getElementById(id);
+        console.log(`${id}:`, el ? '✅ Trovato' : '❌ Non trovato');
+    });
+    
+    // Test click manuale
+    const toggleBtn = document.getElementById('chatToggleBtn');
+    if (toggleBtn) {
+        console.log('👆 Aggiunto test click al toggle button');
+        toggleBtn.addEventListener('click', function(e) {
+            console.log('🎯 Click sul toggle button!', e);
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const panel = document.getElementById('chatPanel');
+            if (panel) {
+                const isHidden = panel.style.display === 'none' || !panel.style.display;
+                panel.style.display = isHidden ? 'block' : 'none';
+                console.log('📋 Panel display:', panel.style.display);
+            }
+        });
+    }
+});
+
 // Log di debug
 if (window.chatConfig.debug) {
-    console.log('Chat Config:', window.chatConfig);
+    console.log('🐛 Debug Mode attivato');
 }
 </script>
 
