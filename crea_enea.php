@@ -23,6 +23,14 @@ try {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validazione dati
     $cliente_id = $_POST['cliente_id'] ?? '';
+    $codice_enea = $_POST['codice_enea'] ?? '';
+    $anno_fiscale = $_POST['anno_fiscale'] ?? date('Y');
+    $tipo_detrazione = $_POST['tipo_detrazione'] ?? '50';
+    $importo_spesa = $_POST['importo_spesa'] ?? null;
+    $importo_detrazione = $_POST['importo_detrazione'] ?? null;
+    $stato = $_POST['stato'] ?? 'bozza';
+    $data_trasmissione = $_POST['data_trasmissione'] ?? null;
+    $note = $_POST['note'] ?? '';
     $descrizione = $_POST['descrizione'] ?? '';
     $prima_tel = $_POST['prima_tel'] ?? null;
     $richiesta_doc = $_POST['richiesta_doc'] ?? null;
@@ -51,14 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $pdo->prepare("
                 INSERT INTO enea 
-                (cliente_id, descrizione, prima_tel, richiesta_doc, ns_prev_n_del, ns_ord_n_del, ns_fatt_n_del, 
-                 bonifico_ns, copia_fatt_fornitore, schede_tecniche, visura_catastale, firma_notorio, 
-                 firma_delega_ag_entr, firma_delega_enea, consenso, ev_atto_notorio) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (cliente_id, codice_enea, anno_fiscale, tipo_detrazione, importo_spesa, importo_detrazione, 
+                 stato, data_trasmissione, note, descrizione, prima_tel, richiesta_doc, ns_prev_n_del, 
+                 ns_ord_n_del, ns_fatt_n_del, bonifico_ns, copia_fatt_fornitore, schede_tecniche, 
+                 visura_catastale, firma_notorio, firma_delega_ag_entr, firma_delega_enea, consenso, ev_atto_notorio) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
             $stmt->execute([
                 $cliente_id,
+                $codice_enea ?: null,
+                $anno_fiscale,
+                $tipo_detrazione,
+                $importo_spesa ?: null,
+                $importo_detrazione ?: null,
+                $stato,
+                $data_trasmissione ?: null,
+                $note ?: null,
                 $descrizione ?: null,
                 $prima_tel ?: null,
                 $richiesta_doc ?: null,
@@ -181,6 +198,98 @@ if (!$is_popup) {
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="codice_enea" class="form-label">Codice ENEA</label>
+                                        <input type="text" class="form-control" id="codice_enea" name="codice_enea" 
+                                               value="<?= htmlspecialchars($_POST['codice_enea'] ?? '') ?>"
+                                               placeholder="Inserisci codice ENEA">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="anno_fiscale" class="form-label">Anno Fiscale</label>
+                                        <select class="form-select" id="anno_fiscale" name="anno_fiscale">
+                                            <?php 
+                                            $anno_corrente = date('Y');
+                                            $anno_selezionato = $_POST['anno_fiscale'] ?? $anno_corrente;
+                                            for ($i = $anno_corrente; $i >= $anno_corrente - 5; $i--): ?>
+                                                <option value="<?= $i ?>" <?= $anno_selezionato == $i ? 'selected' : '' ?>>
+                                                    <?= $i ?>
+                                                </option>
+                                            <?php endfor; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tipo_detrazione" class="form-label">Tipo Detrazione</label>
+                                        <select class="form-select" id="tipo_detrazione" name="tipo_detrazione">
+                                            <?php 
+                                            $tipi = [
+                                                '50' => '50%',
+                                                '65' => '65%', 
+                                                '110' => 'Superbonus 110%',
+                                                'bonus_facciate' => 'Bonus Facciate'
+                                            ];
+                                            $tipo_selezionato = $_POST['tipo_detrazione'] ?? '50';
+                                            foreach ($tipi as $valore => $label): ?>
+                                                <option value="<?= $valore ?>" <?= $tipo_selezionato == $valore ? 'selected' : '' ?>>
+                                                    <?= $label ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="importo_spesa" class="form-label">Importo Spesa (€)</label>
+                                        <input type="number" class="form-control" id="importo_spesa" name="importo_spesa" 
+                                               step="0.01" min="0"
+                                               value="<?= htmlspecialchars($_POST['importo_spesa'] ?? '') ?>"
+                                               placeholder="0.00">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="importo_detrazione" class="form-label">Importo Detrazione (€)</label>
+                                        <input type="number" class="form-control" id="importo_detrazione" name="importo_detrazione" 
+                                               step="0.01" min="0"
+                                               value="<?= htmlspecialchars($_POST['importo_detrazione'] ?? '') ?>"
+                                               placeholder="0.00">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="stato" class="form-label">Stato Pratica</label>
+                                        <select class="form-select" id="stato" name="stato">
+                                            <?php 
+                                            $stati = [
+                                                'bozza' => '📝 Bozza',
+                                                'trasmessa' => '📤 Trasmessa',
+                                                'accettata' => '✅ Accettata',
+                                                'respinta' => '❌ Respinta'
+                                            ];
+                                            $stato_selezionato = $_POST['stato'] ?? 'bozza';
+                                            foreach ($stati as $valore => $label): ?>
+                                                <option value="<?= $valore ?>" <?= $stato_selezionato == $valore ? 'selected' : '' ?>>
+                                                    <?= $label ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="data_trasmissione" class="form-label">Data Trasmissione</label>
+                                        <input type="date" class="form-control" id="data_trasmissione" name="data_trasmissione" 
+                                               value="<?= htmlspecialchars($_POST['data_trasmissione'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="descrizione" class="form-label">Descrizione</label>
+                                        <textarea class="form-control" id="descrizione" name="descrizione" rows="1"
+                                                  placeholder="Descrizione breve della pratica"><?= htmlspecialchars($_POST['descrizione'] ?? '') ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="note" class="form-label">Note</label>
+                                        <textarea class="form-control" id="note" name="note" rows="3"
+                                                  placeholder="Note aggiuntive sulla pratica..."><?= htmlspecialchars($_POST['note'] ?? '') ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="bonifico_ns" class="form-label">Bonifico Ns. (€)</label>
                                         <input type="number" class="form-control" id="bonifico_ns" name="bonifico_ns" 
