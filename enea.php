@@ -467,6 +467,3 @@ document.addEventListener('DOMContentLoaded', function() {
 // Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
 window.closeEneaModal = closeEneaModal;
 </script>
-
-<?php include 'includes/chat_widget.php'; ?>
-<?php include 'includes/chat_pratiche_widget.php'; ?>
