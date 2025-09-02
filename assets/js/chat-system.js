@@ -28,10 +28,28 @@ class ChatSystem {
             // Inizializza contatori notifiche
             await this.loadNotifications();
             
+            // Se Socket.IO non è disponibile, usa polling per notifiche
+            if (!this.socket) {
+                this.startNotificationPolling();
+            }
+            
             console.log('✅ Chat System inizializzato');
         } catch (error) {
             console.error('❌ Errore inizializzazione Chat System:', error);
         }
+    }
+    
+    startNotificationPolling() {
+        // Polling ogni 30 secondi per le notifiche
+        setInterval(async () => {
+            try {
+                await this.loadNotifications();
+            } catch (error) {
+                console.error('Errore polling notifiche:', error);
+            }
+        }, 30000);
+        
+        console.log('🔄 Polling notifiche attivato (30s)');
     }
     
     async loadCurrentUser() {
@@ -46,6 +64,14 @@ class ChatSystem {
     async initSocket() {
         return new Promise((resolve, reject) => {
             try {
+                // Verifica che Socket.IO sia disponibile
+                if (typeof io === 'undefined') {
+                    console.warn('⚠️ Socket.IO non disponibile, usando polling');
+                    this.socket = null;
+                    resolve();
+                    return;
+                }
+                
                 this.socket = io('http://localhost:3000'); // Aggiorna con il tuo URL
                 
                 this.socket.on('connect', () => {
@@ -75,12 +101,24 @@ class ChatSystem {
                 });
                 
                 this.socket.on('connect_error', (error) => {
-                    console.error('❌ Errore connessione Socket.IO:', error);
-                    reject(error);
+                    console.warn('⚠️ Socket.IO non raggiungibile, usando polling:', error.message);
+                    this.socket = null;
+                    resolve(); // Non bloccare l'inizializzazione
                 });
                 
+                // Timeout di connessione
+                setTimeout(() => {
+                    if (!this.socket || !this.socket.connected) {
+                        console.warn('⚠️ Timeout connessione Socket.IO, usando polling');
+                        this.socket = null;
+                        resolve();
+                    }
+                }, 5000);
+                
             } catch (error) {
-                reject(error);
+                console.warn('⚠️ Errore Socket.IO, usando polling:', error.message);
+                this.socket = null;
+                resolve(); // Non bloccare l'inizializzazione
             }
         });
     }
@@ -304,17 +342,32 @@ class ChatSystem {
             const result = await response.json();
             
             if (result.success) {
-                // Il messaggio verrà aggiunto via Socket.IO
+                // Il messaggio verrà aggiunto via Socket.IO se disponibile, altrimenti ricarica
                 input.value = '';
                 input.style.height = 'auto';
                 
-                // Emetti via socket per real-time
-                this.socket.emit('send_message', {
-                    chat_id: chatId,
-                    message: message,
-                    user_id: this.currentUser.id,
-                    user_name: this.currentUser.name
-                });
+                if (this.socket && this.socket.connected) {
+                    // Emetti via socket per real-time
+                    this.socket.emit('send_message', {
+                        chat_id: chatId,
+                        message: message,
+                        user_id: this.currentUser.id,
+                        user_name: this.currentUser.name
+                    });
+                } else {
+                    // Fallback: aggiungi messaggio direttamente e ricarica dopo poco
+                    this.appendMessage(windowId, {
+                        message: message,
+                        user_id: this.currentUser.id,
+                        user_name: this.currentUser.name,
+                        created_at: new Date().toISOString()
+                    }, true);
+                    
+                    // Ricarica messaggi dopo 1 secondo per sincronizzazione
+                    setTimeout(() => {
+                        this.loadChatMessages(chatId, windowId);
+                    }, 1000);
+                }
             } else {
                 throw new Error(result.error);
             }
@@ -628,6 +681,62 @@ class ChatSystem {
             el.textContent = online ? 'Online' : 'Offline';
             el.className = `user-status ${online ? 'user-online' : ''}`;
         });
+    }
+    
+    async getOrCreatePraticaChat(praticaId) {
+        try {
+            const response = await fetch(`/api/get_pratica_chat.php?pratica_id=${praticaId || ''}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                return {
+                    id: result.chat_id,
+                    type: result.type,
+                    name: result.name,
+                    pratica_id: result.pratica_id || null
+                };
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Errore creazione chat pratica:', error);
+            throw error;
+        }
+    }
+    
+    async getOrCreatePrivateChat(userId) {
+        try {
+            const response = await fetch('/api/create_private_chat.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    current_user_id: this.currentUser.id
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Ottieni nome dell'altro utente
+                const userResponse = await fetch('/api/users_list.php');
+                const users = await userResponse.json();
+                const otherUser = users.find(u => u.id == userId);
+                
+                return {
+                    id: result.chat_id,
+                    type: 'privata',
+                    name: `Chat con ${otherUser ? otherUser.name : 'Utente'}`
+                };
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Errore creazione chat privata:', error);
+            throw error;
+        }
     }
 }
 
