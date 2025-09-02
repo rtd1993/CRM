@@ -614,6 +614,7 @@ $total_tasks = count($task_list);
 $overdue_tasks = 0;
 $urgent_tasks = 0;
 $recurring_tasks = 0;
+$billable_tasks = 0;
 
 foreach ($task_list as $task) {
     $scadenza = strtotime($task['scadenza']);
@@ -624,6 +625,8 @@ foreach ($task_list as $task) {
     elseif ($diff_giorni < 5) $urgent_tasks++;
     
     if (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) $recurring_tasks++;
+    
+    if (!empty($task['fatturabile']) && $task['fatturabile'] == 1) $billable_tasks++;
 }
 ?>
 
@@ -644,6 +647,38 @@ foreach ($task_list as $task) {
         <button class="btn btn-primary" onclick="openTaskModal()">➕ Crea il primo task</button>
     </div>
 <?php else: ?>
+    <!-- Statistiche rapide -->
+    <div class="stats-row" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
+            <i class="fas fa-tasks" style="color: #6f42c1; font-size: 1.5em; margin-bottom: 8px;"></i>
+            <div style="font-size: 1.8em; font-weight: bold; color: #333;"><?= $total_tasks ?></div>
+            <div style="font-size: 0.9em; color: #666;">Totali</div>
+            <?php if ($billable_tasks > 0): ?>
+                <div style="font-size: 0.8em; margin-top: 4px; color: #28a745;">
+                    <i class="fas fa-euro-sign"></i> <?= $billable_tasks ?> da fatturare
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
+            <i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 1.5em; margin-bottom: 8px;"></i>
+            <div style="font-size: 1.8em; font-weight: bold; color: #dc3545;"><?= $overdue_tasks ?></div>
+            <div style="font-size: 0.9em; color: #666;">Scaduti</div>
+        </div>
+        
+        <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
+            <i class="fas fa-clock" style="color: #ffc107; font-size: 1.5em; margin-bottom: 8px;"></i>
+            <div style="font-size: 1.8em; font-weight: bold; color: #ffc107;"><?= $urgent_tasks ?></div>
+            <div style="font-size: 0.9em; color: #666;">Urgenti</div>
+        </div>
+        
+        <div class="stat-item" style="background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center;">
+            <i class="fas fa-sync-alt" style="color: #17a2b8; font-size: 1.5em; margin-bottom: 8px;"></i>
+            <div style="font-size: 1.8em; font-weight: bold; color: #17a2b8;"><?= $recurring_tasks ?></div>
+            <div style="font-size: 0.9em; color: #666;">Ricorrenti</div>
+        </div>
+    </div>
+    
     <div class="task-table">
         <table>
             <thead>

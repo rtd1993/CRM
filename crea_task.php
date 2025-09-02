@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $scadenza = $_POST['scadenza'] ?? '';
     $ricorrenza = isset($_POST['ricorrenza']) && $_POST['ricorrenza'] !== '' ? intval($_POST['ricorrenza']) : null;
     $assegnato_a = isset($_POST['assegnato_a']) && $_POST['assegnato_a'] !== '' ? intval($_POST['assegnato_a']) : null;
+    $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
     
     // Se c'è un campo hidden con l'ID, siamo in modalità modifica
     $edit_id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : null;
@@ -38,12 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($descrizione) && !empty($scadenza)) {
         if ($is_edit) {
             // Modifica task esistente
-            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ?, assegnato_a = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE task SET descrizione = ?, scadenza = ?, ricorrenza = ?, assegnato_a = ?, fatturabile = ? WHERE id = ?");
             $stmt->bindValue(1, $descrizione);
             $stmt->bindValue(2, $scadenza);
             $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(4, $assegnato_a, is_null($assegnato_a) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindValue(5, $edit_id);
+            $stmt->bindValue(5, $fatturabile);
+            $stmt->bindValue(6, $edit_id);
             $stmt->execute();
             
             // Redirect alla lista task con messaggio di successo
@@ -51,11 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             // Crea nuovo task
-            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza, assegnato_a) VALUES (?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza, assegnato_a, fatturabile) VALUES (?, ?, ?, ?, ?)");
             $stmt->bindValue(1, $descrizione);
             $stmt->bindValue(2, $scadenza);
             $stmt->bindValue(3, $ricorrenza, is_null($ricorrenza) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(4, $assegnato_a, is_null($assegnato_a) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(5, $fatturabile);
             $stmt->execute();
             
             // Redirect alla lista task con messaggio di successo
@@ -311,6 +314,25 @@ $utenti = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                     <li><strong>90</strong> = Trimestrale</li>
                     <li><strong>365</strong> = Annuale</li>
                 </ul>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">💰 Fatturazione</label>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                <input type="checkbox" 
+                       id="fatturabile" 
+                       name="fatturabile" 
+                       value="1"
+                       style="transform: scale(1.2);"
+                       <?= (!empty($task_data['fatturabile']) && $task_data['fatturabile'] == 1) ? 'checked' : '' ?>>
+                <label for="fatturabile" style="margin: 0; cursor: pointer;">
+                    <i class="fas fa-euro-sign" style="color: #28a745; margin-right: 5px;"></i>
+                    Task da fatturare
+                </label>
+            </div>
+            <div class="form-help">
+                Seleziona se questo task deve essere fatturato al cliente
             </div>
         </div>
 
