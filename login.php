@@ -11,11 +11,14 @@ require_once __DIR__ . '/includes/tunnel_bypass.php';
 session_start();
 
 $error = '';
+$debug_info = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
+    $debug_info .= "POST ricevuto. Email: " . htmlspecialchars($email) . "<br>";
+    
     // Debug
     error_log("LOGIN ATTEMPT: Email = $email");
     
@@ -23,25 +26,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Debug
     if ($user) {
+        $debug_info .= "Utente trovato: " . htmlspecialchars($user['nome']) . " (ID: " . $user['id'] . ")<br>";
         error_log("USER FOUND: ID = " . $user['id'] . ", Nome = " . $user['nome']);
-        error_log("PASSWORD CHECK: " . (password_verify($password, $user['password']) ? 'SUCCESS' : 'FAILED'));
+        
+        $password_check = password_verify($password, $user['password']);
+        $debug_info .= "Verifica password: " . ($password_check ? "SUCCESS" : "FAILED") . "<br>";
+        error_log("PASSWORD CHECK: " . ($password_check ? 'SUCCESS' : 'FAILED'));
+        
+        if ($password_check) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['nome'];
+            $_SESSION['role'] = $user['ruolo'];
+            
+            $debug_info .= "Sessione creata. Reindirizzamento...<br>";
+            error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
+            
+            // Aggiungi un small delay per vedere il debug
+            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Reindirizzamento in 2 secondi...</div>";
+            echo "<script>setTimeout(() => window.location.href = 'dashboard.php', 2000);</script>";
+            exit();
+        }
     } else {
+        $debug_info .= "Utente NON trovato per email: " . htmlspecialchars($email) . "<br>";
         error_log("USER NOT FOUND for email: $email");
     }
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['nome'];
-        $_SESSION['role'] = $user['ruolo'];
-        
-        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
-        
-        header('Location: dashboard.php');
-        exit();
-    } else {
+    
+    if (!$user || !password_verify($password, $user['password'] ?? '')) {
         $error = 'Credenziali non valide';
+        $debug_info .= "LOGIN FALLITO<br>";
         error_log("LOGIN FAILED: Invalid credentials");
     }
 }
@@ -398,6 +411,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="error">
                     <i class="fas fa-exclamation-triangle"></i>
                     <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($debug_info): ?>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0; font-size: 12px; color: #333;">
+                    <strong>🔍 DEBUG INFO:</strong><br>
+                    <?= $debug_info ?>
                 </div>
             <?php endif; ?>
             
