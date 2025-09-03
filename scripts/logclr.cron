@@ -1,0 +1,2 @@
+# Pulizia automatica log alle 2:00 di notte
+0 2 * * * root /usr/local/bin/logclr --force >> /var/log/logclr.log 2>&1
