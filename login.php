@@ -16,17 +16,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    $stmt = $pdo->prepare("SELECT id, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
+    // Debug
+    error_log("LOGIN ATTEMPT: Email = $email");
+    
+    $stmt = $pdo->prepare("SELECT id, nome, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Debug
+    if ($user) {
+        error_log("USER FOUND: ID = " . $user['id'] . ", Nome = " . $user['nome']);
+        error_log("PASSWORD CHECK: " . (password_verify($password, $user['password']) ? 'SUCCESS' : 'FAILED'));
+    } else {
+        error_log("USER NOT FOUND for email: $email");
+    }
+
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_name'] = $user['nome'];
         $_SESSION['role'] = $user['ruolo'];
+        
+        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
+        
         header('Location: dashboard.php');
         exit();
     } else {
         $error = 'Credenziali non valide';
+        error_log("LOGIN FAILED: Invalid credentials");
     }
 }
 ?>
