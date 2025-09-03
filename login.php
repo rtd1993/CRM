@@ -13,6 +13,15 @@ session_start();
 $error = '';
 $debug_info = '';
 
+// Debug POST data
+if (!empty($_POST)) {
+    $debug_info .= "<strong>Dati POST ricevuti:</strong><br>";
+    foreach ($_POST as $key => $value) {
+        $debug_info .= "- " . htmlspecialchars($key) . ": " . htmlspecialchars($value) . "<br>";
+    }
+    $debug_info .= "<br>";
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -418,6 +427,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0; font-size: 12px; color: #333;">
                     <strong>🔍 DEBUG INFO:</strong><br>
                     <?= $debug_info ?>
+                    <br>
+                    <strong>Sessione attuale:</strong><br>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        - User ID: <?= $_SESSION['user_id'] ?><br>
+                        - User Name: <?= $_SESSION['user_name'] ?? 'N/A' ?><br>
+                        - User Role: <?= $_SESSION['role'] ?? 'N/A' ?><br>
+                    <?php else: ?>
+                        - Nessuna sessione attiva<br>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
             
