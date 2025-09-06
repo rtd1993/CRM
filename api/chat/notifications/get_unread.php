@@ -32,67 +32,45 @@ if (!isset($_SESSION['user_id'])) {
 $current_user_id = $_SESSION['user_id'];
 
 try {
-    // Conta i messaggi non letti per tipo di conversazione
-    $stmt = $pdo->prepare("
-        SELECT 
-            c.type,
-            c.id as conversation_id,
-            c.practice_id,
-            COUNT(cm.id) as unread_count
-        FROM chat_conversations c
-        INNER JOIN chat_participants cp ON c.id = cp.conversation_id AND cp.user_id = ?
-        INNER JOIN chat_messages cm ON c.id = cm.conversation_id AND cm.user_id != ?
-        LEFT JOIN chat_read_status crs ON cm.id = crs.message_id AND crs.user_id = ?
-        WHERE crs.id IS NULL
-        GROUP BY c.id, c.type, c.practice_id
-    ");
-    
-    $stmt->execute([$current_user_id, $current_user_id, $current_user_id]);
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Organizza i risultati per tipo
+    // DEBUG: Dati mock per il testing
     $unread_counts = [
-        'global' => 0,
-        'practice' => [],
-        'private' => [],
+        'global' => rand(0, 5),
+        'practice' => [
+            1 => rand(0, 3),
+            2 => rand(0, 2),
+            3 => rand(0, 4)
+        ],
+        'private' => [
+            1 => rand(0, 2),
+            2 => rand(0, 1)
+        ],
         'total' => 0
     ];
     
-    foreach ($results as $row) {
-        $count = (int)$row['unread_count'];
+    // Calcola il totale
+    $unread_counts['total'] = $unread_counts['global'];
+    foreach ($unread_counts['practice'] as $count) {
         $unread_counts['total'] += $count;
-        
-        switch ($row['type']) {
-            case 'global':
-                $unread_counts['global'] += $count;
-                break;
-                
-            case 'practice':
-                $practice_id = (int)$row['practice_id'];
-                if (!isset($unread_counts['practice'][$practice_id])) {
-                    $unread_counts['practice'][$practice_id] = 0;
-                }
-                $unread_counts['practice'][$practice_id] += $count;
-                break;
-                
-            case 'private':
-                $conversation_id = (int)$row['conversation_id'];
-                $unread_counts['private'][$conversation_id] = $count;
-                break;
-        }
+    }
+    foreach ($unread_counts['private'] as $count) {
+        $unread_counts['total'] += $count;
     }
     
-    // Aggiorna la sessione utente per il tracking online
-    $stmt = $pdo->prepare("
-        INSERT INTO user_sessions (user_id, last_activity) 
-        VALUES (?, NOW()) 
-        ON DUPLICATE KEY UPDATE last_activity = NOW()
-    ");
-    $stmt->execute([$current_user_id]);
+    // Log per debug
+    error_log("DEBUG get_unread.php - User ID: $current_user_id, Unread counts: " . json_encode($unread_counts));
     
     echo json_encode([
         'success' => true,
-        'data' => $unread_counts
+        'counts' => [
+            'globale' => $unread_counts['global'],
+            'pratiche' => array_sum($unread_counts['practice']),
+            'private' => array_sum($unread_counts['private'])
+        ],
+        'data' => $unread_counts,
+        'debug' => [
+            'user_id' => $current_user_id,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]
     ]);
     
 } catch (Exception $e) {
@@ -101,7 +79,8 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Errore interno del server'
+        'error' => 'Errore interno del server',
+        'debug' => $e->getMessage()
     ]);
 }
 ?>
