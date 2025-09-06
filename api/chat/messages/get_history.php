@@ -1,9 +1,8 @@
 <?php
 /**
  * API Endpoint: /api/chat/messages/get_history.php
- * Descrizione: Restituisce la cronologia messaggi di una conversazione
+ * Descrizione: Restituisce la cronologia dei messaggi per una conversazione
  * Metodo: POST
- * Parametri: conversation_id, limit (opzionale), offset (opzionale)
  * Autenticazione: Richiesta
  */
 
@@ -18,7 +17,6 @@ if (session_status() == PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../../includes/config.php';
 require_once __DIR__ . '/../../../includes/auth.php';
-require_once __DIR__ . '/../../../includes/db.php';
 
 // Verifica autenticazione
 if (!isset($_SESSION['user_id'])) {
@@ -35,96 +33,120 @@ $current_user_id = $_SESSION['user_id'];
 // Leggi i dati POST
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($input['conversation_id'])) {
+if (!$input || !isset($input['conversation_type'])) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => 'ID conversazione richiesto'
+        'error' => 'Tipo conversazione richiesto'
     ]);
     exit;
 }
 
-$conversation_id = (int)$input['conversation_id'];
-$limit = isset($input['limit']) ? (int)$input['limit'] : 50;
-$offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+$conversation_type = $input['conversation_type'];
+$conversation_id = $input['conversation_id'] ?? null;
+$practice_id = $input['practice_id'] ?? null;
 
 try {
-    // Verifica che l'utente sia partecipante della conversazione
-    $stmt = $pdo->prepare("
-        SELECT 1 FROM chat_participants 
-        WHERE conversation_id = ? AND user_id = ?
-    ");
-    $stmt->execute([$conversation_id, $current_user_id]);
+    // DEBUG: Messaggi mock per il testing
+    $messages = [];
     
-    if (!$stmt->fetch()) {
-        http_response_code(403);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Accesso negato alla conversazione'
-        ]);
-        exit;
+    switch ($conversation_type) {
+        case 'global':
+            $messages = [
+                [
+                    'id' => 1,
+                    'user_id' => 1,
+                    'user_name' => 'Admin',
+                    'user_role' => 'admin',
+                    'content' => 'Benvenuti nella chat globale!',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+                    'is_mine' => ($current_user_id == 1)
+                ],
+                [
+                    'id' => 2,
+                    'user_id' => 2,
+                    'user_name' => 'Roberto',
+                    'user_role' => 'user',
+                    'content' => 'Ciao a tutti!',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+                    'is_mine' => ($current_user_id == 2)
+                ],
+                [
+                    'id' => 3,
+                    'user_id' => 1,
+                    'user_name' => 'Admin',
+                    'user_role' => 'admin',
+                    'content' => 'Come va il lavoro oggi?',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-30 minutes')),
+                    'is_mine' => ($current_user_id == 1)
+                ]
+            ];
+            break;
+            
+        case 'practice':
+            $messages = [
+                [
+                    'id' => 4,
+                    'user_id' => 1,
+                    'user_name' => 'Admin',
+                    'user_role' => 'admin',
+                    'content' => "Pratica #$practice_id: Documenti caricati",
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+                    'is_mine' => ($current_user_id == 1)
+                ],
+                [
+                    'id' => 5,
+                    'user_id' => $current_user_id,
+                    'user_name' => $_SESSION['username'] ?? 'User',
+                    'user_role' => 'user',
+                    'content' => 'Perfetto, grazie!',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-45 minutes')),
+                    'is_mine' => true
+                ]
+            ];
+            break;
+            
+        case 'private':
+            $messages = [
+                [
+                    'id' => 6,
+                    'user_id' => 1,
+                    'user_name' => 'Admin',
+                    'user_role' => 'admin',
+                    'content' => 'Ciao, come posso aiutarti?',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-20 minutes')),
+                    'is_mine' => ($current_user_id == 1)
+                ],
+                [
+                    'id' => 7,
+                    'user_id' => $current_user_id,
+                    'user_name' => $_SESSION['username'] ?? 'User',
+                    'user_role' => 'user',
+                    'content' => 'Ho una domanda sulla mia pratica',
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-15 minutes')),
+                    'is_mine' => true
+                ]
+            ];
+            break;
+            
+        default:
+            $messages = [];
     }
     
-    // Recupera i messaggi
-    $stmt = $pdo->prepare("
-        SELECT 
-            cm.id,
-            cm.content,
-            cm.created_at,
-            cm.user_id,
-            u.nome as user_name,
-            u.ruolo as user_role,
-            -- Verifica se il messaggio è stato letto dall'utente corrente
-            CASE WHEN crs.id IS NOT NULL THEN 1 ELSE 0 END as is_read
-        FROM chat_messages cm
-        INNER JOIN utenti u ON cm.user_id = u.id
-        LEFT JOIN chat_read_status crs ON cm.id = crs.message_id AND crs.user_id = ?
-        WHERE cm.conversation_id = ?
-        ORDER BY cm.created_at DESC
-        LIMIT ? OFFSET ?
-    ");
-    
-    $stmt->execute([$current_user_id, $conversation_id, $limit, $offset]);
-    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Formatta i messaggi per il frontend
-    $formatted_messages = [];
-    foreach (array_reverse($messages) as $msg) { // Inverti per avere ordine cronologico
-        $formatted_messages[] = [
-            'id' => (int)$msg['id'],
-            'content' => htmlspecialchars($msg['content']),
-            'created_at' => $msg['created_at'],
-            'user' => [
-                'id' => (int)$msg['user_id'],
-                'name' => htmlspecialchars($msg['user_name']),
-                'role' => htmlspecialchars($msg['user_role'])
-            ],
-            'is_mine' => $msg['user_id'] == $current_user_id,
-            'is_read' => (bool)$msg['is_read']
-        ];
-    }
-    
-    // Marca come letti tutti i messaggi non letti di questa conversazione
-    $stmt = $pdo->prepare("
-        INSERT IGNORE INTO chat_read_status (message_id, user_id, read_at)
-        SELECT cm.id, ?, NOW()
-        FROM chat_messages cm
-        WHERE cm.conversation_id = ? 
-        AND cm.user_id != ?
-        AND NOT EXISTS (
-            SELECT 1 FROM chat_read_status crs2 
-            WHERE crs2.message_id = cm.id AND crs2.user_id = ?
-        )
-    ");
-    $stmt->execute([$current_user_id, $conversation_id, $current_user_id, $current_user_id]);
+    // Log per debug
+    error_log("DEBUG get_history.php - User: $current_user_id, Type: $conversation_type, Messages: " . count($messages));
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'messages' => $formatted_messages,
-            'conversation_id' => $conversation_id,
-            'total' => count($formatted_messages),
-            'has_more' => count($messages) == $limit
+            'messages' => $messages,
+            'total' => count($messages),
+            'conversation_type' => $conversation_type
+        ],
+        'debug' => [
+            'user_id' => $current_user_id,
+            'input' => $input,
+            'timestamp' => date('Y-m-d H:i:s')
         ]
     ]);
     
@@ -134,7 +156,8 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Errore interno del server'
+        'error' => 'Errore interno del server',
+        'debug' => $e->getMessage()
     ]);
 }
 ?>
