@@ -1,7 +1,12 @@
 <?php
 // Dashboard semplificato per test 524 timeout
-require_once __DIR__ . '/includes/auth.php';
-require_login();
+session_start();
+
+// Controllo sessione semplice
+if (!isset($_SESSION['user_id'])) {
+    echo "Errore: Sessione non valida. <a href='login.php'>Torna al login</a>";
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="it">
