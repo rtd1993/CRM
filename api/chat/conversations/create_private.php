@@ -35,8 +35,8 @@ header('Access-Control-Allow-Headers: Content-Type');
 try {
     $current_user_id = $_SESSION['user_id'];
 
-// Leggi i dati POST
-$input = json_decode(file_get_contents('php://input'), true);
+    // Leggi i dati POST
+    $input = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($input['other_user_id'])) {
     http_response_code(400);
