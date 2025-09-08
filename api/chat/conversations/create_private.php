@@ -16,23 +16,12 @@ try {
     require_login();
     require_once __DIR__ . '/../../../includes/config.php';
     require_once __DIR__ . '/../../../includes/db.php';
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false, 
-        'error' => 'Include error: ' . $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine()
-    ]);
-    exit;
-}
+    
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: POST');
+    header('Access-Control-Allow-Headers: Content-Type');
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
-
-try {
     $current_user_id = $_SESSION['user_id'];
 
     // Leggi i dati POST
