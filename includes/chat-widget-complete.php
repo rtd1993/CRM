@@ -418,6 +418,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     margin-right: 12px;
     padding: 5px;
     border-radius: 4px;
+    position: relative;
+    z-index: 200;
+    pointer-events: auto;
 }
 
 .btn-back:hover {
