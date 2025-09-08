@@ -4,6 +4,14 @@ session_start();
 
 echo "<h2>Test Sessioni PHP</h2>";
 
+// Test simulazione login
+if (isset($_GET['simulate_login'])) {
+    $_SESSION['user_id'] = 1;
+    $_SESSION['user_name'] = 'Test User';
+    $_SESSION['role'] = 'admin';
+    echo "<p style='background: green; color: white; padding: 10px;'>✅ Simulazione login eseguita!</p>";
+}
+
 // Imposta un valore di test
 if (!isset($_SESSION['test_value'])) {
     $_SESSION['test_value'] = 'test_' . time();
@@ -28,7 +36,9 @@ echo "</div>";
 $_SESSION['timestamp'] = date('Y-m-d H:i:s');
 echo "<p>Timestamp aggiunto alla sessione: " . $_SESSION['timestamp'] . "</p>";
 
-// Link per ricaricare
+// Link per testare
 echo "<p><a href='test_session.php'>Ricarica per testare persistenza</a></p>";
+echo "<p><a href='test_session.php?simulate_login=1'>🔥 SIMULA LOGIN (aggiungi user_id alla sessione)</a></p>";
+echo "<p><a href='dashboard-test.php'>Test Dashboard dopo simulazione login</a></p>";
 echo "<p><a href='login.php'>Torna al Login</a></p>";
 ?>
