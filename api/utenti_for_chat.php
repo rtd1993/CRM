@@ -17,12 +17,11 @@ try {
         SELECT 
             id,
             nome,
-            cognome,
             email,
             ruolo
         FROM utenti 
         WHERE id != ?
-        ORDER BY nome ASC, cognome ASC
+        ORDER BY nome ASC
     ");
     
     $stmt->execute([$current_user_id]);
