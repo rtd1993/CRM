@@ -211,7 +211,7 @@ class ChatFooterSystem {
      * Mostra panel
      */
     showPanel() {
-        this.elements.panel.classList.add('visible');
+        this.elements.panel.style.display = 'flex';
         this.elements.toggleBtn.classList.add('active');
         this.isVisible = true;
         
@@ -224,7 +224,7 @@ class ChatFooterSystem {
      * Nascondi panel
      */
     hidePanel() {
-        this.elements.panel.classList.remove('visible');
+        this.elements.panel.style.display = 'none';
         this.elements.toggleBtn.classList.remove('active');
         this.isVisible = false;
         
@@ -275,17 +275,15 @@ class ChatFooterSystem {
      */
     showChatWindow() {
         this.elements.listContainer.style.display = 'none';
-        this.elements.chatWindow.classList.add('visible');
+        this.elements.chatWindow.style.display = 'flex';
     }
     
     /**
      * Mostra lista chat
      */
     showChatList() {
-        this.elements.chatWindow.classList.remove('visible');
-        setTimeout(() => {
-            this.elements.listContainer.style.display = 'block';
-        }, 300);
+        this.elements.chatWindow.style.display = 'none';
+        this.elements.listContainer.style.display = 'block';
         
         this.currentChat = null;
         

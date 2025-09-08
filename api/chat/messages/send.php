@@ -35,18 +35,31 @@ $current_user_id = $_SESSION['user_id'];
 // Leggi i dati POST
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($input['content']) || trim($input['content']) === '') {
+if (!$input) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => 'Contenuto messaggio richiesto'
+        'error' => 'Dati POST mancanti'
     ]);
     exit;
 }
 
-$content = trim($input['content']);
-$conversation_id = isset($input['conversation_id']) ? (int)$input['conversation_id'] : null;
-$practice_id = isset($input['practice_id']) ? (int)$input['practice_id'] : null;
+// Supporta sia conversation_type che type per compatibilità
+$conversation_type = $input['conversation_type'] ?? $input['type'] ?? null;
+$conversation_id = $input['conversation_id'] ?? $input['id'] ?? null;
+$message = $input['message'] ?? $input['content'] ?? '';
+$practice_id = $input['practice_id'] ?? null;
+
+if (!$conversation_type || !$message) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Tipo conversazione e messaggio richiesti'
+    ]);
+    exit;
+}
+
+$content = trim($message);
 
 // Validazione lunghezza messaggio
 if (strlen($content) > 1000) {
@@ -59,7 +72,35 @@ if (strlen($content) > 1000) {
 }
 
 try {
-    $pdo->beginTransaction();
+    // DEBUG: Simulazione invio messaggio
+    $message_id = rand(1000, 9999);
+    $timestamp = date('Y-m-d H:i:s');
+    
+    // Crea oggetto messaggio simulato
+    $new_message = [
+        'id' => $message_id,
+        'user_id' => $current_user_id,
+        'user_name' => $_SESSION['username'] ?? 'User',
+        'user_role' => $_SESSION['user_role'] ?? 'user',
+        'content' => htmlspecialchars($content),
+        'created_at' => $timestamp,
+        'is_mine' => true
+    ];
+    
+    // Log per debug
+    error_log("DEBUG send.php - User: $current_user_id, Type: $conversation_type, Message: " . substr($content, 0, 50));
+    
+    echo json_encode([
+        'success' => true,
+        'message' => $new_message,
+        'conversation_type' => $conversation_type,
+        'conversation_id' => $conversation_id,
+        'debug' => [
+            'user_id' => $current_user_id,
+            'input' => $input,
+            'timestamp' => $timestamp
+        ]
+    ]);
     
     // Se non è specificata una conversazione, determinala dal contesto
     if (!$conversation_id) {
@@ -174,13 +215,13 @@ try {
     ]);
     
 } catch (Exception $e) {
-    $pdo->rollBack();
     error_log("Errore API send.php: " . $e->getMessage());
     
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Errore interno del server'
+        'error' => 'Errore interno del server',
+        'debug' => $e->getMessage()
     ]);
 }
 ?>
