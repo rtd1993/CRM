@@ -35,8 +35,6 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 <!-- Includi il JavaScript del sistema chat completo -->
 <script src="/assets/js/chat-complete.js?v=<?= time() ?>"></script>
 
-<?php
-
 <!-- Footer Chat Widget -->
 <div id="chat-footer-widget" class="chat-widget-container">
     <!-- Toggle Button -->
