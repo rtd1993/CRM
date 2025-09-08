@@ -712,18 +712,28 @@ class CompleteChatSystem {
      */
     async loadAndRenderAllUsers() {
         try {
-            // Carica utenti (per ora usiamo dati mock, poi si può collegare a API reale)
-            const users = [
-                {id: 1, name: 'Admin', is_online: true},
-                {id: 2, name: 'Roberto', is_online: true},
-                {id: 3, name: 'Mario', is_online: false},
-                {id: 4, name: 'Luca', is_online: true}
-            ];
+            this.log('🔄 Caricamento utenti per chat private...');
             
-            // Filtra l'utente corrente
-            const availableUsers = users.filter(user => user.id != this.config.userId);
+            // Svuota la lista utenti
+            this.elements.privatesList.innerHTML = '';
             
-            if (availableUsers.length === 0) {
+            // Carica utenti dal database
+            const response = await fetch('api/utenti_for_chat.php');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Errore caricamento utenti');
+            }
+            
+            const users = data.users || [];
+            this.log('✅ Utenti caricati:', users.length);
+            
+            if (users.length === 0) {
                 this.elements.privatesList.innerHTML = `
                     <div style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
                         Nessun altro utente disponibile.
@@ -732,8 +742,8 @@ class CompleteChatSystem {
                 return;
             }
             
-            // Renderizza tutti gli utenti come chat private
-            availableUsers.forEach(user => {
+            // Renderizza ogni utente
+            users.forEach(user => {
                 const userHTML = `
                     <div class="chat-item" data-type="privata" data-id="${user.id}">
                         <div class="chat-avatar user" style="position: relative;">
@@ -742,10 +752,12 @@ class CompleteChatSystem {
                         </div>
                         <div class="chat-info">
                             <div class="chat-name">${this.escapeHtml(user.name)}</div>
-                            <div class="chat-last-message">Clicca per iniziare una chat</div>
+                            <div class="chat-last-message">
+                                ${user.ruolo ? `${user.ruolo} • ` : ''}${user.username}
+                            </div>
                         </div>
                         <div class="chat-meta">
-                            <span class="chat-status">${user.is_online ? 'Online' : 'Offline'}</span>
+                            <div class="user-status">${user.is_online ? '🟢' : '⚫'}</div>
                         </div>
                     </div>
                 `;
@@ -753,8 +765,8 @@ class CompleteChatSystem {
                 this.elements.privatesList.insertAdjacentHTML('beforeend', userHTML);
             });
             
-            // Aggiungi event listener per ogni utente
-            this.elements.privatesList.querySelectorAll('.chat-item[data-type="privata"]').forEach(item => {
+            // Aggiungi event listeners
+            this.elements.privatesList.querySelectorAll('.chat-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const userId = item.dataset.id;
@@ -766,44 +778,62 @@ class CompleteChatSystem {
             
         } catch (error) {
             this.log('❌ Errore caricamento utenti:', error);
-        }
-        
-        chats.forEach(chat => {
-            const isOnline = this.onlineUsers.get(chat.other_user_id)?.is_online || false;
-            const unreadCount = chat.unread_count || 0;
             
-            const chatHTML = `
-                <div class="chat-item" data-type="privata" data-id="${chat.other_user_id}" data-chat-id="${chat.id}">
-                    <div class="chat-avatar user" style="position: relative;">
-                        ${chat.other_user_name.charAt(0).toUpperCase()}
-                        <div class="online-indicator ${isOnline ? '' : 'offline'}"></div>
-                    </div>
-                    <div class="chat-info">
-                        <div class="chat-name">${this.escapeHtml(chat.other_user_name)}</div>
-                        <div class="chat-last-message">${chat.last_message ? this.escapeHtml(chat.last_message) : 'Nessun messaggio'}</div>
-                    </div>
-                    <div class="chat-meta">
-                        ${chat.last_message_time ? `<span class="chat-time">${this.formatTime(chat.last_message_time)}</span>` : ''}
-                        ${unreadCount > 0 ? `<span class="chat-unread-badge">${unreadCount}</span>` : ''}
-                    </div>
-                </div>
-            `;
+            // Fallback con utenti mock se l'API non funziona
+            this.log('⚠️ Uso utenti mock come fallback');
+            const mockUsers = [
+                { id: 1, name: 'Admin Sistema', is_online: true, ruolo: 'admin', username: 'admin' },
+                { id: 2, name: 'Mario Rossi', is_online: false, ruolo: 'utente', username: 'mario.rossi' },
+                { id: 3, name: 'Giulia Verdi', is_online: true, ruolo: 'manager', username: 'giulia.verdi' }
+            ];
             
-            this.elements.privatesList.insertAdjacentHTML('beforeend', chatHTML);
-        });
-        
-        // Aggiungi event listeners
-        this.elements.privatesList.querySelectorAll('.chat-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const userId = item.dataset.id;
-                const userName = item.querySelector('.chat-name').textContent;
-                this.openChat('privata', userId, userName);
+            // Filtra l'utente corrente se necessario
+            const availableUsers = mockUsers.filter(user => user.id != this.config.userId);
+            
+            if (availableUsers.length === 0) {
+                this.elements.privatesList.innerHTML = `
+                    <div style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
+                        Nessun altro utente disponibile.
+                    </div>
+                `;
+                return;
+            }
+            
+            availableUsers.forEach(user => {
+                const userHTML = `
+                    <div class="chat-item" data-type="privata" data-id="${user.id}">
+                        <div class="chat-avatar user" style="position: relative;">
+                            ${user.name.charAt(0).toUpperCase()}
+                            <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">${this.escapeHtml(user.name)}</div>
+                            <div class="chat-last-message">${user.ruolo} • ${user.username}</div>
+                        </div>
+                        <div class="chat-meta">
+                            <div class="user-status">${user.is_online ? '🟢' : '⚫'}</div>
+                        </div>
+                    </div>
+                `;
+                
+                this.elements.privatesList.insertAdjacentHTML('beforeend', userHTML);
             });
-        });
+            
+            // Aggiungi event listeners anche per i mock users
+            this.elements.privatesList.querySelectorAll('.chat-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const userId = item.dataset.id;
+                    const userName = item.querySelector('.chat-name').textContent;
+                    this.log('👥 Click su utente per chat privata (mock):', userName);
+                    this.openChat('privata', userId, userName);
+                });
+            });
+        }
     }
     
     /**
-     * Mostra modal selezione utente
+     * Mostra modal selezione utente (RIMOSSA - ora gli utenti sono mostrati direttamente)
      */
     async showUserSelectionModal() {
         try {
