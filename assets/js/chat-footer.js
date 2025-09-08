@@ -32,20 +32,28 @@ class ChatFooterSystem {
      */
     async init() {
         try {
+            this.log('🔧 Inizio inizializzazione...');
+            
+            this.log('📌 Binding elementi DOM...');
             this.bindElements();
+            
+            this.log('🎪 Binding eventi...');
             this.bindEvents();
+            
+            this.log('💾 Caricamento dati iniziali...');
             await this.loadInitialData();
+            
+            this.log('⏱️ Avvio polling...');
             this.startPolling();
+            
             this.isInitialized = true;
-            
-            this.log('Sistema chat inizializzato con successo');
-            
+            this.log('✅ Sistema chat inizializzato con successo');
+
         } catch (error) {
-            this.log('Errore inizializzazione chat:', error);
+            this.log('❌ Errore inizializzazione chat:', error);
+            console.error('Stack trace:', error.stack);
         }
-    }
-    
-    /**
+    }    /**
      * Collega elementi DOM
      */
     bindElements() {
@@ -211,7 +219,18 @@ class ChatFooterSystem {
      * Mostra panel
      */
     showPanel() {
+        this.log('🚀 showPanel() chiamato - isInitialized:', this.isInitialized);
+        this.log('📱 Panel element:', this.elements.panel);
+        this.log('🎨 Panel display attuale:', this.elements.panel?.style.display);
+        
+        if (!this.elements.panel) {
+            this.log('❌ Elemento panel non trovato!');
+            return;
+        }
+        
         this.elements.panel.style.setProperty('display', 'flex', 'important');
+        this.log('🎨 Panel display dopo setProperty:', this.elements.panel.style.display);
+        
         this.elements.toggleBtn.classList.add('active');
         this.isVisible = true;
         
