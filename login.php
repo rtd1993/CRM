@@ -25,52 +25,26 @@ if (!empty($_POST)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
-
-    $debug_info .= "POST ricevuto. Email: " . htmlspecialchars($email) . "<br>";
     
     // Query per trovare l'utente
     $stmt = $pdo->prepare("SELECT id, nome, email, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
-    $debug_info .= "Query preparata<br>";
-    
     $stmt->execute([$email]);
-    $debug_info .= "Query eseguita<br>";
-    
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $debug_info .= "Risultato fetch: " . ($user ? "TROVATO" : "NON TROVATO") . "<br>";
 
-    if ($user) {
-        $debug_info .= "Utente trovato: " . htmlspecialchars($user['nome']) . " (ID: " . $user['id'] . ")<br>";
-        error_log("USER FOUND: ID = " . $user['id'] . ", Nome = " . $user['nome']);
+    if ($user && password_verify($password, $user['password'])) {
+        // Login successo - imposta sessione
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_name'] = $user['nome'];
+        $_SESSION['role'] = $user['ruolo'];
         
-        $password_check = password_verify($password, $user['password']);
-        $debug_info .= "Verifica password: " . ($password_check ? "SUCCESS" : "FAILED") . "<br>";
-        $debug_info .= "Hash nel DB: " . substr($user['password'], 0, 20) . "...<br>";
-        error_log("PASSWORD CHECK: " . ($password_check ? 'SUCCESS' : 'FAILED'));
+        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
         
-        if ($password_check) {
-            $debug_info .= "Creazione sessione...<br>";
-            
-            // Semplice assegnazione dei valori di sessione
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['nome'];
-            $_SESSION['role'] = $user['ruolo'];
-            
-            $debug_info .= "Sessione creata. USER_ID: " . $_SESSION['user_id'] . "<br>";
-            error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
-            
-            // Redirect immediato alla dashboard test
-            header('Location: dashboard-test.php');
-            exit();
-        }
+        // Redirect pulito senza output
+        header('Location: dashboard-test.php');
+        exit();
     } else {
-        $debug_info .= "Utente NON trovato per email: " . htmlspecialchars($email) . "<br>";
-        error_log("USER NOT FOUND for email: $email");
-    }
-    
-    if (!$user || !password_verify($password, $user['password'] ?? '')) {
         $error = 'Credenziali non valide';
-        $debug_info .= "LOGIN FALLITO<br>";
-        error_log("LOGIN FAILED: Invalid credentials");
+        error_log("LOGIN FAILED: Invalid credentials for email: $email");
     }
 }
 ?>
