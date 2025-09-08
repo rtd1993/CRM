@@ -2,10 +2,26 @@
 // Dashboard semplificato per test 524 timeout
 session_start();
 
+// Debug della sessione
+echo "<div style='background: yellow; padding: 10px; margin: 10px;'>";
+echo "<h3>DEBUG SESSIONE:</h3>";
+echo "Session ID: " . session_id() . "<br>";
+echo "Session Status: " . session_status() . "<br>";
+echo "Session Data: <pre>" . print_r($_SESSION, true) . "</pre>";
+echo "Cookies: <pre>" . print_r($_COOKIE, true) . "</pre>";
+echo "</div>";
+
 // Controllo sessione semplice
 if (!isset($_SESSION['user_id'])) {
-    echo "Errore: Sessione non valida. <a href='login.php'>Torna al login</a>";
+    echo "<div style='background: red; color: white; padding: 10px;'>";
+    echo "Errore: Sessione non valida. user_id non trovato in sessione.";
+    echo "<br><a href='login.php' style='color: white;'>Torna al login</a>";
+    echo "</div>";
     exit;
+} else {
+    echo "<div style='background: green; color: white; padding: 10px;'>";
+    echo "✅ Sessione valida! User ID: " . $_SESSION['user_id'];
+    echo "</div>";
 }
 ?>
 <!DOCTYPE html>

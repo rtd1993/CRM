@@ -54,12 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['role'] = $user['ruolo'];
             
             $debug_info .= "Sessione creata. USER_ID: " . $_SESSION['user_id'] . "<br>";
+            $debug_info .= "Session ID: " . session_id() . "<br>";
+            $debug_info .= "Session data: " . print_r($_SESSION, true) . "<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
             // Test redirect a dashboard semplificata
             $debug_info .= "Tentativo redirect...<br>";
-            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Redirect in corso...</div>";
-            echo "<script>console.log('Login success, redirecting...'); setTimeout(() => window.location.href = 'dashboard-test.php', 1000);</script>";
+            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Redirect in corso...<br>Session ID: " . session_id() . "</div>";
+            echo "<script>console.log('Login success, redirecting...'); console.log('Session data:', " . json_encode($_SESSION) . "); setTimeout(() => window.location.href = 'dashboard-test.php', 2000);</script>";
             exit();
         }
     } else {
