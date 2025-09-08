@@ -1,5 +1,7 @@
 <?php
 // Test configurazione PHP sessioni
+session_start(); // IMPORTANTE: session_start() PRIMA di session_id()
+
 echo "<h1>Configurazione PHP Sessioni</h1>";
 
 echo "<h3>Informazioni PHP Session:</h3>";
@@ -22,6 +24,9 @@ $save_path = ini_get('session.save_path');
 echo "<h3>Test cartella sessioni:</h3>";
 echo "<p><strong>Percorso:</strong> $save_path</p>";
 
+echo "<h3>Session corrente:</h3>";
+echo "<p><strong>Session ID:</strong> " . session_id() . "</p>";
+
 if (is_dir($save_path)) {
     echo "<p>✅ Cartella esistente</p>";
     if (is_writable($save_path)) {
@@ -36,10 +41,14 @@ if (is_dir($save_path)) {
     if (count($files) > 0) {
         echo "<ul>";
         foreach (array_slice($files, 0, 5) as $file) {
-            echo "<li>" . basename($file) . " (size: " . filesize($file) . " bytes)</li>";
+            echo "<li>" . basename($file) . " (size: " . filesize($file) . " bytes, modified: " . date('Y-m-d H:i:s', filemtime($file)) . ")</li>";
         }
         echo "</ul>";
     }
+    
+    // Test scrittura sessione
+    $_SESSION['test_config'] = 'test_value_' . time();
+    echo "<p>✅ Valore test aggiunto alla sessione</p>";
     
     // Cerca il nostro file di sessione
     $our_session_file = $save_path . '/sess_' . session_id();
@@ -53,9 +62,6 @@ if (is_dir($save_path)) {
     echo "<p>❌ Cartella NON esistente</p>";
 }
 
-session_start();
-echo "<h3>Session corrente:</h3>";
-echo "<p><strong>Session ID:</strong> " . session_id() . "</p>";
 echo "<p><strong>Session Data:</strong><pre>" . print_r($_SESSION, true) . "</pre></p>";
 
 echo "<p><a href='test_session.php'>Torna al Test Sessioni</a></p>";
