@@ -33,18 +33,29 @@ $current_user_id = $_SESSION['user_id'];
 // Leggi i dati POST
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!$input || !isset($input['conversation_type'])) {
+if (!$input) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => 'Tipo conversazione richiesto'
+        'error' => 'Dati POST mancanti'
     ]);
     exit;
 }
 
-$conversation_type = $input['conversation_type'];
-$conversation_id = $input['conversation_id'] ?? null;
+// Supporta sia conversation_type che type per compatibilità
+$conversation_type = $input['conversation_type'] ?? $input['type'] ?? null;
+$conversation_id = $input['conversation_id'] ?? $input['id'] ?? null;
 $practice_id = $input['practice_id'] ?? null;
+
+if (!$conversation_type) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Tipo conversazione richiesto',
+        'received_data' => $input
+    ]);
+    exit;
+}
 
 try {
     // DEBUG: Messaggi mock per il testing
