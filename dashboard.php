@@ -1,4 +1,8 @@
 <?php
+// Imposta timeout massimo per evitare blocchi
+set_time_limit(60);
+ini_set('max_execution_time', 60);
+
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/config.php';
@@ -7,6 +11,9 @@ require_once __DIR__ . '/includes/db.php';
 // Funzione per recuperare eventi Google Calendar
 function getCalendarEvents($timeMin, $timeMax) {
     try {
+        // Imposta timeout per evitare blocchi
+        set_time_limit(10);
+        
         require_once __DIR__ . '/vendor/autoload.php';
         
         $calendarId = 'gestione.ascontabilmente@gmail.com';
@@ -15,6 +22,7 @@ function getCalendarEvents($timeMin, $timeMax) {
         $client = new Google_Client();
         $client->useApplicationDefaultCredentials();
         $client->addScope(Google_Service_Calendar::CALENDAR);
+        $client->setConfig('timeout', 5); // Timeout di 5 secondi per le richieste HTTP
         $service = new Google_Service_Calendar($client);
         
         $params = [
@@ -50,7 +58,10 @@ function getCalendarEvents($timeMin, $timeMax) {
         return $output;
     } catch (Exception $e) {
         error_log("Errore recupero eventi calendario: " . $e->getMessage());
+        set_time_limit(30); // Ripristina timeout normale
         return [];
+    } finally {
+        set_time_limit(30); // Assicura sempre il ripristino del timeout
     }
 }
 
