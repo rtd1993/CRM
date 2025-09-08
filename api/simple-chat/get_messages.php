@@ -23,10 +23,11 @@ if (!isset($_SESSION['user_id'])) {
 try {
     // Leggi input
     $input = json_decode(file_get_contents('php://input'), true);
+    $conversation_id = isset($input['conversation_id']) ? (int)$input['conversation_id'] : 1; // Default chat globale
     $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
     $since = isset($input['since']) ? (int)$input['since'] : 0;
     
-    // Query per messaggi globali
+    // Query per messaggi della conversazione specifica
     $sql = "SELECT 
                 m.id,
                 m.user_id,
@@ -35,7 +36,8 @@ try {
                 m.created_at
             FROM chat_messages m
             LEFT JOIN utenti u ON m.user_id = u.id
-            WHERE m.conversation_id = 1";
+            WHERE m.conversation_id = :conversation_id
+            AND m.is_deleted = 0";
     
     // Se richiesti solo messaggi nuovi
     if ($since > 0) {
@@ -45,6 +47,7 @@ try {
     $sql .= " ORDER BY m.created_at ASC LIMIT :limit";
     
     $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':conversation_id', $conversation_id, PDO::PARAM_INT);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     
     if ($since > 0) {

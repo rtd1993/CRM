@@ -24,6 +24,7 @@ try {
     // Leggi input
     $input = json_decode(file_get_contents('php://input'), true);
     
+    $conversation_id = isset($input['conversation_id']) ? (int)$input['conversation_id'] : 1; // Default chat globale
     $message = isset($input['message']) ? trim($input['message']) : '';
     
     // Validazione
@@ -39,19 +40,34 @@ try {
     
     $user_id = $_SESSION['user_id'];
     
+    // Verifica che la conversazione esista
+    $stmt = $pdo->prepare("SELECT id, type FROM chat_conversations WHERE id = ? AND is_active = 1");
+    $stmt->execute([$conversation_id]);
+    $conversation = $stmt->fetch();
+    
+    if (!$conversation) {
+        echo json_encode(['success' => false, 'error' => 'Conversazione non trovata']);
+        exit;
+    }
+    
     // Inserisci messaggio
     $sql = "INSERT INTO chat_messages 
             (user_id, conversation_id, message, created_at) 
             VALUES 
-            (:user_id, 1, :message, NOW())";
+            (:user_id, :conversation_id, :message, NOW())";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':user_id' => $user_id,
+        ':conversation_id' => $conversation_id,
         ':message' => $message
     ]);
     
     $message_id = $pdo->lastInsertId();
+    
+    // Aggiorna timestamp ultima attività conversazione
+    $stmt = $pdo->prepare("UPDATE chat_conversations SET last_message_at = NOW() WHERE id = ?");
+    $stmt->execute([$conversation_id]);
     
     echo json_encode([
         'success' => true,
