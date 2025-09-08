@@ -139,7 +139,8 @@ class CompleteChatSystem {
         
         // Chat globale
         if (this.elements.globalItem) {
-            this.elements.globalItem.addEventListener('click', () => {
+            this.elements.globalItem.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
                 this.log('📞 Apertura chat globale');
                 this.openChat('globale', 1, 'Chat Generale');
             });
@@ -148,6 +149,7 @@ class CompleteChatSystem {
         // Selezione cliente per pratiche
         if (this.elements.clientSelector) {
             this.elements.clientSelector.addEventListener('change', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
                 const clientId = e.target.value;
                 if (clientId) {
                     const clientName = e.target.options[e.target.selectedIndex].text;
@@ -159,7 +161,8 @@ class CompleteChatSystem {
         
         // Nuova chat privata
         if (this.elements.newPrivateBtn) {
-            this.elements.newPrivateBtn.addEventListener('click', () => {
+            this.elements.newPrivateBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
                 this.log('👥 Richiesta nuova chat privata');
                 this.showUserSelectionModal();
             });
@@ -167,14 +170,16 @@ class CompleteChatSystem {
         
         // Back to list
         if (this.elements.backBtn) {
-            this.elements.backBtn.addEventListener('click', () => {
+            this.elements.backBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
                 this.showChatList();
             });
         }
         
         // Invio messaggio
         if (this.elements.sendBtn) {
-            this.elements.sendBtn.addEventListener('click', () => {
+            this.elements.sendBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
                 this.sendMessage();
             });
         }
@@ -184,6 +189,7 @@ class CompleteChatSystem {
             this.elements.messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
+                    e.stopPropagation(); // Evita chiusura panel
                     this.sendMessage();
                 }
             });
@@ -191,19 +197,13 @@ class CompleteChatSystem {
         
         // Chiudi panel cliccando fuori
         document.addEventListener('click', (e) => {
-            this.log('🖱️ Document click detected, target:', e.target);
-            this.log('🖱️ Widget contains target:', this.elements.widget ? this.elements.widget.contains(e.target) : 'widget not found');
-            this.log('🖱️ Panel visible:', this.isVisible);
-            
             if (this.isVisible && !this.elements.widget.contains(e.target)) {
-                this.log('🖱️ Closing panel due to outside click');
                 this.hidePanel();
             }
         });
         
         // Prevent panel close quando si clicca dentro
         this.elements.panel.addEventListener('click', (e) => {
-            this.log('🖱️ Panel click detected, stopping propagation');
             e.stopPropagation();
         });
     }
