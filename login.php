@@ -50,26 +50,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($password_check) {
             $debug_info .= "Creazione sessione...<br>";
             
-            // Assicuriamoci che la sessione sia attiva
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-            
+            // Semplice assegnazione dei valori di sessione
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['nome'];
             $_SESSION['role'] = $user['ruolo'];
             
-            // Forza il salvataggio della sessione
-            session_write_close();
-            session_start();
-            
             $debug_info .= "Sessione creata. USER_ID: " . $_SESSION['user_id'] . "<br>";
-            $debug_info .= "Session ID: " . session_id() . "<br>";
-            $debug_info .= "Session data: " . print_r($_SESSION, true) . "<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
-            // Redirect immediato senza output
-            header('Location: test_session.php');
+            // Redirect immediato alla dashboard test
+            header('Location: dashboard-test.php');
             exit();
         }
     } else {
