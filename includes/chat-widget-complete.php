@@ -222,6 +222,8 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    z-index: 10000;
+    border: 3px solid red; /* DEBUG: border rosso per vedere il pannello */
 }
 
 .chat-panel.hidden {

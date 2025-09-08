@@ -259,6 +259,16 @@ class CompleteChatSystem {
         if (this.elements.panel) {
             this.elements.panel.classList.remove('hidden');
             this.log('📋 Panel classes after:', this.elements.panel.className);
+            
+            // Debug posizione
+            const rect = this.elements.panel.getBoundingClientRect();
+            this.log('📐 Panel position:', {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                visible: rect.top >= 0 && rect.left >= 0 && rect.top < window.innerHeight && rect.left < window.innerWidth
+            });
         } else {
             this.log('❌ Panel element not found!');
         }
