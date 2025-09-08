@@ -3,6 +3,7 @@
 set_time_limit(60);
 ini_set('max_execution_time', 60);
 
+require_once __DIR__ . '/includes/session_fix.php'; // Fix per sessioni
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/config.php';

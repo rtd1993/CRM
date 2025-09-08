@@ -1,7 +1,7 @@
 <?php
 // File: includes/auth.php
 
-session_start();
+require_once __DIR__ . '/session_fix.php'; // Fix per sessioni
 
 function is_logged_in() {
     return isset($_SESSION['user_id']);
