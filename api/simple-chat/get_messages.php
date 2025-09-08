@@ -35,8 +35,7 @@ try {
                 m.created_at
             FROM chat_messages m
             LEFT JOIN utenti u ON m.user_id = u.id
-            WHERE m.conversation_type = 'globale'
-            AND m.conversation_id = 1";
+            WHERE m.conversation_id = 1";
     
     // Se richiesti solo messaggi nuovi
     if ($since > 0) {

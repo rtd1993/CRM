@@ -41,9 +41,9 @@ try {
     
     // Inserisci messaggio
     $sql = "INSERT INTO chat_messages 
-            (user_id, conversation_type, conversation_id, message, created_at) 
+            (user_id, conversation_id, message, created_at) 
             VALUES 
-            (:user_id, 'globale', 1, :message, NOW())";
+            (:user_id, 1, :message, NOW())";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
