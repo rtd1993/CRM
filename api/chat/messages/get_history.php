@@ -149,11 +149,9 @@ try {
     
     echo json_encode([
         'success' => true,
-        'data' => [
-            'messages' => $messages,
-            'total' => count($messages),
-            'conversation_type' => $conversation_type
-        ],
+        'messages' => $messages,
+        'total' => count($messages),
+        'conversation_type' => $conversation_type,
         'debug' => [
             'user_id' => $current_user_id,
             'input' => $input,

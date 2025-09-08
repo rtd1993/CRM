@@ -33,7 +33,22 @@ $current_user_id = $_SESSION['user_id'];
 // Leggi i dati POST
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!$input || !isset($input['conversation_type'])) {
+if (!$input) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Dati POST mancanti'
+    ]);
+    exit;
+}
+
+// Supporta sia conversation_type che type per compatibilità
+$conversation_type = $input['conversation_type'] ?? $input['type'] ?? null;
+$conversation_id = $input['conversation_id'] ?? $input['id'] ?? null;
+$practice_id = $input['practice_id'] ?? null;
+$last_message_id = $input['last_message_id'] ?? $input['since'] ?? 0;
+
+if (!$conversation_type) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
@@ -41,11 +56,6 @@ if (!$input || !isset($input['conversation_type'])) {
     ]);
     exit;
 }
-
-$conversation_type = $input['conversation_type'];
-$conversation_id = $input['conversation_id'] ?? null;
-$practice_id = $input['practice_id'] ?? null;
-$last_message_id = $input['last_message_id'] ?? 0;
 
 try {
     // DEBUG: Simulazione di nuovi messaggi casuali
@@ -71,12 +81,10 @@ try {
     
     echo json_encode([
         'success' => true,
-        'data' => [
-            'messages' => $new_messages,
-            'count' => count($new_messages),
-            'conversation_type' => $conversation_type,
-            'last_checked' => date('Y-m-d H:i:s')
-        ],
+        'messages' => $new_messages,
+        'count' => count($new_messages),
+        'conversation_type' => $conversation_type,
+        'last_checked' => date('Y-m-d H:i:s'),
         'debug' => [
             'user_id' => $current_user_id,
             'input' => $input,
