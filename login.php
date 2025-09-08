@@ -61,6 +61,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Redirect in corso...</div>";
             echo "<script>console.log('Login success, redirecting...'); setTimeout(() => window.location.href = 'dashboard-test.php', 1000);</script>";
             exit();
+        }
+    } else {
+        $debug_info .= "Utente NON trovato per email: " . htmlspecialchars($email) . "<br>";
+        error_log("USER NOT FOUND for email: $email");
+    }
+    
+    if (!$user || !password_verify($password, $user['password'] ?? '')) {
+        $error = 'Credenziali non valide';
+        $debug_info .= "LOGIN FALLITO<br>";
+        error_log("LOGIN FAILED: Invalid credentials");
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="it">
