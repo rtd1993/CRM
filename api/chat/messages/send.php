@@ -7,28 +7,15 @@
  * Autenticazione: Richiesta
  */
 
+require_once __DIR__ . '/../../../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../../../includes/config.php';
+require_once __DIR__ . '/../../../includes/db.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
-
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once __DIR__ . '/../../../includes/config.php';
-require_once __DIR__ . '/../../../includes/auth.php';
-require_once __DIR__ . '/../../../includes/db.php';
-
-// Verifica autenticazione
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Non autenticato'
-    ]);
-    exit;
-}
 
 $current_user_id = $_SESSION['user_id'];
 

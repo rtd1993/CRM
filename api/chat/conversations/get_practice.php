@@ -4,27 +4,22 @@
  * Trova o crea una conversazione per una pratica cliente
  */
 
+require_once __DIR__ . '/../../../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../../../includes/config.php';
+require_once __DIR__ . '/../../../includes/db.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Includi configurazione database
-require_once __DIR__ . '/../../../includes/db.php';
-
-// Verifica sessione
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Non autenticato']);
-    exit;
-}
+$user_id = $_SESSION['user_id'];
 
 try {
     // Leggi input
     $input = json_decode(file_get_contents('php://input'), true);
     $client_id = isset($input['client_id']) ? (int)$input['client_id'] : null;
-    $user_id = $_SESSION['user_id'];
     
     if (!$client_id) {
         echo json_encode(['success' => false, 'error' => 'client_id richiesto']);
