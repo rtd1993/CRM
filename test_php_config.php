@@ -50,6 +50,17 @@ if (is_dir($save_path)) {
     $_SESSION['test_config'] = 'test_value_' . time();
     echo "<p>✅ Valore test aggiunto alla sessione</p>";
     
+    // IMPORTANTE: Mostra tutti i dati della sessione PRIMA di aggiungere il nostro test
+    echo "<h3>TUTTI i dati della sessione (inclusi da altre pagine):</h3>";
+    echo "<pre>" . print_r($_SESSION, true) . "</pre>";
+    
+    // Verifica specificamente user_id
+    if (isset($_SESSION['user_id'])) {
+        echo "<p style='background: green; color: white; padding: 10px;'>✅ USER_ID TROVATO: " . $_SESSION['user_id'] . "</p>";
+    } else {
+        echo "<p style='background: red; color: white; padding: 10px;'>❌ USER_ID NON TROVATO</p>";
+    }
+    
     // Cerca il nostro file di sessione
     $our_session_file = $save_path . '/sess_' . session_id();
     if (file_exists($our_session_file)) {
