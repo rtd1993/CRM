@@ -33,7 +33,7 @@ class ChatFooterSystem {
     async init() {
         try {
             this.log('🔧 Inizio inizializzazione...');
-            
+        
             this.log('📌 Binding elementi DOM...');
             this.bindElements();
             
