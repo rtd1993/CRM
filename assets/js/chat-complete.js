@@ -191,13 +191,19 @@ class CompleteChatSystem {
         
         // Chiudi panel cliccando fuori
         document.addEventListener('click', (e) => {
+            this.log('🖱️ Document click detected, target:', e.target);
+            this.log('🖱️ Widget contains target:', this.elements.widget ? this.elements.widget.contains(e.target) : 'widget not found');
+            this.log('🖱️ Panel visible:', this.isVisible);
+            
             if (this.isVisible && !this.elements.widget.contains(e.target)) {
+                this.log('🖱️ Closing panel due to outside click');
                 this.hidePanel();
             }
         });
         
         // Prevent panel close quando si clicca dentro
         this.elements.panel.addEventListener('click', (e) => {
+            this.log('🖱️ Panel click detected, stopping propagation');
             e.stopPropagation();
         });
     }
