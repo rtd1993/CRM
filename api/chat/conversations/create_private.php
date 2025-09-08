@@ -123,11 +123,22 @@ try {
     ]);
     
 } catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Include error: ' . $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
+    exit;
+}
+
+} catch (Exception $e) {
     if (isset($pdo)) {
         $pdo->rollBack();
     }
     error_log("Errore API create_private.php: " . $e->getMessage());
-    
+
     http_response_code(500);
     echo json_encode([
         'success' => false,
