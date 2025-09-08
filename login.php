@@ -49,19 +49,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($password_check) {
             $debug_info .= "Creazione sessione...<br>";
+            
+            // Assicuriamoci che la sessione sia attiva
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                session_start();
+            }
+            
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['nome'];
             $_SESSION['role'] = $user['ruolo'];
+            
+            // Forza il salvataggio della sessione
+            session_write_close();
+            session_start();
             
             $debug_info .= "Sessione creata. USER_ID: " . $_SESSION['user_id'] . "<br>";
             $debug_info .= "Session ID: " . session_id() . "<br>";
             $debug_info .= "Session data: " . print_r($_SESSION, true) . "<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
-            // Test redirect a dashboard semplificata
-            $debug_info .= "Tentativo redirect...<br>";
-            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Redirect in corso...<br>Session ID: " . session_id() . "</div>";
-            echo "<script>console.log('Login success, redirecting...'); console.log('Session data:', " . json_encode($_SESSION) . "); setTimeout(() => window.location.href = 'dashboard-test.php', 2000);</script>";
+            // Redirect immediato senza output
+            header('Location: dashboard-test.php');
             exit();
         }
     } else {
