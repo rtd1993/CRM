@@ -32,20 +32,25 @@ class CompleteChatSystem {
         
         // Configurazione
         this.config = window.completeChatConfig || {};
+        
+        // Debug configurazione
+        this.log('🔧 Configurazione ricevuta:', this.config);
+        
         this.apiBase = this.config.apiBase || '/api/chat/';
         this.pollingInterval = this.config.pollingInterval || 3000;
         
         // Verifica userId - fondamentale per il funzionamento
+        if (!this.config.userId && window.completeChatConfig) {
+            this.log('🔄 Recupero userId da window.completeChatConfig');
+            this.config = { ...window.completeChatConfig };
+        }
+        
         if (!this.config.userId) {
             console.error('❌ userId mancante nella configurazione!', this.config);
-            // Prova a recuperarlo da window.completeChatConfig se disponibile
-            if (window.completeChatConfig && window.completeChatConfig.userId) {
-                this.config.userId = window.completeChatConfig.userId;
-            } else {
-                // Fallback estremo - non dovrebbe mai succedere
-                this.config.userId = 1;
-                console.warn('🚨 Usando userId fallback:', this.config.userId);
-            }
+            // Fallback estremo
+            this.config.userId = 1;
+            this.config.userName = 'Utente';
+            console.warn('🚨 Usando userId fallback:', this.config.userId);
         }
         
         this.init();
@@ -597,8 +602,20 @@ class CompleteChatSystem {
             this.log('❌ Errore invio messaggio:', error);
             
             // FALLBACK: Simula invio messaggio locale (per testing)
-            if (conversationId >= 1000) { // Se è un ID fallback
-                this.log('🔧 Simulando invio messaggio locale per conversation_id fallback:', conversationId);
+            // Ottieni conversationId per il fallback
+            let fallbackConversationId = null;
+            if (this.currentChat.type === 'globale') {
+                fallbackConversationId = 1;
+            } else if (this.currentChat.type === 'pratica') {
+                fallbackConversationId = 1000 + parseInt(this.currentChat.id);
+            } else if (this.currentChat.type === 'privata') {
+                const userId1 = Math.min(this.config.userId, parseInt(this.currentChat.id));
+                const userId2 = Math.max(this.config.userId, parseInt(this.currentChat.id));
+                fallbackConversationId = 2000 + userId1 * 100 + userId2;
+            }
+            
+            if (fallbackConversationId && fallbackConversationId >= 1000) { // Se è un ID fallback
+                this.log('🔧 Simulando invio messaggio locale per conversation_id fallback:', fallbackConversationId);
                 
                 // Aggiungi messaggio alla UI come se fosse stato inviato
                 this.addMessageToUI({
