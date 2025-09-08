@@ -90,15 +90,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
             <div class="chat-private-section">
                 <div class="chat-section-header">
                     <span>👥 Chat Private</span>
-                    <button id="new-private-chat-btn" class="btn-new-chat">
-                        <i class="fas fa-plus"></i>
-                    </button>
                 </div>
                 <div id="private-chats-list">
-                    <!-- Lista chat private dinamica -->
-                    <div class="no-private-chats" style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
-                        Nessuna chat privata.<br>Clicca + per iniziare.
-                    </div>
+                    <!-- Lista utenti per chat private - caricata dinamicamente -->
                 </div>
             </div>
         </div>
@@ -129,23 +123,6 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                 <button id="send-message-btn" class="btn-send" disabled>
                     <i class="fas fa-paper-plane"></i>
                 </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Selezione Utente per Chat Private -->
-<div class="modal fade" id="userSelectionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nuova Chat Privata</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="list-group" id="users-list">
-                    <!-- Lista utenti dinamica -->
-                </div>
             </div>
         </div>
     </div>
@@ -362,6 +339,27 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     font-weight: 600;
     font-size: 13px;
     color: #495057;
+}
+
+/* Online Indicator */
+.online-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #28a745;
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+.online-indicator.offline {
+    background: #6c757d;
+}
+
+.chat-status {
+    font-size: 11px;
+    color: #6c757d;
 }
 
 .btn-new-chat {

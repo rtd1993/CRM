@@ -31,38 +31,20 @@ class CompleteChatSystem {
         this.elements = {};
         
         // Configurazione
-        console.log('🔍 PRIMA - window.completeChatConfig:', window.completeChatConfig);
         this.config = window.completeChatConfig || {};
-        console.log('🔍 DOPO copia - this.config:', this.config);
-        
-        // Debug configurazione
-        this.log('🔧 Configurazione ricevuta:', this.config);
-        
         this.apiBase = this.config.apiBase || '/api/chat/';
         this.pollingInterval = this.config.pollingInterval || 3000;
         
         // Verifica userId - fondamentale per il funzionamento
         if (!this.config.userId && window.completeChatConfig) {
-            this.log('🔄 Recupero userId da window.completeChatConfig');
-            console.log('🔍 Tentativo di recupero da window.completeChatConfig.userId:', window.completeChatConfig.userId);
             this.config = { ...window.completeChatConfig };
-            console.log('🔍 DOPO spread operator - this.config:', this.config);
         }
         
         if (!this.config.userId) {
-            console.error('❌ userId mancante nella configurazione!', this.config);
             // Fallback estremo - usa il valore che vediamo nei log
-            this.config.userId = 2; // Usiamo il valore corretto dal config originale
+            this.config.userId = 2;
             this.config.userName = 'Roberto';
-            console.warn('🚨 Usando userId fallback:', this.config.userId);
         }
-        
-        // Verifica finale
-        console.log('✅ CONFIGURAZIONE FINALE:', {
-            userId: this.config.userId,
-            userName: this.config.userName,
-            apiBase: this.apiBase
-        });
         
         this.init();
     }
@@ -203,17 +185,17 @@ class CompleteChatSystem {
             });
         }
         
-        // Nuova chat privata
-        if (this.elements.newPrivateBtn) {
-            this.elements.newPrivateBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Evita chiusura panel
-                this.log('👥 CLICK RICEVUTO su nuova chat privata!');
-                this.log('👥 Richiesta nuova chat privata');
-                this.showUserSelectionModal();
-            });
-        } else {
-            this.log('❌ Elemento newPrivateBtn non trovato!');
-        }
+        // Rimuoviamo il pulsante nuova chat privata
+        // if (this.elements.newPrivateBtn) {
+        //     this.elements.newPrivateBtn.addEventListener('click', (e) => {
+        //         e.stopPropagation();
+        //         this.log('👥 CLICK RICEVUTO su nuova chat privata!');
+        //         this.log('👥 Richiesta nuova chat privata');
+        //         this.showUserSelectionModal();
+        //     });
+        // } else {
+        //     this.log('❌ Elemento newPrivateBtn non trovato!');
+        // }
         
         // Back to list
         if (this.elements.backBtn) {
@@ -721,14 +703,69 @@ class CompleteChatSystem {
     renderPrivateChats(chats) {
         this.elements.privatesList.innerHTML = '';
         
-        if (!chats || chats.length === 0) {
-            this.elements.privatesList.innerHTML = `
-                <div class="no-private-chats" style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
-                    Nessuna chat privata.<br>
-                    Clicca + per iniziare.
-                </div>
-            `;
-            return;
+        // Carica tutti gli utenti disponibili invece delle chat esistenti
+        this.loadAndRenderAllUsers();
+    }
+    
+    /**
+     * Carica e renderizza tutti gli utenti per le chat private
+     */
+    async loadAndRenderAllUsers() {
+        try {
+            // Carica utenti (per ora usiamo dati mock, poi si può collegare a API reale)
+            const users = [
+                {id: 1, name: 'Admin', is_online: true},
+                {id: 2, name: 'Roberto', is_online: true},
+                {id: 3, name: 'Mario', is_online: false},
+                {id: 4, name: 'Luca', is_online: true}
+            ];
+            
+            // Filtra l'utente corrente
+            const availableUsers = users.filter(user => user.id != this.config.userId);
+            
+            if (availableUsers.length === 0) {
+                this.elements.privatesList.innerHTML = `
+                    <div style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
+                        Nessun altro utente disponibile.
+                    </div>
+                `;
+                return;
+            }
+            
+            // Renderizza tutti gli utenti come chat private
+            availableUsers.forEach(user => {
+                const userHTML = `
+                    <div class="chat-item" data-type="privata" data-id="${user.id}">
+                        <div class="chat-avatar user" style="position: relative;">
+                            ${user.name.charAt(0).toUpperCase()}
+                            <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">${this.escapeHtml(user.name)}</div>
+                            <div class="chat-last-message">Clicca per iniziare una chat</div>
+                        </div>
+                        <div class="chat-meta">
+                            <span class="chat-status">${user.is_online ? 'Online' : 'Offline'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                this.elements.privatesList.insertAdjacentHTML('beforeend', userHTML);
+            });
+            
+            // Aggiungi event listener per ogni utente
+            this.elements.privatesList.querySelectorAll('.chat-item[data-type="privata"]').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const userId = item.dataset.id;
+                    const userName = item.querySelector('.chat-name').textContent;
+                    this.log('👥 Click su utente per chat privata:', userName);
+                    this.openChat('privata', userId, userName);
+                });
+            });
+            
+        } catch (error) {
+            this.log('❌ Errore caricamento utenti:', error);
         }
         
         chats.forEach(chat => {
