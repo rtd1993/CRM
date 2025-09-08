@@ -5,7 +5,7 @@ echo "🚀 Caricamento file chat sul server..."
 
 # Configurazione
 SERVER="admin@192.168.1.80"
-REMOTE_PATH="/var/www/html/ascontabilmente.homes"
+REMOTE_PATH="/var/www/CRM"
 LOCAL_PATH="/c/Users/rtd19/Documents/GitHub/CRM"
 
 # Carica i file delle API chat
