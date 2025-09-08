@@ -211,7 +211,7 @@ class ChatFooterSystem {
      * Mostra panel
      */
     showPanel() {
-        this.elements.panel.style.display = 'flex';
+        this.elements.panel.style.setProperty('display', 'flex', 'important');
         this.elements.toggleBtn.classList.add('active');
         this.isVisible = true;
         
@@ -224,7 +224,7 @@ class ChatFooterSystem {
      * Nascondi panel
      */
     hidePanel() {
-        this.elements.panel.style.display = 'none';
+        this.elements.panel.style.setProperty('display', 'none', 'important');
         this.elements.toggleBtn.classList.remove('active');
         this.isVisible = false;
         
