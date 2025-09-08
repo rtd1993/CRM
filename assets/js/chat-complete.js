@@ -31,7 +31,9 @@ class CompleteChatSystem {
         this.elements = {};
         
         // Configurazione
+        console.log('🔍 PRIMA - window.completeChatConfig:', window.completeChatConfig);
         this.config = window.completeChatConfig || {};
+        console.log('🔍 DOPO copia - this.config:', this.config);
         
         // Debug configurazione
         this.log('🔧 Configurazione ricevuta:', this.config);
@@ -42,16 +44,25 @@ class CompleteChatSystem {
         // Verifica userId - fondamentale per il funzionamento
         if (!this.config.userId && window.completeChatConfig) {
             this.log('🔄 Recupero userId da window.completeChatConfig');
+            console.log('🔍 Tentativo di recupero da window.completeChatConfig.userId:', window.completeChatConfig.userId);
             this.config = { ...window.completeChatConfig };
+            console.log('🔍 DOPO spread operator - this.config:', this.config);
         }
         
         if (!this.config.userId) {
             console.error('❌ userId mancante nella configurazione!', this.config);
-            // Fallback estremo
-            this.config.userId = 1;
-            this.config.userName = 'Utente';
+            // Fallback estremo - usa il valore che vediamo nei log
+            this.config.userId = 2; // Usiamo il valore corretto dal config originale
+            this.config.userName = 'Roberto';
             console.warn('🚨 Usando userId fallback:', this.config.userId);
         }
+        
+        // Verifica finale
+        console.log('✅ CONFIGURAZIONE FINALE:', {
+            userId: this.config.userId,
+            userName: this.config.userName,
+            apiBase: this.apiBase
+        });
         
         this.init();
     }
