@@ -30,6 +30,16 @@ echo "<strong>Session Save Path:</strong> " . session_save_path() . "<br>";
 echo "<strong>Session Cookie Params:</strong> " . print_r(session_get_cookie_params(), true) . "<br>";
 echo "<strong>Session Data:</strong><pre>" . print_r($_SESSION, true) . "</pre>";
 echo "<strong>All Cookies:</strong><pre>" . print_r($_COOKIE, true) . "</pre>";
+
+// Mostra contenuto del file di sessione
+$session_file = session_save_path() . '/sess_' . session_id();
+if (file_exists($session_file)) {
+    echo "<strong>Contenuto file sessione:</strong> " . file_get_contents($session_file) . "<br>";
+    echo "<strong>File size:</strong> " . filesize($session_file) . " bytes<br>";
+    echo "<strong>File modified:</strong> " . date('Y-m-d H:i:s', filemtime($session_file)) . "<br>";
+} else {
+    echo "<strong>File sessione NON TROVATO:</strong> " . $session_file . "<br>";
+}
 echo "</div>";
 
 // Test scrittura/lettura
