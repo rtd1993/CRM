@@ -216,7 +216,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     right: 0;
     width: 350px;
     height: 500px;
-    background: white;
+    background: lime !important; /* DEBUG: sfondo verde lime */
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     overflow: hidden;
@@ -224,6 +224,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     flex-direction: column;
     z-index: 10000;
     border: 3px solid red; /* DEBUG: border rosso per vedere il pannello */
+    opacity: 1 !important; /* DEBUG: assicura opacità */
 }
 
 .chat-panel.hidden {

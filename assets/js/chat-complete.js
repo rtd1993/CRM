@@ -269,6 +269,16 @@ class CompleteChatSystem {
                 height: rect.height,
                 visible: rect.top >= 0 && rect.left >= 0 && rect.top < window.innerHeight && rect.left < window.innerWidth
             });
+            
+            // Debug CSS computato
+            const computed = window.getComputedStyle(this.elements.panel);
+            this.log('🎨 Panel computed styles:', {
+                display: computed.display,
+                visibility: computed.visibility,
+                opacity: computed.opacity,
+                zIndex: computed.zIndex,
+                backgroundColor: computed.backgroundColor
+            });
         } else {
             this.log('❌ Panel element not found!');
         }
