@@ -28,12 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $debug_info .= "POST ricevuto. Email: " . htmlspecialchars($email) . "<br>";
     
-    // Debug
-    error_log("LOGIN ATTEMPT: Email = $email");
+    // Query per trovare l'utente
+    $stmt = $pdo->prepare("SELECT id, nome, email, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
+    $debug_info .= "Query preparata<br>";
     
-    $stmt = $pdo->prepare("SELECT id, nome, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
     $stmt->execute([$email]);
+    $debug_info .= "Query eseguita<br>";
+    
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $debug_info .= "Risultato fetch: " . ($user ? "TROVATO" : "NON TROVATO") . "<br>";
 
     if ($user) {
         $debug_info .= "Utente trovato: " . htmlspecialchars($user['nome']) . " (ID: " . $user['id'] . ")<br>";
@@ -41,31 +44,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $password_check = password_verify($password, $user['password']);
         $debug_info .= "Verifica password: " . ($password_check ? "SUCCESS" : "FAILED") . "<br>";
+        $debug_info .= "Hash nel DB: " . substr($user['password'], 0, 20) . "...<br>";
         error_log("PASSWORD CHECK: " . ($password_check ? 'SUCCESS' : 'FAILED'));
         
         if ($password_check) {
+            $debug_info .= "Creazione sessione...<br>";
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['nome'];
             $_SESSION['role'] = $user['ruolo'];
             
-            $debug_info .= "Sessione creata. Reindirizzamento...<br>";
+            $debug_info .= "Sessione creata. USER_ID: " . $_SESSION['user_id'] . "<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
             // Test redirect a dashboard semplificata
-            header('Location: dashboard-test.php');
+            $debug_info .= "Tentativo redirect...<br>";
+            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Redirect in corso...</div>";
+            echo "<script>console.log('Login success, redirecting...'); setTimeout(() => window.location.href = 'dashboard-test.php', 1000);</script>";
             exit();
-        }
-    } else {
-        $debug_info .= "Utente NON trovato per email: " . htmlspecialchars($email) . "<br>";
-        error_log("USER NOT FOUND for email: $email");
-    }
-    
-    if (!$user || !password_verify($password, $user['password'] ?? '')) {
-        $error = 'Credenziali non valide';
-        $debug_info .= "LOGIN FALLITO<br>";
-        error_log("LOGIN FAILED: Invalid credentials");
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="it">
