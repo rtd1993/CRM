@@ -1,41 +1,12 @@
 <?php
-session_start();
-
-// Debug: aggiungi gestione errori dettagliata
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-try {
-    require_once '../includes/config.php';
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Config error: ' . $e->getMessage()]);
-    exit;
-}
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/db.php';
 
 header('Content-Type: application/json');
 
 try {
-    // Debug sessione
-    $debug_info = [
-        'session_id' => session_id(),
-        'session_user_id' => $_SESSION['user_id'] ?? 'not_set',
-        'session_data' => $_SESSION ?? []
-    ];
-
-    // Controllo autenticazione
-    if (!isset($_SESSION['user_id'])) {
-        echo json_encode([
-            'success' => false, 
-            'error' => 'Non autenticato',
-            'debug' => $debug_info
-        ]);
-        exit;
-    }
-
-    // Includi database dopo controllo sessione
-    require_once '../includes/db.php';
-    
     $current_user_id = $_SESSION['user_id'];
 
     // Query per ottenere tutti gli utenti tranne l'utente corrente
