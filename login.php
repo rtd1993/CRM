@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
             // Redirect immediato senza output
-            header('Location: dashboard-test.php');
+            header('Location: test_session.php');
             exit();
         }
     } else {
