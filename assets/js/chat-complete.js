@@ -253,7 +253,16 @@ class CompleteChatSystem {
      */
     showPanel() {
         this.log('🔓 Apertura panel chat');
-        this.elements.panel.classList.remove('hidden');
+        this.log('📋 Panel element:', this.elements.panel);
+        this.log('📋 Panel classes before:', this.elements.panel ? this.elements.panel.className : 'ELEMENT NOT FOUND');
+        
+        if (this.elements.panel) {
+            this.elements.panel.classList.remove('hidden');
+            this.log('📋 Panel classes after:', this.elements.panel.className);
+        } else {
+            this.log('❌ Panel element not found!');
+        }
+        
         this.elements.toggleBtn.classList.add('active');
         this.isVisible = true;
         
