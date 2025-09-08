@@ -39,6 +39,7 @@ echo "<p>Timestamp aggiunto alla sessione: " . $_SESSION['timestamp'] . "</p>";
 // Link per testare
 echo "<p><a href='test_session.php'>Ricarica per testare persistenza</a></p>";
 echo "<p><a href='test_session.php?simulate_login=1'>🔥 SIMULA LOGIN (aggiungi user_id alla sessione)</a></p>";
+echo "<p><a href='test_login_direct.php'>🔧 TEST LOGIN DIRETTO (con database reale)</a></p>";
 echo "<p><a href='dashboard-test.php'>Test Dashboard dopo simulazione login</a></p>";
 echo "<p><a href='login.php'>Torna al Login</a></p>";
 ?>
