@@ -20,10 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     
+    error_log("LOGIN ATTEMPT: Email = $email");
+    
     // Query per trovare l'utente
     $stmt = $pdo->prepare("SELECT id, nome, email, password, ruolo FROM utenti WHERE email = ? LIMIT 1");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    error_log("USER LOOKUP: " . ($user ? "FOUND ID=" . $user['id'] : "NOT FOUND"));
 
     if ($user && password_verify($password, $user['password'])) {
         // Login successo - imposta sessione
@@ -31,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_name'] = $user['nome'];
         $_SESSION['role'] = $user['ruolo'];
         
-        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
+        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in, redirecting to dashboard.php");
         
         // Redirect alla dashboard originale ora che sappiamo il problema
         header('Location: dashboard.php');
@@ -398,10 +402,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             
-            <?php if ($error): ?>
+                        <?php if ($error): ?>
                 <div class="error-message">
                     <i class="fas fa-exclamation-triangle"></i>
                     <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
+            
+            <!-- Debug temporaneo -->
+            <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+                <div style="background: yellow; padding: 10px; margin: 10px; font-size: 12px;">
+                    <strong>DEBUG POST:</strong><br>
+                    Email ricevuta: <?= htmlspecialchars($_POST['email'] ?? 'NESSUNA') ?><br>
+                    Password ricevuta: <?= !empty($_POST['password']) ? 'SI' : 'NO' ?><br>
+                    Errore: <?= htmlspecialchars($error) ?><br>
                 </div>
             <?php endif; ?>            <form method="post" action="" id="loginForm">
                 <div class="form-group">
