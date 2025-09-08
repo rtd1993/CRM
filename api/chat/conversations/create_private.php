@@ -7,17 +7,33 @@
  * Autenticazione: Richiesta
  */
 
-require_once __DIR__ . '/../../../includes/auth.php';
-require_login();
-require_once __DIR__ . '/../../../includes/config.php';
-require_once __DIR__ . '/../../../includes/db.php';
+// Debug: aggiungi gestione errori dettagliata
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+try {
+    require_once __DIR__ . '/../../../includes/auth.php';
+    require_login();
+    require_once __DIR__ . '/../../../includes/config.php';
+    require_once __DIR__ . '/../../../includes/db.php';
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Include error: ' . $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
+    exit;
+}
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-$current_user_id = $_SESSION['user_id'];
+try {
+    $current_user_id = $_SESSION['user_id'];
 
 // Leggi i dati POST
 $input = json_decode(file_get_contents('php://input'), true);
@@ -118,13 +134,19 @@ try {
     ]);
     
 } catch (Exception $e) {
-    $pdo->rollBack();
+    if (isset($pdo)) {
+        $pdo->rollBack();
+    }
     error_log("Errore API create_private.php: " . $e->getMessage());
     
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Errore interno del server'
+        'error' => $e->getMessage(),
+        'debug' => [
+            'file' => basename($e->getFile()),
+            'line' => $e->getLine()
+        ]
     ]);
 }
 ?>
