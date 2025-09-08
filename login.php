@@ -51,9 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $debug_info .= "Sessione creata. Reindirizzamento...<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
-            // Aggiungi un small delay per vedere il debug
-            echo "<div style='position:fixed;top:10px;left:10px;background:green;color:white;padding:10px;z-index:9999;'>LOGIN SUCCESS! Reindirizzamento in 2 secondi...</div>";
-            echo "<script>setTimeout(() => window.location.href = 'dashboard.php', 2000);</script>";
+            // Redirect diretto senza delay
+            header('Location: dashboard.php');
             exit();
         }
     } else {
