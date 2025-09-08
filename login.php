@@ -51,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $debug_info .= "Sessione creata. Reindirizzamento...<br>";
             error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
             
-            // Redirect diretto senza delay
-            header('Location: dashboard.php');
+            // Test redirect a dashboard semplificata
+            header('Location: dashboard-test.php');
             exit();
         }
     } else {
