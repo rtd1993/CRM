@@ -116,8 +116,20 @@ class CompleteChatSystem {
             widget: !!this.elements.widget,
             toggleBtn: !!this.elements.toggleBtn,
             panel: !!this.elements.panel,
-            chatWindow: !!this.elements.chatWindow
+            chatWindow: !!this.elements.chatWindow,
+            globalItem: !!this.elements.globalItem,
+            practiceItem: !!this.elements.practiceItem,
+            clientSelector: !!this.elements.clientSelector,
+            newPrivateBtn: !!this.elements.newPrivateBtn
         });
+        
+        // Debug elementi critici
+        if (!this.elements.globalItem) {
+            this.log('❌ GlobalItem non trovato! Elemento nel DOM:', document.querySelector('[data-type="globale"]'));
+        }
+        if (!this.elements.practiceItem) {
+            this.log('❌ PracticeItem non trovato! Elemento nel DOM:', document.querySelector('[data-type="pratiche"]'));
+        }
     }
     
     /**
@@ -141,9 +153,12 @@ class CompleteChatSystem {
         if (this.elements.globalItem) {
             this.elements.globalItem.addEventListener('click', (e) => {
                 e.stopPropagation(); // Evita chiusura panel
+                this.log('📞 CLICK RICEVUTO su chat globale!');
                 this.log('📞 Apertura chat globale');
                 this.openChat('globale', 1, 'Chat Generale');
             });
+        } else {
+            this.log('❌ Elemento globalItem non trovato!');
         }
         
         // Selezione cliente per pratiche

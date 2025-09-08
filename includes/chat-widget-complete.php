@@ -275,6 +275,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     border-bottom: 1px solid #e9ecef;
     cursor: pointer;
     transition: background 0.3s ease;
+    pointer-events: auto; /* Assicura che riceva i click */
+    position: relative; /* Assicura posizionamento corretto */
+    z-index: 1; /* Sopra altri elementi */
 }
 
 .chat-item:hover {
