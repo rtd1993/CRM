@@ -31,7 +31,7 @@ try {
         [
             'id' => 1,
             'name' => 'Admin',
-            'type' => 'private',
+            'type' => 'privata',
             'other_user' => [
                 'id' => 2,
                 'name' => 'Admin',
