@@ -69,7 +69,7 @@ try {
         FROM chat_conversations c
         INNER JOIN chat_participants cp1 ON c.id = cp1.conversation_id AND cp1.user_id = ?
         INNER JOIN chat_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id = ?
-        WHERE c.type = 'private'
+        WHERE c.type = 'privata'
         AND (
             SELECT COUNT(*) FROM chat_participants cp3 WHERE cp3.conversation_id = c.id
         ) = 2
@@ -96,7 +96,7 @@ try {
     // Crea nuova conversazione
     $stmt = $pdo->prepare("
         INSERT INTO chat_conversations (name, type, created_by, created_at) 
-        VALUES (?, 'private', ?, NOW())
+        VALUES (?, 'privata', ?, NOW())
     ");
     $conversation_name = "Chat con " . $other_user['nome'];
     $stmt->execute([$conversation_name, $current_user_id]);
