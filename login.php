@@ -34,8 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in");
         
-        // Redirect pulito senza output
-        header('Location: dashboard-test.php');
+        // Redirect alla dashboard originale ora che sappiamo il problema
+        header('Location: dashboard.php');
         exit();
     } else {
         $error = 'Credenziali non valide';
