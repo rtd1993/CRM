@@ -16,22 +16,13 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             id,
-            username,
             nome,
             cognome,
             email,
-            ruolo,
-            last_activity
+            ruolo
         FROM utenti 
-        WHERE id != ? 
-        AND status = 'active'
-        ORDER BY 
-            CASE 
-                WHEN last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN 1 
-                ELSE 0 
-            END DESC,
-            nome ASC,
-            cognome ASC
+        WHERE id != ?
+        ORDER BY nome ASC, cognome ASC
     ");
     
     $stmt->execute([$current_user_id]);
@@ -40,29 +31,24 @@ try {
     $result = [];
     
     foreach ($users as $user) {
-        // Determina se l'utente è online (ultima attività negli ultimi 5 minuti)
+        // Per ora tutti gli utenti sono considerati offline
+        // TODO: Implementare sistema di presenza online se necessario
         $is_online = false;
-        if ($user['last_activity']) {
-            $last_activity = new DateTime($user['last_activity']);
-            $now = new DateTime();
-            $diff = $now->getTimestamp() - $last_activity->getTimestamp();
-            $is_online = $diff < 300; // 5 minuti
-        }
         
         // Costruisci il nome completo
         $full_name = trim($user['nome'] . ' ' . $user['cognome']);
         if (empty($full_name)) {
-            $full_name = $user['username'];
+            $full_name = 'Utente ' . $user['id'];
         }
         
         $result[] = [
             'id' => $user['id'],
-            'username' => $user['username'],
+            'username' => 'user' . $user['id'], // Genera un username basato sull'ID
             'name' => $full_name,
             'email' => $user['email'],
             'ruolo' => $user['ruolo'],
             'is_online' => $is_online,
-            'last_activity' => $user['last_activity']
+            'last_activity' => null
         ];
     }
 

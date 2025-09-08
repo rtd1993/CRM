@@ -451,6 +451,28 @@ class CompleteChatSystem {
             
         } catch (error) {
             this.log('❌ Errore caricamento cronologia:', error);
+            
+            // FALLBACK: Usa messaggi locali se disponibili per conversation ID >= 1000
+            let fallbackConversationId = null;
+            if (type === 'pratica') {
+                fallbackConversationId = 1000 + parseInt(id);
+            } else if (type === 'privata') {
+                const userId1 = Math.min(this.config.userId, parseInt(id));
+                const userId2 = Math.max(this.config.userId, parseInt(id));
+                fallbackConversationId = 2000 + userId1 * 100 + userId2;
+            }
+            
+            if (fallbackConversationId && fallbackConversationId >= 1000) {
+                this.log('🔧 Caricamento messaggi locali per conversation_id fallback:', fallbackConversationId);
+                const localMessages = this.getLocalMessages(fallbackConversationId);
+                if (localMessages.length > 0) {
+                    this.log('📱 Messaggi locali trovati:', localMessages.length);
+                    this.renderMessages(localMessages);
+                    this.scrollToBottom();
+                    return; // Non mostrare errore se abbiamo messaggi locali
+                }
+            }
+            
             this.showError('Errore nel caricamento dei messaggi');
         } finally {
             this.hideLoading();
@@ -610,15 +632,21 @@ class CompleteChatSystem {
             if (fallbackConversationId && fallbackConversationId >= 1000) { // Se è un ID fallback
                 this.log('🔧 Simulando invio messaggio locale per conversation_id fallback:', fallbackConversationId);
                 
-                // Aggiungi messaggio alla UI come se fosse stato inviato
-                this.addMessageToUI({
+                // Crea oggetto messaggio
+                const messageObj = {
                     id: Date.now(),
                     user_id: this.config.userId,
                     user_name: this.config.userName,
                     message: message,
                     created_at: new Date().toISOString(),
                     is_own: true
-                });
+                };
+                
+                // Salva messaggio localmente
+                this.saveMessageLocally(fallbackConversationId, messageObj);
+                
+                // Aggiungi messaggio alla UI
+                this.addMessageToUI(messageObj);
                 
                 // Pulisci input
                 this.elements.messageInput.value = '';
@@ -1097,6 +1125,56 @@ class CompleteChatSystem {
         return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
     }
     
+    /**
+     * Gestione persistenza locale dei messaggi (fallback)
+     */
+    getLocalStorageKey(conversationId) {
+        return `chat_messages_${this.config.userId}_${conversationId}`;
+    }
+    
+    saveMessageLocally(conversationId, message) {
+        try {
+            const key = this.getLocalStorageKey(conversationId);
+            const messages = this.getLocalMessages(conversationId);
+            messages.push({
+                ...message,
+                is_local: true,
+                local_timestamp: Date.now()
+            });
+            
+            // Mantieni solo gli ultimi 100 messaggi per conversazione
+            if (messages.length > 100) {
+                messages.splice(0, messages.length - 100);
+            }
+            
+            localStorage.setItem(key, JSON.stringify(messages));
+            this.log('💾 Messaggio salvato localmente:', conversationId, message.message);
+        } catch (error) {
+            this.log('❌ Errore salvataggio locale:', error);
+        }
+    }
+    
+    getLocalMessages(conversationId) {
+        try {
+            const key = this.getLocalStorageKey(conversationId);
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            this.log('❌ Errore caricamento messaggi locali:', error);
+            return [];
+        }
+    }
+    
+    clearLocalMessages(conversationId) {
+        try {
+            const key = this.getLocalStorageKey(conversationId);
+            localStorage.removeItem(key);
+            this.log('🗑️ Messaggi locali rimossi per:', conversationId);
+        } catch (error) {
+            this.log('❌ Errore pulizia messaggi locali:', error);
+        }
+    }
+
     /**
      * Logging
      */
