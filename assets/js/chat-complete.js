@@ -807,56 +807,17 @@ class CompleteChatSystem {
         } catch (error) {
             this.log('❌ Errore caricamento utenti:', error);
             
-            // Fallback con utenti mock se l'API non funziona
-            this.log('⚠️ Uso utenti mock come fallback');
-            const mockUsers = [
-                { id: 1, name: 'Admin Sistema', is_online: true, ruolo: 'admin', username: 'admin' },
-                { id: 2, name: 'Mario Rossi', is_online: false, ruolo: 'utente', username: 'mario.rossi' },
-                { id: 3, name: 'Giulia Verdi', is_online: true, ruolo: 'manager', username: 'giulia.verdi' }
-            ];
-            
-            // Filtra l'utente corrente se necessario
-            const availableUsers = mockUsers.filter(user => user.id != this.config.userId);
-            
-            if (availableUsers.length === 0) {
-                this.elements.privatesList.innerHTML = `
-                    <div style="padding: 15px; text-align: center; color: #6c757d; font-size: 13px;">
-                        Nessun altro utente disponibile.
-                    </div>
-                `;
-                return;
-            }
-            
-            availableUsers.forEach(user => {
-                const userHTML = `
-                    <div class="chat-item" data-type="privata" data-id="${user.id}">
-                        <div class="chat-avatar user" style="position: relative;">
-                            ${user.name.charAt(0).toUpperCase()}
-                            <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">${this.escapeHtml(user.name)}</div>
-                            <div class="chat-last-message">${user.ruolo} • ${user.username}</div>
-                        </div>
-                        <div class="chat-meta">
-                            <div class="user-status">${user.is_online ? '🟢' : '⚫'}</div>
-                        </div>
-                    </div>
-                `;
-                
-                this.elements.privatesList.insertAdjacentHTML('beforeend', userHTML);
-            });
-            
-            // Aggiungi event listeners anche per i mock users
-            this.elements.privatesList.querySelectorAll('.chat-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const userId = item.dataset.id;
-                    const userName = item.querySelector('.chat-name').textContent;
-                    this.log('👥 Click su utente per chat privata (mock):', userName);
-                    this.openChat('privata', userId, userName);
-                });
-            });
+            // Mostra messaggio di errore invece di dati mock
+            this.elements.privatesList.innerHTML = `
+                <div style="padding: 15px; text-align: center; color: #dc3545; font-size: 13px;">
+                    <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                    Errore nel caricamento degli utenti.<br>
+                    <button onclick="window.completeChatSystem.loadAndRenderAllUsers()" 
+                            style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-size: 11px;">
+                        Riprova
+                    </button>
+                </div>
+            `;
         }
     }
     
@@ -1123,6 +1084,42 @@ class CompleteChatSystem {
         if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
         
         return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+    }
+    
+    /**
+     * Salva messaggio localmente (localStorage)
+     */
+    saveMessageLocally(conversationId, messageObj) {
+        try {
+            const key = `chat_messages_${conversationId}`;
+            let messages = JSON.parse(localStorage.getItem(key) || '[]');
+            messages.push(messageObj);
+            
+            // Mantieni solo gli ultimi 100 messaggi
+            if (messages.length > 100) {
+                messages = messages.slice(-100);
+            }
+            
+            localStorage.setItem(key, JSON.stringify(messages));
+            this.log('💾 Messaggio salvato localmente:', messageObj.message);
+        } catch (error) {
+            this.log('❌ Errore salvataggio locale:', error);
+        }
+    }
+    
+    /**
+     * Ottieni messaggi locali (localStorage)
+     */
+    getLocalMessages(conversationId) {
+        try {
+            const key = `chat_messages_${conversationId}`;
+            const messages = JSON.parse(localStorage.getItem(key) || '[]');
+            this.log('📱 Messaggi locali caricati:', messages.length);
+            return messages;
+        } catch (error) {
+            this.log('❌ Errore caricamento messaggi locali:', error);
+            return [];
+        }
     }
     
     /**
