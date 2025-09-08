@@ -376,6 +376,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     justify-content: center;
     cursor: pointer;
     font-size: 12px;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
 }
 
 .btn-new-chat:hover {
@@ -458,6 +461,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     border-top: 1px solid #e9ecef;
     display: flex;
     gap: 10px;
+    position: relative;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .chat-input {
@@ -468,6 +474,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     font-size: 14px;
     outline: none;
     resize: none;
+    position: relative;
+    z-index: 101;
+    pointer-events: auto;
 }
 
 .chat-input:focus {
@@ -492,6 +501,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     align-items: center;
     justify-content: center;
     transition: background 0.3s ease;
+    position: relative;
+    z-index: 102;
+    pointer-events: auto;
 }
 
 .btn-send:hover:not(:disabled) {

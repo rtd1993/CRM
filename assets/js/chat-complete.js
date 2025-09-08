@@ -178,9 +178,12 @@ class CompleteChatSystem {
         if (this.elements.newPrivateBtn) {
             this.elements.newPrivateBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Evita chiusura panel
+                this.log('👥 CLICK RICEVUTO su nuova chat privata!');
                 this.log('👥 Richiesta nuova chat privata');
                 this.showUserSelectionModal();
             });
+        } else {
+            this.log('❌ Elemento newPrivateBtn non trovato!');
         }
         
         // Back to list
