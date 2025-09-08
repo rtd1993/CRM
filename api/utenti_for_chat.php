@@ -35,7 +35,7 @@ try {
         $is_online = false;
         
         // Costruisci il nome completo
-        $full_name = trim($user['nome'] . ' ' . $user['cognome']);
+        $full_name = trim($user['nome']);
         if (empty($full_name)) {
             $full_name = 'Utente ' . $user['id'];
         }
