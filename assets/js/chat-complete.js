@@ -921,24 +921,47 @@ class CompleteChatSystem {
      */
     async updateUnreadCounts() {
         try {
-            // TODO: Implementare API per contatori non letti
-            // Per ora usa valori mock
-            const counts = {
-                globale: 0,
-                pratiche: 0,
-                private: 0
-            };
+            this.log('🔔 Aggiornamento contatori non letti...');
+            
+            const response = await fetch('/api/get_all_unread_counts.php', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Errore HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Errore sconosciuto');
+            }
+            
+            const counts = data.counts;
+            this.log('📊 Contatori ricevuti:', counts);
             
             // Aggiorna badge
             this.updateBadge(this.elements.globalBadge, counts.globale);
             this.updateBadge(this.elements.practiceBadge, counts.pratiche);
             
             // Badge totale
-            const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-            this.updateBadge(this.elements.totalBadge, total);
+            this.updateBadge(this.elements.totalBadge, counts.total);
+            
+            // Salva contatori in cache per confronti futuri
+            this.unreadCounts = counts;
             
         } catch (error) {
             this.log('❌ Errore aggiornamento contatori:', error);
+            
+            // In caso di errore, prova a mostrare contatori da cache
+            if (this.unreadCounts) {
+                this.updateBadge(this.elements.globalBadge, this.unreadCounts.globale || 0);
+                this.updateBadge(this.elements.practiceBadge, this.unreadCounts.pratiche || 0);
+                this.updateBadge(this.elements.totalBadge, this.unreadCounts.total || 0);
+            }
         }
     }
     
@@ -961,13 +984,31 @@ class CompleteChatSystem {
      */
     async markAsRead(type, id) {
         try {
-            // TODO: Implementare API mark as read
-            this.log('📖 Messaggi segnati come letti per:', type, id);
+            const response = await fetch('api/mark_as_read.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: type,
+                    id: id
+                })
+            });
             
-            // Aggiorna contatori
-            setTimeout(() => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.log('📖 Messaggi segnati come letti:', data.messages_marked, 'per', type, id);
+                
+                // Aggiorna immediatamente i contatori
                 this.updateUnreadCounts();
-            }, 500);
+            } else {
+                throw new Error(data.error || 'Errore sconosciuto');
+            }
             
         } catch (error) {
             this.log('❌ Errore mark as read:', error);

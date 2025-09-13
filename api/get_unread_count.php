@@ -14,40 +14,69 @@ try {
         throw new Exception('Tipo chat mancante');
     }
     
-    // Ottieni timestamp ultimo messaggio letto
-    $stmt = $pdo->prepare("
-        SELECT last_read_timestamp 
-        FROM chat_read_status 
-        WHERE user_id = ? AND chat_type = ? AND pratica_id <=> ?
-    ");
-    $stmt->execute([$user_id, $chat_type, $pratica_id]);
-    $read_status = $stmt->fetch();
+    // Trova conversation_id per il tipo di chat richiesto
+    $conversation_id = null;
     
-    $last_read = $read_status ? $read_status['last_read_timestamp'] : '1970-01-01 00:00:00';
-    
-    // Conta messaggi non letti
     if ($chat_type === 'globale') {
-        // Per chat globale
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) as unread_count
-            FROM chat_messaggi 
-            WHERE timestamp > ? AND utente_id != ?
-        ");
-        $stmt->execute([$last_read, $user_id]);
+        // Per chat globale (dovrebbe essere id=1)
+        $stmt = $pdo->prepare("SELECT id FROM chat_conversations WHERE type = 'globale' LIMIT 1");
+        $stmt->execute();
+        $conv = $stmt->fetch();
+        $conversation_id = $conv ? $conv['id'] : 1;
     } else if ($chat_type === 'pratica' && $pratica_id) {
-        // Per chat pratiche
+        // Per chat pratica specifica
+        $stmt = $pdo->prepare("SELECT id FROM chat_conversations WHERE type = 'pratica' AND client_id = ?");
+        $stmt->execute([$pratica_id]);
+        $conv = $stmt->fetch();
+        $conversation_id = $conv ? $conv['id'] : null;
+    } else if ($chat_type === 'privata' && isset($_GET['other_user_id'])) {
+        // Per chat privata
+        $other_user_id = $_GET['other_user_id'];
         $stmt = $pdo->prepare("
-            SELECT COUNT(*) as unread_count
-            FROM chat_pratiche 
-            WHERE timestamp > ? AND pratica_id = ? AND utente_id != ?
+            SELECT id FROM chat_conversations 
+            WHERE type = 'privata' 
+            AND ((user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?))
         ");
-        $stmt->execute([$last_read, $pratica_id, $user_id]);
-    } else {
-        throw new Exception('Parametri non validi');
+        $stmt->execute([$user_id, $other_user_id, $other_user_id, $user_id]);
+        $conv = $stmt->fetch();
+        $conversation_id = $conv ? $conv['id'] : null;
     }
     
-    $result = $stmt->fetch();
-    $unread_count = $result['unread_count'] ?? 0;
+    if (!$conversation_id) {
+        echo json_encode([
+            'success' => true,
+            'unread_count' => 0,
+            'message' => 'Conversazione non trovata'
+        ]);
+        exit;
+    }
+    
+    // Ottieni status lettura per questa conversazione
+    $stmt = $pdo->prepare("
+        SELECT unread_count, last_read_at 
+        FROM chat_read_status 
+        WHERE user_id = ? AND conversation_id = ?
+    ");
+    $stmt->execute([$user_id, $conversation_id]);
+    $read_status = $stmt->fetch();
+    
+    if ($read_status) {
+        $unread_count = (int)$read_status['unread_count'];
+        $last_read = $read_status['last_read_at'];
+    } else {
+        // Se non esiste record, conta tutti i messaggi come non letti
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as total_count
+            FROM chat_messages 
+            WHERE conversation_id = ? AND user_id != ? AND is_deleted = FALSE
+        ");
+        $stmt->execute([$conversation_id, $user_id]);
+        $result = $stmt->fetch();
+        $unread_count = (int)($result['total_count'] ?? 0);
+        $last_read = '1970-01-01 00:00:00';
+    }
+    
+
     
     echo json_encode([
         'success' => true,
