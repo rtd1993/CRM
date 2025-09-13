@@ -894,9 +894,7 @@ document.addEventListener('keydown', function(event) {
 });
 </script>
 
-</main>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
 
 <?php
 // Flush del buffer di output

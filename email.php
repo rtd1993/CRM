@@ -588,5 +588,5 @@ if (isset($_GET['get_template']) && isset($_GET['template_id'])) {
             updateClienteCount();
         });
     </script>
-</body>
-</html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

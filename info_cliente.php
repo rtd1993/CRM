@@ -499,9 +499,7 @@ $section_icons = [
 
 <a href="clienti.php" class="back-link">⬅️ Torna alla lista clienti</a>
 
-</main>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

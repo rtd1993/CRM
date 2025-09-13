@@ -492,3 +492,5 @@ function openEneaFolder(folderPath) {
     window.open(driveUrl, '_blank');
 }
 </script>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

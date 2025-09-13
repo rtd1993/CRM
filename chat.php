@@ -533,6 +533,5 @@ function inviaAppunto() {
 // Focus automatico sul campo messaggio globale
 document.getElementById("chat-input").focus();
 </script>
-</main>
-</body>
-</html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -447,3 +447,5 @@ document.addEventListener('DOMContentLoaded', function() {
 // Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
 window.closeContoTermicoModal = closeContoTermicoModal;
 </script>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
