@@ -424,10 +424,15 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 .chat-window-header {
     display: flex;
     align-items: center;
-    padding: 15px;
+    padding: 16px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     gap: 12px;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    position: relative;
+    top: 0;
+    left: 0;
 }
 
 .btn-back {
@@ -492,6 +497,10 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
 }
 
 /* Messages Area */
