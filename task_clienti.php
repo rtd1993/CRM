@@ -286,10 +286,19 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 $nome_cliente = "Cliente ID " . $task_data['cliente_id'];
             }
             
-            // Salva il log del task completato nella cartella del cliente
-            if (!empty($task_data['Codice_fiscale']) && isset($_SESSION['user_name'])) {
-                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Codice_fiscale']);
-                $cartella_cliente = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
+            // Salva il log del task completato nella cartella del cliente con nuovo formato
+            if (!empty($task_data['cliente_id']) && isset($_SESSION['user_name'])) {
+                // Crea nome cartella con formato id_cognome.nome
+                $cliente_folder = $task_data['cliente_id'] . '_' . 
+                                strtolower(preg_replace('/[^A-Za-z0-9]/', '', $task_data['Cognome_Ragione_sociale'] ?? 'cliente'));
+                
+                // Aggiungi il nome se presente
+                if (!empty($task_data['Nome'])) {
+                    $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $task_data['Nome']));
+                    $cliente_folder .= '.' . $nome_clean;
+                }
+                
+                $cartella_cliente = __DIR__ . '/local_drive/' . $cliente_folder;
                 
                 // Assicurati che la cartella esista (con controllo ottimizzato)
                 if (!is_dir($cartella_cliente)) {

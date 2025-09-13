@@ -39,13 +39,24 @@ if ($handle = opendir($current_dir)) {
         $is_dir = is_dir($full_path);
         $size = $is_dir ? '' : filesize($full_path);
 
-        // Associa cliente se il nome cartella corrisponde al codice fiscale
+        // Associa cliente se il nome cartella corrisponde al nuovo formato id_cognome.nome o vecchio CF
         $cliente = '';
         if ($is_dir) {
-            $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome` FROM clienti WHERE `Codice_fiscale` = ?");
-            $stmt->execute([$entry]);
-            if ($row = $stmt->fetch()) {
-                $cliente = $row['Cognome_Ragione_sociale'] . ' ' . $row['Nome'];
+            // Prova prima con il nuovo formato id_cognome.nome
+            if (preg_match('/^(\d+)_/', $entry, $matches)) {
+                $cliente_id = $matches[1];
+                $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome` FROM clienti WHERE id = ?");
+                $stmt->execute([$cliente_id]);
+                if ($row = $stmt->fetch()) {
+                    $cliente = $row['Cognome_Ragione_sociale'] . ' ' . ($row['Nome'] ?? '');
+                }
+            } else {
+                // Fallback: prova con il vecchio formato basato su codice fiscale
+                $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome` FROM clienti WHERE `Codice_fiscale` = ?");
+                $stmt->execute([$entry]);
+                if ($row = $stmt->fetch()) {
+                    $cliente = $row['Cognome_Ragione_sociale'] . ' ' . ($row['Nome'] ?? '');
+                }
             }
         }
 

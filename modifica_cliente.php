@@ -143,12 +143,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result) {
                 $success_message = "Cliente aggiornato con successo!";
                 
-                // Gestione file note se presente
+                // Gestione file note se presente con nuovo formato cartella
                 if (isset($_POST['note'])) {
                     $note_content = trim($_POST['note']);
-                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
-                    $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale_clean;
-                    $note_file = $cartella_path . '/note_' . $codice_fiscale_clean . '.txt';
+                    
+                    // Crea nome cartella con nuovo formato id_cognome.nome
+                    $cliente_folder = $cliente['id'] . '_' . 
+                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
+                    
+                    // Aggiungi il nome se presente
+                    if (!empty($cliente['Nome'])) {
+                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+                        $cliente_folder .= '.' . $nome_clean;
+                    }
+                    
+                    $cartella_path = __DIR__ . '/local_drive/' . $cliente_folder;
+                    $note_file = $cartella_path . '/note_' . $cliente['id'] . '.txt';
                     
                     // Crea la cartella se non esiste
                     if (!is_dir($cartella_path)) {
@@ -644,10 +654,19 @@ $sezioni = [
                                         <?php
                                         $tipo = $campi_db[$campo];
                                         
-                                        // Gestione speciale per il campo note (caricamento da file)
+                                        // Gestione speciale per il campo note (caricamento da file con nuovo formato)
                                         if ($campo === 'note') {
-                                            $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
-                                            $note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
+                                            // Crea nome cartella con nuovo formato id_cognome.nome
+                                            $cliente_folder = $cliente['id'] . '_' . 
+                                                            strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
+                                            
+                                            // Aggiungi il nome se presente
+                                            if (!empty($cliente['Nome'])) {
+                                                $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+                                                $cliente_folder .= '.' . $nome_clean;
+                                            }
+                                            
+                                            $note_file = __DIR__ . '/local_drive/' . $cliente_folder . '/note_' . $cliente['id'] . '.txt';
                                             $valore = file_exists($note_file) ? file_get_contents($note_file) : '';
                                         } else {
                                             $valore = $cliente[$campo] ?? '';

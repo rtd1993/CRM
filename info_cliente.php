@@ -25,9 +25,17 @@ try {
         exit;
     }
     
-    // Caricamento delle note dal file
-    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente['Codice_fiscale']);
-    $note_file = __DIR__ . '/local_drive/' . $codice_fiscale_clean . '/note_' . $codice_fiscale_clean . '.txt';
+    // Caricamento delle note dal file con nuovo formato cartella id_cognome.nome
+    $cliente_folder = $cliente['id'] . '_' . 
+                     strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
+    
+    // Aggiungi il nome se presente
+    if (!empty($cliente['Nome'])) {
+        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+        $cliente_folder .= '.' . $nome_clean;
+    }
+    
+    $note_file = __DIR__ . '/local_drive/' . $cliente_folder . '/note_' . $cliente['id'] . '.txt';
     $note_content = file_exists($note_file) ? file_get_contents($note_file) : '';
     
 } catch (Exception $e) {
