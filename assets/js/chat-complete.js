@@ -475,8 +475,12 @@ class CompleteChatSystem {
             this.log('📩 Risposta cronologia:', data);
             
             if (data.success) {
-                this.renderMessages(data.messages || []);
+                // Se non ci sono messaggi, mostra il messaggio vuoto invece di errore
+                const messages = data.messages || [];
+                this.renderMessages(messages);
                 this.scrollToBottom();
+                this.log(`💬 Caricati ${messages.length} messaggi per ${type}:${id}`);
+                return; // Esce qui se tutto va bene
             } else {
                 throw new Error(data.error || 'Errore caricamento cronologia');
             }
@@ -502,9 +506,15 @@ class CompleteChatSystem {
                     this.renderMessages(localMessages);
                     this.scrollToBottom();
                     return; // Non mostrare errore se abbiamo messaggi locali
+                } else {
+                    // Nessun messaggio locale trovato - mostra stato vuoto invece di errore
+                    this.log('💭 Nessun messaggio per questa chat, mostra stato vuoto');
+                    this.renderMessages([]);
+                    return;
                 }
             }
             
+            // Solo per altri tipi di errore o chat non supportate, mostra errore
             this.showError('Errore nel caricamento dei messaggi');
         } finally {
             this.hideLoading();
@@ -704,10 +714,27 @@ class CompleteChatSystem {
         this.elements.messagesArea.innerHTML = '';
         
         if (!messages || messages.length === 0) {
+            // Personalizza il messaggio in base al tipo di chat
+            let emptyMessage = 'Nessun messaggio ancora.<br>Inizia la conversazione!';
+            let icon = 'fas fa-comments';
+            
+            if (this.currentChat) {
+                if (this.currentChat.type === 'private' || this.currentChat.type === 'privata') {
+                    emptyMessage = 'Nessun messaggio ancora in questa chat privata.<br>Scrivi il primo messaggio!';
+                    icon = 'fas fa-user-friends';
+                } else if (this.currentChat.type === 'pratica') {
+                    emptyMessage = 'Nessun messaggio ancora per questa pratica.<br>Inizia a discutere!';
+                    icon = 'fas fa-folder-open';
+                } else if (this.currentChat.type === 'globale') {
+                    emptyMessage = 'Nessun messaggio ancora nella chat generale.<br>Saluta tutti!';
+                    icon = 'fas fa-globe';
+                }
+            }
+            
             this.elements.messagesArea.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #6c757d;">
-                    <i class="fas fa-comments fa-2x mb-3"></i>
-                    <p>Nessun messaggio ancora.<br>Inizia la conversazione!</p>
+                    <i class="${icon} fa-2x" style="margin-bottom: 16px; opacity: 0.5;"></i>
+                    <p style="margin: 0; line-height: 1.4;">${emptyMessage}</p>
                 </div>
             `;
             return;
