@@ -495,3 +495,5 @@ if ($_POST && isset($_POST['invia_email'])) {
 </script>
 </body>
 </html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

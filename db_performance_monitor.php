@@ -199,3 +199,5 @@ $total_db_time = (microtime(true) - $start_time) * 1000;
 </main>
 </body>
 </html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -624,3 +624,5 @@ document.getElementById('ricorrenza').addEventListener('input', function() {
 </main>
 </body>
 </html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

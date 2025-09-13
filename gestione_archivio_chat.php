@@ -211,3 +211,5 @@ setTimeout(function() {
     location.reload();
 }, 300000);
 </script>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

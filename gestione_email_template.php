@@ -518,3 +518,5 @@ $templates = $pdo->query("SELECT * FROM email_templates ORDER BY nome")->fetchAl
 </script>
 </body>
 </html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
