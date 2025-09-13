@@ -86,7 +86,7 @@ MAILTO=admin@ascontabilmente.it
 # BACKUP AUTOMATICO DATABASE
 # Ogni giorno alle 01:00
 # ============================================
-0 1 * * * mysqldump -u root -pAdmin123! --single-transaction --routines --triggers crm | gzip > /var/www/CRM/backups/backup_$(date +\%Y\%m\%d_\%H\%M\%S).sql.gz 2>> /var/www/CRM/logs/cron_backup.log
+0 1 * * * mysqldump -u crmuser -pAdmin123! --single-transaction --routines --triggers crm | gzip > /var/www/CRM/backups/backup_$(date +\%Y\%m\%d_\%H\%M\%S).sql.gz 2>> /var/www/CRM/logs/cron_backup.log
 
 # ============================================
 # ROTAZIONE BACKUP (mantieni ultimi 7)
@@ -110,7 +110,7 @@ MAILTO=admin@ascontabilmente.it
 # OTTIMIZZAZIONE TABELLE CHAT (settimanale)
 # Ogni lunedì alle 03:30
 # ============================================
-30 3 * * 1 mysql -u root -pAdmin123! crm -e "OPTIMIZE TABLE chat_conversations, chat_messages;" && echo "[$(date)] Tabelle chat ottimizzate" >> /var/www/CRM/logs/cron_optimization.log
+30 3 * * 1 mysql -u crmuser -pAdmin123! crm -e "OPTIMIZE TABLE chat_conversations, chat_messages;" && echo "[$(date)] Tabelle chat ottimizzate" >> /var/www/CRM/logs/cron_optimization.log
 
 EOF
 
@@ -173,7 +173,7 @@ mkdir -p /var/www/CRM/backups
 echo -e "\n${YELLOW}Test ottimizzazione database (dry run)...${NC}"
 if [ -f "$CRM_DIR/optimize_database_nightly.sh" ]; then
     # Test connessione database
-    mysql -u root -pAdmin123! crm -e "SELECT 1;" > /dev/null 2>&1
+    mysql -u crmuser -pAdmin123! crm -e "SELECT 1;" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Connessione database OK${NC}"
     else

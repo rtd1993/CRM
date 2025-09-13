@@ -9,7 +9,7 @@ SCRIPT_DIR="/var/www/CRM"
 ARCHIVIO_BASE="/var/www/CRM/local_drive/ASContabilmente/archivio/chat"
 LOG_FILE="/var/www/CRM/logs/chat_archivio_mensile.log"
 DB_NAME="crm"
-DB_USER="root"
+DB_USER="crmuser"
 DB_PASS="Admin123!"
 
 # Funzione di logging

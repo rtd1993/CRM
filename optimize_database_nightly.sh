@@ -6,7 +6,7 @@
 
 LOG_FILE="/var/www/CRM/logs/database_optimization_nightly.log"
 DB_NAME="crm"
-DB_USER="root"
+DB_USER="crmuser"
 DB_PASS="Admin123!"
 
 # Colori per output

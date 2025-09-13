@@ -79,15 +79,15 @@ systemctl is-active mysql >/dev/null 2>&1
 check_status $?
 
 echo -n "   Connessione database CRM: "
-mysql -u root -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1
+mysql -u crmuser -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1
 check_status $?
 
 echo -n "   Tabella chat_messages: "
-mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_messages" >/dev/null 2>&1
+mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_messages" >/dev/null 2>&1
 check_status $?
 
 echo -n "   Tabella chat_conversations: "
-mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_conversations" >/dev/null 2>&1
+mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_conversations" >/dev/null 2>&1
 check_status $?
 
 # =================================================================
@@ -126,7 +126,7 @@ else
 fi
 
 # Dimensione database
-db_size=$(mysql -u root -pAdmin123! -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS 'DB Size in MB' FROM information_schema.tables WHERE table_schema='crm';" 2>/dev/null | grep -E '[0-9]+\.[0-9]+')
+db_size=$(mysql -u crmuser -pAdmin123! -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS 'DB Size in MB' FROM information_schema.tables WHERE table_schema='crm';" 2>/dev/null | grep -E '[0-9]+\.[0-9]+')
 if [ -n "$db_size" ]; then
     echo "   Dimensione database CRM: ${db_size} MB"
 else
@@ -203,7 +203,7 @@ systemctl is-active cron >/dev/null 2>&1 && score=$((score + 5))
 systemctl is-active mysql >/dev/null 2>&1 && score=$((score + 5))
 
 # Database accessibile (+10 punti)
-mysql -u root -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1 && score=$((score + 10))
+mysql -u crmuser -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1 && score=$((score + 10))
 
 echo -n "   Health Score: ${score}/100 "
 if [ "$score" -ge 80 ]; then

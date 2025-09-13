@@ -132,13 +132,13 @@ fi
 
 # Verifica database
 echo -e "\n${YELLOW}🗃️  DATABASE${NC}"
-DB_SIZE=$(mysql -u root -pAdmin123! -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as size_mb FROM information_schema.tables WHERE table_schema = 'crm';" 2>/dev/null | tail -1)
+DB_SIZE=$(mysql -u crmuser -pAdmin123! -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as size_mb FROM information_schema.tables WHERE table_schema = 'crm';" 2>/dev/null | tail -1)
 if [ -n "$DB_SIZE" ] && [ "$DB_SIZE" != "NULL" ]; then
     echo -e "  ✅ Dimensione database: ${GREEN}${DB_SIZE} MB${NC}"
     
     # Conta messaggi chat
-    CHAT_MESSAGES=$(mysql -u root -pAdmin123! crm -sN -e "SELECT COUNT(*) FROM chat_messages;" 2>/dev/null)
-    CHAT_CONVERSATIONS=$(mysql -u root -pAdmin123! crm -sN -e "SELECT COUNT(*) FROM chat_conversations;" 2>/dev/null)
+    CHAT_MESSAGES=$(mysql -u crmuser -pAdmin123! crm -sN -e "SELECT COUNT(*) FROM chat_messages;" 2>/dev/null)
+    CHAT_CONVERSATIONS=$(mysql -u crmuser -pAdmin123! crm -sN -e "SELECT COUNT(*) FROM chat_conversations;" 2>/dev/null)
     
     if [ -n "$CHAT_MESSAGES" ]; then
         echo -e "  📨 Messaggi chat: $CHAT_MESSAGES"
