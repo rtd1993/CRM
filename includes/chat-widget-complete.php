@@ -53,8 +53,10 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
             </button>
         </div>
         
-        <!-- Chat List Container -->
-        <div id="chat-list-container" class="chat-list-container">
+        <!-- Content Container -->
+        <div class="chat-panel-content">
+            <!-- Chat List Container -->
+            <div id="chat-list-container" class="chat-list-container">
             <!-- Chat Globale -->
             <div class="chat-item" data-type="globale" data-id="1">
                 <div class="chat-avatar">🌐</div>
@@ -124,6 +126,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+        </div>
         </div>
     </div>
 </div>
@@ -207,6 +210,13 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     display: none !important;
 }
 
+/* Content Container */
+.chat-panel-content {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
 /* Panel Header */
 .chat-panel-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -240,9 +250,16 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 
 /* Chat List */
 .chat-list-container {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
     background: #f8f9fa;
+    z-index: 5;
 }
 
 .chat-item {
@@ -390,11 +407,13 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100%;
+    height: 100%;
     background: white;
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
-    z-index: 2;
+    z-index: 10;
 }
 
 .chat-window.hidden {
@@ -446,6 +465,16 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 
 /* Chat List Container - Quando nascosto */
 .chat-list-container.hidden {
+    display: none !important;
+}
+
+/* Forza la copertura completa del chat window */
+.chat-window:not(.hidden) {
+    background: white !important;
+    z-index: 20 !important;
+}
+
+.chat-window:not(.hidden) ~ .chat-list-container {
     display: none !important;
 }
 

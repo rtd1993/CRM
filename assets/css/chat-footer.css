@@ -99,8 +99,56 @@
     border: 1px solid rgba(0,0,0,0.08);
 }
 
+.chat-panel > .chat-panel-header {
+    position: relative;
+    z-index: 15;
+}
+
 .chat-panel.hidden {
     display: none !important;
+}
+
+/* === CONTAINER PRINCIPALE === */
+.chat-panel-content {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Assicura che solo una vista sia visibile alla volta */
+.chat-panel-content .chat-list-container,
+.chat-panel-content .chat-window {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Transizioni fluide tra viste */
+.chat-window:not(.hidden) {
+    opacity: 1;
+    transform: translateX(0);
+    background: white;
+    z-index: 20;
+}
+
+.chat-window.hidden {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.chat-list-container:not(.hidden) {
+    opacity: 1;
+    transform: translateX(0);
+    z-index: 10;
+}
+
+.chat-list-container.hidden {
+    opacity: 0;
+    transform: translateX(-100%);
 }
 
 .chat-panel.visible {
@@ -148,12 +196,19 @@
 
 /* === CHAT LIST CONTAINER === */
 .chat-list-container {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
     background: #f8f9fa;
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
+    z-index: 5;
 }
 
 .chat-list-container.hidden {
@@ -162,10 +217,17 @@
 
 /* === CHAT WINDOW === */
 .chat-window {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
     display: flex;
     flex-direction: column;
-    background: white;
+    z-index: 10;
     transition: all 0.3s ease;
 }
 
