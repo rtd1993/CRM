@@ -21,7 +21,7 @@ if (!$cliente_id || $conferma !== '1') {
 
 try {
     // Ottieni informazioni del cliente prima dell'eliminazione
-    $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Codice_fiscale` FROM clienti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome`, `Codice_fiscale` FROM clienti WHERE id = ?");
     $stmt->execute([$cliente_id]);
     $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -40,9 +40,18 @@ try {
         throw new Exception("Errore durante l'eliminazione dal database");
     }
     
-    // Gestione cartella cliente
-    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
-    $cartella_cliente = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+    // Gestione cartella cliente con nuovo formato id_cognome.nome
+    // Crea nome cartella con nuovo formato
+    $cliente_folder = $cliente_id . '_' . 
+                     strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
+    
+    // Aggiungi il nome se presente
+    if (!empty($cliente['Nome'])) {
+        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+        $cliente_folder .= '.' . $nome_clean;
+    }
+    
+    $cartella_cliente = '/var/www/CRM/local_drive/' . $cliente_folder;
     $cartella_ex_clienti = '/var/www/CRM/local_drive/ASContabilmente/Ex_clienti';
     
     // Crea la cartella degli ex clienti se non esiste
@@ -52,7 +61,7 @@ try {
     
     // Se la cartella del cliente esiste, la zippa e la sposta
     if (is_dir($cartella_cliente)) {
-        $nome_zip = $codice_fiscale_clean . '_' . date('Y-m-d_H-i-s') . '.zip';
+        $nome_zip = $cliente_folder . '_eliminato_' . date('Y-m-d_H-i-s') . '.zip';
         $percorso_zip = $cartella_ex_clienti . '/' . $nome_zip;
         
         try {

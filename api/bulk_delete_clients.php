@@ -38,7 +38,7 @@ try {
     foreach ($client_ids as $cliente_id) {
         try {
             // Ottieni informazioni del cliente prima dell'eliminazione
-            $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Codice_fiscale` FROM clienti WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, `Nome`, `Codice_fiscale` FROM clienti WHERE id = ?");
             $stmt->execute([$cliente_id]);
             $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -62,9 +62,18 @@ try {
                     'codice_fiscale' => $codice_fiscale
                 ];
                 
-                // Gestione cartella cliente
-                $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
-                $cartella_cliente = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+                // Gestione cartella cliente con nuovo formato id_cognome.nome
+                // Crea nome cartella con nuovo formato
+                $cliente_folder = $cliente_id . '_' . 
+                                 strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
+                
+                // Aggiungi il nome se presente
+                if (!empty($cliente['Nome'])) {
+                    $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+                    $cliente_folder .= '.' . $nome_clean;
+                }
+                
+                $cartella_cliente = '/var/www/CRM/local_drive/' . $cliente_folder;
                 $cartella_ex_clienti = '/var/www/CRM/local_drive/ASContabilmente/Ex_clienti';
                 
                 // Crea la cartella degli ex clienti se non esiste

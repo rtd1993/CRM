@@ -96,17 +96,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Ottieni l'ID del record appena inserito
             $enea_id = $pdo->lastInsertId();
             
-            // Crea cartella ENEA nel Drive del cliente
+            // Crea cartella ENEA nel Drive del cliente con nuovo formato
             try {
-                // Recupera i dati del cliente per il codice fiscale
-                $cliente_stmt = $pdo->prepare("SELECT Codice_fiscale FROM clienti WHERE id = ?");
+                // Recupera i dati del cliente per creare il percorso corretto
+                $cliente_stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome FROM clienti WHERE id = ?");
                 $cliente_stmt->execute([$cliente_id]);
                 $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
                 
-                if ($cliente_data && !empty($cliente_data['Codice_fiscale'])) {
-                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Codice_fiscale']);
+                if ($cliente_data) {
+                    // Crea nome cartella con nuovo formato id_cognome.nome
+                    $cliente_folder = $cliente_id . '_' . 
+                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
+                    
+                    // Aggiungi il nome se presente
+                    if (!empty($cliente_data['Nome'])) {
+                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
+                        $cliente_folder .= '.' . $nome_clean;
+                    }
+                    
                     $base_path = '/var/www/CRM/local_drive';
-                    $cliente_path = $base_path . '/' . $codice_fiscale_clean;
+                    $cliente_path = $base_path . '/' . $cliente_folder;
                     
                     // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
                     $folder_name = 'ENEA_' . $anno_fiscale;
@@ -123,7 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!is_dir($enea_folder_path)) {
                         if (mkdir($enea_folder_path, 0755, true)) {
                             // Crea file README nella cartella ENEA
-                            $readme_content = "Cartella ENEA - Cliente: " . $cliente_data['Codice_fiscale'] . "\n";
+                            $nome_completo = $cliente_data['Cognome_Ragione_sociale'] . (!empty($cliente_data['Nome']) ? ' ' . $cliente_data['Nome'] : '');
+                            $readme_content = "Cartella ENEA - Cliente: " . $nome_completo . "\n";
+                            $readme_content .= "ID Cliente: " . $cliente_id . "\n";
                             $readme_content .= "Anno Fiscale: " . $anno_fiscale . "\n";
                             $readme_content .= "Tipo Detrazione: " . $tipo_detrazione . "\n";
                             if (!empty($descrizione)) $readme_content .= "Descrizione: " . $descrizione . "\n";

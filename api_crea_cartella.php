@@ -13,28 +13,37 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $codice_fiscale = $_POST['codice_fiscale'] ?? '';
 $cliente_id = intval($_POST['cliente_id'] ?? 0);
 
-if (empty($codice_fiscale)) {
-    echo json_encode(['success' => false, 'message' => 'Codice fiscale non fornito']);
-    exit;
-}
-
 if ($cliente_id <= 0) {
     echo json_encode(['success' => false, 'message' => 'ID cliente non valido']);
     exit;
 }
 
-// Sanitizza il codice fiscale per nome cartella
-$codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $codice_fiscale);
-
-if (empty($codice_fiscale_clean)) {
-    echo json_encode(['success' => false, 'message' => 'Codice fiscale non valido per nome cartella']);
-    exit;
-}
-
-$base_path = '/var/www/CRM/local_drive';
-$cartella_path = $base_path . '/' . $codice_fiscale_clean;
+// Recupera i dati del cliente per creare il nome cartella corretto
+require_once __DIR__ . '/includes/db.php';
 
 try {
+    $stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome FROM clienti WHERE id = ?");
+    $stmt->execute([$cliente_id]);
+    $cliente_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$cliente_data) {
+        echo json_encode(['success' => false, 'message' => 'Cliente non trovato']);
+        exit;
+    }
+    
+    // Crea nome cartella con nuovo formato id_cognome.nome
+    $cliente_folder = $cliente_id . '_' . 
+                     strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
+    
+    // Aggiungi il nome se presente
+    if (!empty($cliente_data['Nome'])) {
+        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
+        $cliente_folder .= '.' . $nome_clean;
+    }
+    
+    $base_path = '/var/www/CRM/local_drive';
+    $cartella_path = $base_path . '/' . $cliente_folder;
+
     // Verifica che la directory base esista
     if (!is_dir($base_path)) {
         echo json_encode(['success' => false, 'message' => 'Directory base local_drive non trovata']);
