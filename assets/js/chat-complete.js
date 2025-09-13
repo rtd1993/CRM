@@ -200,7 +200,10 @@ class CompleteChatSystem {
         // Back to list
         if (this.elements.backBtn) {
             this.elements.backBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Evita chiusura panel
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.log('🔙 Click su bottone back');
                 this.showChatList();
             });
         }
@@ -226,7 +229,10 @@ class CompleteChatSystem {
         
         // Chiudi panel cliccando fuori
         document.addEventListener('click', (e) => {
-            if (this.isVisible && !this.elements.widget.contains(e.target)) {
+            // Non chiudere se si clicca sul bottone back o all'interno del widget
+            if (this.isVisible && !this.elements.widget.contains(e.target) && 
+                !e.target.closest('#back-to-list-btn') && 
+                !e.target.closest('.btn-back')) {
                 this.hidePanel();
             }
         });

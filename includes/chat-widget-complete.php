@@ -420,6 +420,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     position: relative;
     top: 0;
     left: 0;
+    z-index: 100;
 }
 
 .btn-back {
@@ -434,6 +435,11 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     align-items: center;
     justify-content: center;
     font-size: 16px;
+    position: relative;
+    z-index: 1000;
+    pointer-events: auto;
+    min-width: 40px;
+    min-height: 40px;
 }
 
 .btn-back:hover {
@@ -495,6 +501,19 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     width: 100% !important;
     height: 100% !important;
     border-radius: 20px !important;
+    z-index: 50 !important;
+}
+
+/* Assicura che il bottone back sia sempre cliccabile */
+.chat-panel.chat-open .btn-back {
+    z-index: 1001 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+.chat-panel.chat-open .chat-window-header {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
 }
 
 /* Messages Area */
