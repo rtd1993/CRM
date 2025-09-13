@@ -11,7 +11,7 @@ include __DIR__ . '/includes/header.php';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Query base
-$sql = "SELECT id, Cognome_Ragione_sociale AS cognome, Codice_ditta, Mail, PEC, Telefono, Data_di_scadenza, Scadenza_PEC, Codice_fiscale, completo FROM clienti";
+$sql = "SELECT id, Cognome_Ragione_sociale AS cognome, Nome, Codice_ditta, Mail, PEC, Telefono, Data_di_scadenza, Scadenza_PEC, Codice_fiscale, completo FROM clienti";
 $params = [];
 
 // Ricerca
@@ -653,13 +653,22 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                     📋 Dettagli
                                 </a>
                                 <?php
-                                // Controlla se esiste la cartella del cliente
-                                if (!empty($c['Codice_fiscale'])) {
-                                    $codice_fiscale_clean = preg_replace('/[^A-Za-z0-9]/', '', $c['Codice_fiscale']);
-                                    $cartella_path = '/var/www/CRM/local_drive/' . $codice_fiscale_clean;
+                                // Controlla se esiste la cartella del cliente con nuovo formato ID_COGNOME.NOME
+                                if (!empty($c['cognome'])) {
+                                    $cognome_clean = preg_replace('/[^A-Za-z0-9]/', '', $c['cognome']);
+                                    $nome_clean = !empty($c['Nome']) ? preg_replace('/[^A-Za-z0-9]/', '', $c['Nome']) : '';
+                                    
+                                    // Costruisce il nome della cartella: ID_COGNOME.NOME (o solo ID_COGNOME se nome è vuoto)
+                                    if (!empty($nome_clean)) {
+                                        $folder_name = $c['id'] . '_' . $cognome_clean . '.' . $nome_clean;
+                                    } else {
+                                        $folder_name = $c['id'] . '_' . $cognome_clean;
+                                    }
+                                    
+                                    $cartella_path = __DIR__ . '/local_drive/' . $folder_name;
                                     if (is_dir($cartella_path)) {
                                 ?>
-                                    <a href="drive.php?path=<?= urlencode($codice_fiscale_clean) ?>" 
+                                    <a href="drive.php?path=<?= urlencode($folder_name) ?>" 
                                        class="details-btn" 
                                        style="margin-left: 0.5rem;"
                                        title="Apri cartella cliente">
