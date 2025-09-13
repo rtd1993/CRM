@@ -362,6 +362,9 @@ class CompleteChatSystem {
     showChatWindow() {
         this.elements.listContainer.classList.add('hidden');
         this.elements.chatWindow.classList.remove('hidden');
+        
+        // Aggiungi classe per nascondere header principale
+        this.elements.panel.classList.add('chat-open');
     }
     
     /**
@@ -370,6 +373,9 @@ class CompleteChatSystem {
     showChatList() {
         this.elements.chatWindow.classList.add('hidden');
         this.elements.listContainer.classList.remove('hidden');
+        
+        // Rimuovi classe per mostrare header principale
+        this.elements.panel.classList.remove('chat-open');
         
         this.currentChat = null;
         

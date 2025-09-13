@@ -478,6 +478,22 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     display: none !important;
 }
 
+/* Nascondi header principale quando chat è aperta */
+.chat-panel.chat-open .chat-panel-header {
+    display: none !important;
+}
+
+/* Quando chat window è aperta, occupa tutto lo spazio */
+.chat-panel.chat-open .chat-window:not(.hidden) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
 /* Messages Area */
 .chat-messages-area {
     flex: 1;
