@@ -4,14 +4,53 @@
    Descrizione: Sistema chat completo nel footer con design moderno
    ================================================================= */
 
+/* === RESET E ISOLAMENTO === */
+/* Assicura che il chat widget non influenzi il resto della pagina */
+.chat-widget-container *,
+#chat-footer-widget * {
+    box-sizing: border-box;
+}
+
+.chat-widget-container,
+#chat-footer-widget {
+    /* Isolamento completo dal resto della pagina */
+    contain: layout style;
+    /* Previene overflow */
+    max-width: 100vw;
+    max-height: 100vh;
+}
+
+/* Previeni problemi di overflow sulla pagina principale */
+body {
+    overflow-x: auto !important;
+}
+
+/* Assicura che il widget non causi scroll orizzontale */
+.chat-widget-container .chat-panel,
+#chat-footer-widget .chat-panel {
+    max-width: min(380px, calc(100vw - 40px));
+    right: 0;
+}
+
 /* === BASE CONTAINER === */
-.chat-footer-widget {
+.chat-widget-container,
+#chat-footer-widget {
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 9999;
     font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     user-select: none;
+    /* Assicura che il widget non interferisca con il layout */
+    pointer-events: none;
+}
+
+/* Solo gli elementi interattivi devono essere cliccabili */
+.chat-widget-container .chat-toggle-button,
+.chat-widget-container .chat-panel,
+#chat-footer-widget .chat-toggle-button,
+#chat-footer-widget .chat-panel {
+    pointer-events: auto;
 }
 
 /* === TOGGLE BUTTON === */
@@ -820,7 +859,8 @@
 
 /* === PRINT STYLES === */
 @media print {
-    .chat-footer-widget {
+    .chat-widget-container,
+    #chat-footer-widget {
         display: none !important;
     }
 }
