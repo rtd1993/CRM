@@ -147,7 +147,7 @@ test_database() {
     tables=("chat_conversations" "chat_messages")
     for table in "${tables[@]}"; do
         if mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" >/dev/null 2>&1; then
-            record_count=$(mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" 2>/dev/null | tail -1)
+            record_count=$(mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" 2>/dev/null | tail -1)
             log_success "Tabella $table: $record_count record"
         else
             log_error "Errore accesso tabella: $table"
