@@ -136,7 +136,7 @@ test_database() {
     log_action "Testando connessione database..."
     
     # Test connessione base
-    if mysql -u root -pAdmin123! crm -e "SELECT 'OK' as test" >/dev/null 2>&1; then
+    if mysql -u crmuser -pAdmin123! crm -e "SELECT 'OK' as test" >/dev/null 2>&1; then
         log_success "Connessione database OK"
     else
         log_error "Errore connessione database"
@@ -146,7 +146,7 @@ test_database() {
     # Test tabelle chat
     tables=("chat_conversations" "chat_messages")
     for table in "${tables[@]}"; do
-        if mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" >/dev/null 2>&1; then
+        if mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" >/dev/null 2>&1; then
             record_count=$(mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM $table" 2>/dev/null | tail -1)
             log_success "Tabella $table: $record_count record"
         else
@@ -206,7 +206,7 @@ create_initial_backup() {
     
     backup_file="$BACKUP_PATH/initial_deployment_$(date +%Y%m%d_%H%M%S).sql.gz"
     
-    if mysqldump -u root -pAdmin123! --single-transaction --routines --triggers crm | gzip > "$backup_file" 2>/dev/null; then
+    if mysqldump -u crmuser -pAdmin123! --single-transaction --routines --triggers crm | gzip > "$backup_file" 2>/dev/null; then
         backup_size=$(du -h "$backup_file" | cut -f1)
         log_success "Backup iniziale creato: $(basename "$backup_file") (${backup_size})"
     else
@@ -263,8 +263,8 @@ $(ls -la $CRM_PATH/*.sh 2>/dev/null | grep -v "total")
 $(crontab -l 2>/dev/null | grep -E "(optimize_database_nightly|archivio_chat_mensile)")
 
 🗄️ DATABASE STATUS:
-- Chat Messages: $(mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_messages" 2>/dev/null | tail -1) record
-- Chat Conversations: $(mysql -u root -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_conversations" 2>/dev/null | tail -1) record
+- Chat Messages: $(mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_messages" 2>/dev/null | tail -1) record
+- Chat Conversations: $(mysql -u crmuser -pAdmin123! crm -e "SELECT COUNT(*) FROM chat_conversations" 2>/dev/null | tail -1) record
 
 💾 BACKUP:
 $(ls -la $BACKUP_PATH/*.gz 2>/dev/null | tail -1)
