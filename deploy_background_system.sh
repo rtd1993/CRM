@@ -67,7 +67,7 @@ check_prerequisites() {
     fi
     
     # Verifica connessione database
-    if ! mysql -u root -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1; then
+    if ! mysql -u crmuser -pAdmin123! crm -e "SELECT 1" >/dev/null 2>&1; then
         log_error "Impossibile connettersi al database CRM"
         exit 1
     fi
