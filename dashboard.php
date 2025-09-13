@@ -104,12 +104,10 @@ include __DIR__ . '/includes/header.php';
 
 /* Classe speciale per sezioni a larghezza completa */
 .data-section.scadenze-section {
-    max-width: none;
-    width: 95vw;
-    margin: 0 auto;
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
+    grid-column: 1 / -1;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
 }
 
 .calendar-section {
@@ -758,8 +756,6 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/includes/header.php'; ?>
 
 <style>
 /* Stili per la sezione Scadenze unificata */
