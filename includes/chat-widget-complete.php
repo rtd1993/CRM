@@ -98,6 +98,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                 </div>
             </div>
         </div>
+        </div>
         
         <!-- Chat Window -->
         <div id="chat-window" class="chat-window hidden">
@@ -126,7 +127,6 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
-        </div>
         </div>
     </div>
 </div>
@@ -212,8 +212,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 
 /* Content Container */
 .chat-panel-content {
-    position: relative;
     flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
 }
 
@@ -250,16 +251,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 
 /* Chat List */
 .chat-list-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
+    flex: 1;
     overflow-y: auto;
     background: #f8f9fa;
-    z-index: 5;
 }
 
 .chat-item {
@@ -402,18 +396,11 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 
 /* Chat Window */
 .chat-window {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
+    flex: 1;
     background: white;
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
-    z-index: 10;
 }
 
 .chat-window.hidden {
@@ -488,8 +475,18 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     display: none !important;
 }
 
-/* Quando chat window è aperta, occupa tutto lo spazio */
-.chat-panel.chat-open .chat-window:not(.hidden) {
+/* Nascondi header principale quando chat è aperta */
+.chat-panel.chat-open .chat-panel-header {
+    display: none !important;
+}
+
+/* Quando chat è aperta, nascondi il contenuto normale */
+.chat-panel.chat-open .chat-panel-content {
+    display: none !important;
+}
+
+/* Il chat-window occupa tutto il panel quando è aperto */
+.chat-panel.chat-open .chat-window {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
@@ -497,10 +494,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
     border-radius: 20px !important;
-    overflow: hidden !important;
 }
 
 /* Messages Area */
