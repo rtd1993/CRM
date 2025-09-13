@@ -72,6 +72,7 @@ check_prerequisites() {
         exit 1
     fi
     
+    
     log_success "Prerequisiti verificati"
 }
 
