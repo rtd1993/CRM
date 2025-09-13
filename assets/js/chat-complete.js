@@ -366,28 +366,48 @@ class CompleteChatSystem {
      * Mostra chat window
      */
     showChatWindow() {
-        this.elements.listContainer.classList.add('hidden');
-        this.elements.chatWindow.classList.remove('hidden');
+        // Forza un reflow per assicurare che le transizioni funzionino correttamente
+        this.elements.panel.offsetHeight;
         
         // Aggiungi classe per nascondere header principale
         this.elements.panel.classList.add('chat-open');
+        
+        // Attendi un frame prima di mostrare la chat window per una transizione fluida
+        requestAnimationFrame(() => {
+            this.elements.listContainer.classList.add('hidden');
+            this.elements.chatWindow.classList.remove('hidden');
+            
+            // Forza il posizionamento corretto
+            this.elements.chatWindow.style.transform = 'translateX(0)';
+            this.elements.chatWindow.style.opacity = '1';
+        });
     }
     
     /**
      * Mostra lista chat
      */
     showChatList() {
-        this.elements.chatWindow.classList.add('hidden');
-        this.elements.listContainer.classList.remove('hidden');
+        // Forza un reflow per assicurare che le transizioni funzionino correttamente
+        this.elements.panel.offsetHeight;
         
-        // Rimuovi classe per mostrare header principale
-        this.elements.panel.classList.remove('chat-open');
+        // Inizia la transizione di uscita
+        this.elements.chatWindow.style.transform = 'translateX(100%)';
+        this.elements.chatWindow.style.opacity = '0';
         
-        this.currentChat = null;
-        
-        // Disabilita input
-        this.elements.messageInput.disabled = true;
-        this.elements.sendBtn.disabled = true;
+        // Attendi che la transizione sia completata prima di nascondere
+        setTimeout(() => {
+            this.elements.chatWindow.classList.add('hidden');
+            this.elements.listContainer.classList.remove('hidden');
+            
+            // Rimuovi classe per mostrare header principale
+            this.elements.panel.classList.remove('chat-open');
+            
+            this.currentChat = null;
+            
+            // Disabilita input
+            this.elements.messageInput.disabled = true;
+            this.elements.sendBtn.disabled = true;
+        }, 300); // Durata della transizione CSS
         this.elements.messageInput.placeholder = 'Seleziona una chat...';
         this.elements.messageInput.value = '';
     }
