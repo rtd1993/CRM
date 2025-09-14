@@ -90,7 +90,7 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                     </div>
                 </div>
                 <div class="chat-meta">
-                    <span id="practice-chat-badge" class="chat-unread-badge hidden">0</span>
+                    <!-- Badge rimosso: solo notifica in chat globale -->
                 </div>
             </div>
             

@@ -105,7 +105,7 @@ class CompleteChatSystem {
             // Badge e contatori
             totalBadge: document.getElementById('total-unread-badge'),
             globalBadge: document.getElementById('global-chat-badge'),
-            practiceBadge: document.getElementById('practice-chat-badge'),
+            // practiceBadge rimosso - solo notifica in chat globale
             
             // Chat list
             listContainer: document.getElementById('chat-list-container'),
