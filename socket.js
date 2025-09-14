@@ -1,22 +1,40 @@
+console.log("🚀 Avvio Socket.IO Server...");
+
 const { createServer } = require("http");
+console.log("✅ HTTP server module caricato");
+
 const { Server } = require("socket.io");
+console.log("✅ Socket.IO module caricato");
+
 const mysql = require("mysql2");
+console.log("✅ MySQL2 module caricato");
+
 const axios = require("axios");
+console.log("✅ Axios module caricato");
+
 const dayjs = require("dayjs");
+console.log("✅ DayJS module caricato");
+
 require("dotenv").config();
+console.log("✅ Configurazione .env caricata");
 
 const httpServer = createServer();
+console.log("✅ HTTP server creato");
+
 const io = new Server(httpServer, {
     cors: { origin: "*" }
 });
+console.log("✅ Socket.IO server creato");
 
 // DB connection
+console.log("🔌 Connessione al database...");
 const db = mysql.createConnection({
     host: "localhost",
     user: "crmuser",
     password: "Admin123!",
     database: "crm"
 });
+console.log("✅ Connessione database configurata");
 
 // Utenti online tracciati
 const utentiOnline = new Map(); // utente_id => Set(socket.id)
@@ -308,6 +326,9 @@ io.on("connection", socket => {
     });
 });
 
+console.log("🌐 Avvio server HTTP sulla porta 3001...");
 httpServer.listen(3001, () => {
-    console.log("✅ Socket.IO attivo su porta 3001");
+    console.log("✅ Socket.IO Server attivo e pronto!");
+    console.log("🌍 URL: http://localhost:3001");
+    console.log("📅 Avviato:", new Date().toLocaleString());
 });
