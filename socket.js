@@ -151,15 +151,15 @@ io.on("connection", socket => {
             // Ottieni info conversazione per determinare il tipo
             const conversation = await new Promise((resolve, reject) => {
                 db.query(
-                    "SELECT name, type FROM conversations WHERE id = ?", 
-                    [conversation_id], 
+                    "SELECT c.name, c.type, c.client_id, cl.Cognome_Ragione_sociale, cl.Nome FROM conversations c LEFT JOIN clienti cl ON c.client_id = cl.id WHERE c.id = ?",
+                    [conversation_id],
                     (err, results) => {
                         if (err) reject(err);
                         else resolve(results[0]);
                     }
                 );
             });
-            
+
             // Invia messaggio a tutti nella room della conversazione
             const messageData = {
                 id: message_id,
@@ -171,11 +171,49 @@ io.on("connection", socket => {
                 chat_type: conversation ? conversation.type : 'private',
                 chat_name: conversation ? conversation.name : 'Chat'
             };
-            
+
             // Invio real-time via Socket.IO room
             io.to(`conversation_${conversation_id}`).emit("new_message", messageData);
-            
-            // Invio notifiche Telegram agli utenti offline
+
+            // NUOVA LOGICA: Se è una chat pratica, notifica anche in chat globale
+            if (conversation && conversation.type === 'pratica' && conversation.client_id) {
+                const clientName = conversation.Cognome_Ragione_sociale + (conversation.Nome ? ` ${conversation.Nome}` : '');
+                const globalNotificationMessage = `💼 ${user_name} ha inserito un messaggio sulla pratica "${clientName}"`;
+                
+                // Salva notifica in chat globale (conversation_id = 1)
+                const globalTimestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
+                
+                try {
+                    const globalResult = await new Promise((resolve, reject) => {
+                        db.query(
+                            "INSERT INTO messages (conversation_id, user_id, message, message_type, created_at) VALUES (?, ?, ?, 'system', ?)",
+                            [1, user_id, globalNotificationMessage, globalTimestamp],
+                            (err, result) => {
+                                if (err) reject(err);
+                                else resolve(result);
+                            }
+                        );
+                    });
+
+                    // Invia notifica real-time alla chat globale
+                    const globalMessageData = {
+                        id: globalResult.insertId,
+                        conversation_id: 1,
+                        user_id,
+                        user_name,
+                        message: globalNotificationMessage,
+                        created_at: globalTimestamp,
+                        chat_type: 'global',
+                        chat_name: 'Chat Generale',
+                        message_type: 'system'
+                    };
+
+                    io.to('conversation_1').emit("new_message", globalMessageData);
+                    console.log(`📢 Notifica chat pratica inviata in chat globale: ${globalNotificationMessage}`);
+                } catch (error) {
+                    console.error("❌ Errore invio notifica chat globale:", error);
+                }
+            }            // Invio notifiche Telegram agli utenti offline
             participants.forEach(participant => {
                 if (participant.user_id !== user_id) { // Non inviare a se stesso
                     const userSockets = utentiOnline.get(participant.user_id);
