@@ -130,10 +130,25 @@ if (isset($_SESSION['user_id'])) {
             position: relative;
             z-index: 1000;
         }
+        .crm-header .crm-menu .nav-link,
         .crm-header .crm-menu .dropdown-toggle {
             display: flex;
             align-items: center;
             cursor: pointer;
+            color: #fff !important;
+            text-decoration: none;
+            padding: 8px 15px;
+            transition: all 0.3s ease;
+        }
+        .crm-header .crm-menu .nav-link:hover,
+        .crm-header .crm-menu .dropdown-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff !important;
+        }
+        .crm-header .crm-menu .nav-link.active,
+        .crm-header .crm-menu .dropdown-toggle.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
         }
         .crm-header .crm-menu .dropdown-menu {
             background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
@@ -209,11 +224,11 @@ if (isset($_SESSION['user_id'])) {
     <nav>
         <ul class="crm-menu container-fluid">
             <!-- Dashboard -->
-            <li><a href="/dashboard.php"<?php if(basename($_SERVER['PHP_SELF'])=='dashboard.php') echo ' class="active"';?>>Dashboard</a></li>
+            <li class="nav-item"><a href="/dashboard.php" class="nav-link<?php if(basename($_SERVER['PHP_SELF'])=='dashboard.php') echo ' active';?>">Dashboard</a></li>
             
             <!-- Clienti Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['clienti.php', 'richieste.php', 'crea_richiesta.php', 'modifica_richiesta.php', 'drive.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['clienti.php', 'richieste.php', 'crea_richiesta.php', 'modifica_richiesta.php', 'drive.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Clienti 
                 </a>
                 <ul class="dropdown-menu">
@@ -224,8 +239,8 @@ if (isset($_SESSION['user_id'])) {
             </li>
             
             <!-- Task & Calendario Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['calendario.php', 'task.php', 'task_clienti.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['calendario.php', 'task.php', 'task_clienti.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Task & Calendario 
                 </a>
                 <ul class="dropdown-menu">
@@ -236,8 +251,8 @@ if (isset($_SESSION['user_id'])) {
             </li>
             
             <!-- Pratiche Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php', 'procedure.php', 'crea_procedura.php', 'modifica_procedura.php', 'stampa_procedura.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php', 'procedure.php', 'crea_procedura.php', 'modifica_procedura.php', 'stampa_procedura.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Pratiche 
                 </a>
                 <ul class="dropdown-menu">
@@ -249,8 +264,8 @@ if (isset($_SESSION['user_id'])) {
             </li>
             
             <!-- Info & Email Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['link_utili.php', 'contatti.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['link_utili.php', 'contatti.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Info & Email 
                 </a>
                 <ul class="dropdown-menu">
@@ -262,8 +277,8 @@ if (isset($_SESSION['user_id'])) {
             </li>
             
             <!-- Amministrazione Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['gestione_utenti.php', 'telegram_config.php', 'devtools.php', 'admin_wireguard.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['gestione_utenti.php', 'telegram_config.php', 'devtools.php', 'admin_wireguard.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Amministrazione 
                 </a>
                 <ul class="dropdown-menu">
