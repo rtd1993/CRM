@@ -49,33 +49,68 @@ function getSystemStats($pdo) {
     try {
         $stats = [];
         
+        // Funzione helper per contare righe in modo sicuro
+        $safeCount = function($table) use ($pdo) {
+            try {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM `$table`");
+                return $stmt->fetchColumn();
+            } catch (Exception $e) {
+                return 0; // Se la tabella non esiste, restituisce 0
+            }
+        };
+        
         // Clienti
-        $stmt = $pdo->query("SELECT COUNT(*) FROM clienti");
-        $stats['clienti'] = $stmt->fetchColumn();
+        $stats['clienti'] = $safeCount('clienti');
         
         // Messaggi chat
-        $stmt = $pdo->query("SELECT COUNT(*) FROM chat_messages");
-        $stats['messaggi'] = $stmt->fetchColumn();
+        $stats['messaggi'] = $safeCount('chat_messages');
         
         // Pratiche ENEA
-        $stmt = $pdo->query("SELECT COUNT(*) FROM enea");
-        $stats['enea'] = $stmt->fetchColumn();
+        $stats['enea'] = $safeCount('enea');
         
         // Conto Termico
-        $stmt = $pdo->query("SELECT COUNT(*) FROM conto_termico");
-        $stats['conto_termico'] = $stmt->fetchColumn();
+        $stats['conto_termico'] = $safeCount('conto_termico');
         
         // Task
-        $stmt = $pdo->query("SELECT COUNT(*) FROM task");
-        $stats['task'] = $stmt->fetchColumn();
+        $stats['task'] = $safeCount('task');
         
-        // Task completati
-        $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE stato = 'completato'");
-        $stats['task_completati'] = $stmt->fetchColumn();
+        // Task completati - verifica prima le colonne disponibili
+        try {
+            // Prova diverse possibili colonne per lo stato
+            $stmt = $pdo->query("SHOW COLUMNS FROM task");
+            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            if (in_array('stato', $columns)) {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE stato = 'completato'");
+            } elseif (in_array('status', $columns)) {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE status = 'completato'");
+            } elseif (in_array('completed', $columns)) {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE completed = 1");
+            } elseif (in_array('done', $columns)) {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE done = 1");
+            } else {
+                // Se non trova colonne di stato, mette 0
+                $stmt = null;
+            }
+            
+            $stats['task_completati'] = $stmt ? $stmt->fetchColumn() : 0;
+        } catch (Exception $e) {
+            $stats['task_completati'] = 0;
+        }
         
-        // Utenti attivi
-        $stmt = $pdo->query("SELECT COUNT(*) FROM utenti WHERE active = 1");
-        $stats['utenti_attivi'] = $stmt->fetchColumn();
+        // Utenti attivi - gestione sicura
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) FROM utenti WHERE active = 1");
+            $stats['utenti_attivi'] = $stmt->fetchColumn();
+        } catch (Exception $e) {
+            // Prova senza filtro active se la colonna non esiste
+            try {
+                $stmt = $pdo->query("SELECT COUNT(*) FROM utenti");
+                $stats['utenti_attivi'] = $stmt->fetchColumn();
+            } catch (Exception $e2) {
+                $stats['utenti_attivi'] = 0;
+            }
+        }
         
         return ['success' => true, 'data' => $stats];
     } catch (Exception $e) {
