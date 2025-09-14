@@ -259,11 +259,13 @@ if (isset($_SESSION['user_id'])) {
             
             <!-- Info & Email Dropdown -->
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['info.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['link_utili.php', 'contatti.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Info & Email <i class="fas fa-chevron-down ms-1"></i>
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/info.php">Info</a></li>
+                    <li><a class="dropdown-item" href="/link_utili.php">Link Utili</a></li>
+                    <li><a class="dropdown-item" href="/contatti.php">Contatti</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="/email_invio.php">Email</a></li>
                 </ul>
             </li>
