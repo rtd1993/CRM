@@ -307,37 +307,29 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             e.stopPropagation();
             
-            // Chiudi tutti gli altri dropdown
-            dropdownToggles.forEach(otherToggle => {
-                if (otherToggle !== toggle) {
-                    const otherDropdown = otherToggle.closest('.dropdown');
-                    const otherMenu = otherDropdown.querySelector('.dropdown-menu');
-                    otherMenu.classList.remove('show');
-                    otherToggle.setAttribute('aria-expanded', 'false');
-                }
-            });
-            
             // Toggle questo dropdown
             const isOpen = menu.classList.contains('show');
+            
             if (isOpen) {
                 menu.classList.remove('show');
                 toggle.setAttribute('aria-expanded', 'false');
             } else {
+                // Chiudi tutti gli altri dropdown
+                dropdownToggles.forEach(otherToggle => {
+                    if (otherToggle !== toggle) {
+                        const otherDropdown = otherToggle.closest('.dropdown');
+                        const otherMenu = otherDropdown.querySelector('.dropdown-menu');
+                        otherMenu.classList.remove('show');
+                        otherToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                
                 menu.classList.add('show');
                 toggle.setAttribute('aria-expanded', 'true');
             }
         });
         
-        // Mostra dropdown on hover (opzionale)
-        dropdown.addEventListener('mouseenter', function() {
-            menu.classList.add('show');
-            toggle.setAttribute('aria-expanded', 'true');
-        });
-        
-        dropdown.addEventListener('mouseleave', function() {
-            menu.classList.remove('show');
-            toggle.setAttribute('aria-expanded', 'false');
-        });
+
     });
     
     // Chiudi dropdown quando si clicca fuori
