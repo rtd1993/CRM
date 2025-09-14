@@ -16,13 +16,13 @@ try {
                    c.Cognome_Ragione_sociale,
                    c.Nome,
                    c.Codice_fiscale,
-                   c.Partita_iva,
+                   c.Partita_IVA,
                    c.Indirizzo,
-                   c.CAP,
-                   c.Citta,
-                   c.Provincia,
+                   c.Sede_Legale,
+                   c.Sede_Operativa,
+                   c.Residenza,
                    c.Telefono,
-                   c.Email
+                   c.Mail
             FROM conto_termico ct 
             LEFT JOIN clienti c ON ct.cliente_id = c.id 
             WHERE ct.id = ?";
@@ -162,7 +162,7 @@ function formatImporto($importo) {
                     </div>
                     <div class="info-row">
                         <span class="label">Partita IVA:</span>
-                        <span class="value"><?= htmlspecialchars($pratica['Partita_iva'] ?: 'Non specificata') ?></span>
+                        <span class="value"><?= htmlspecialchars($pratica['Partita_IVA'] ?: 'Non specificata') ?></span>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -171,16 +171,16 @@ function formatImporto($importo) {
                         <span class="value"><?= htmlspecialchars($pratica['Indirizzo'] ?: 'Non specificato') ?></span>
                     </div>
                     <div class="info-row">
-                        <span class="label">Città:</span>
-                        <span class="value"><?= htmlspecialchars(($pratica['CAP'] ? $pratica['CAP'] . ' ' : '') . ($pratica['Citta'] ?: 'Non specificata') . ($pratica['Provincia'] ? ' (' . $pratica['Provincia'] . ')' : '')) ?></span>
+                        <span class="label">Sede Legale:</span>
+                        <span class="value"><?= htmlspecialchars($pratica['Sede_Legale'] ?: 'Non specificata') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="label">Contatti:</span>
                         <span class="value">
                             <?= htmlspecialchars($pratica['Telefono'] ?: '') ?>
-                            <?= $pratica['Telefono'] && $pratica['Email'] ? ' - ' : '' ?>
-                            <?= htmlspecialchars($pratica['Email'] ?: '') ?>
-                            <?= !$pratica['Telefono'] && !$pratica['Email'] ? 'Non specificati' : '' ?>
+                            <?= $pratica['Telefono'] && $pratica['Mail'] ? ' - ' : '' ?>
+                            <?= htmlspecialchars($pratica['Mail'] ?: '') ?>
+                            <?= !$pratica['Telefono'] && !$pratica['Mail'] ? 'Non specificati' : '' ?>
                         </span>
                     </div>
                 </div>
