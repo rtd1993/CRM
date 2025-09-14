@@ -40,7 +40,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("INSERT INTO utenti (nome, email, password, ruolo, telegram_chat_id, colore) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$nome, $email, $hash, $ruolo, $telegram_chat_id ?: null, $colore]);
         
-        $messaggio = "<div class='alert alert-success mt-3'>✅ Utente creato con successo.</div>";
+        // Ottieni l'ID del nuovo utente
+        $new_user_id = $pdo->lastInsertId();
+        
+        // Aggiungi automaticamente il nuovo utente alla chat globale (conversation_id = 1)
+        try {
+            $stmt_chat = $pdo->prepare("INSERT INTO conversation_participants (conversation_id, user_id, role, is_active) VALUES (1, ?, 'member', 1)");
+            $stmt_chat->execute([$new_user_id]);
+        } catch (Exception $e) {
+            // Se fallisce l'aggiunta alla chat, logga l'errore ma non bloccare la creazione utente
+            error_log("Errore aggiunta utente $new_user_id alla chat globale: " . $e->getMessage());
+        }
+        
+        $messaggio = "<div class='alert alert-success mt-3'>✅ Utente creato con successo e aggiunto alla chat globale.</div>";
         
         // Se è in modalità popup, chiudi il modal
         if (isset($_GET['popup'])) {
