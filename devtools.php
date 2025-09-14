@@ -176,25 +176,57 @@ function getNetworkStats() {
     try {
         $network = [];
         
-        // IP Address del server - prova diversi metodi
-        $server_ip = $_SERVER['SERVER_ADDR'] ?? null;
-        if (!$server_ip || $server_ip === '::1' || $server_ip === '127.0.0.1') {
-            // Prova a ottenere l'IP esterno
-            $server_ip = gethostbyname(gethostname());
-            if ($server_ip === gethostname()) {
-                // Fallback - prova comando Windows
-                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                    $output = shell_exec('ipconfig | findstr /i "IPv4"');
-                    if ($output && preg_match('/(\d+\.\d+\.\d+\.\d+)/', $output, $matches)) {
-                        $server_ip = $matches[1];
-                    } else {
-                        $server_ip = 'N/A';
+        // IP Address della rete locale - metodo specifico per LAN
+        $server_ip = 'N/A';
+        
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Windows - cerca IP della rete locale
+            $output = shell_exec('ipconfig 2>nul');
+            if ($output) {
+                // Cerca tutti gli IPv4 e filtra quelli della rete locale
+                preg_match_all('/IPv4.*?:\s*(\d+\.\d+\.\d+\.\d+)/', $output, $matches);
+                if (!empty($matches[1])) {
+                    foreach ($matches[1] as $ip) {
+                        // Prendi il primo IP che sia della rete locale (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+                        if (preg_match('/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $ip)) {
+                            $server_ip = $ip;
+                            break;
+                        }
                     }
-                } else {
-                    $server_ip = 'N/A';
+                }
+            }
+        } else {
+            // Linux/Unix - usa hostname -I per IP locali
+            $output = shell_exec('hostname -I 2>/dev/null');
+            if ($output) {
+                $ips = explode(' ', trim($output));
+                foreach ($ips as $ip) {
+                    $ip = trim($ip);
+                    // Cerca IP della rete locale
+                    if (preg_match('/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $ip)) {
+                        $server_ip = $ip;
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback con ifconfig
+            if ($server_ip === 'N/A') {
+                $output = shell_exec('ifconfig 2>/dev/null | grep -oE "inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"');
+                if ($output) {
+                    preg_match_all('/inet ([\d.]+)/', $output, $matches);
+                    if (!empty($matches[1])) {
+                        foreach ($matches[1] as $ip) {
+                            if (preg_match('/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $ip)) {
+                                $server_ip = $ip;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
+        
         $network['server_ip'] = $server_ip;
         
         // Hostname
