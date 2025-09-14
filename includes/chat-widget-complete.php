@@ -26,6 +26,16 @@ try {
 }
 ?>
 
+<!-- DEBUG SESSION INFO -->
+<div style="position: fixed; top: 10px; left: 10px; background: yellow; padding: 10px; z-index: 9999; font-family: monospace; font-size: 12px; max-width: 300px;">
+    <strong>Chat Debug:</strong><br>
+    Authenticated: <?= $user_authenticated ? 'YES' : 'NO' ?><br>
+    User ID: <?= $user_id ?><br>
+    User Name: <?= htmlspecialchars($user_name) ?><br>
+    Session Status: <?= session_status() ?><br>
+    Session ID: <?= session_id() ?: 'NONE' ?><br>
+</div>
+
 <?php if ($user_authenticated): ?>
 <script>
 // Configurazione Chat System completo
