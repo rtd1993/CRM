@@ -144,16 +144,6 @@ if (isset($_SESSION['user_id'])) {
             margin-top: 5px;
             min-width: 180px;
             z-index: 9999 !important;
-            position: absolute !important;
-            display: none;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-        }
-        .crm-header .crm-menu .dropdown-menu.show {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
         }
         .crm-header .crm-menu .dropdown-item {
             color: #fff !important;
