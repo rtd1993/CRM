@@ -326,6 +326,24 @@ io.on("connection", socket => {
     });
 });
 
+// Endpoint HTTP per ottenere utenti online (per API PHP)
+const express = require('express');
+const app = express();
+
+app.get('/online-users', (req, res) => {
+    const onlineUserIds = Array.from(utentiOnline.keys());
+    res.json({
+        success: true,
+        online_users: onlineUserIds,
+        total_online: onlineUserIds.length
+    });
+});
+
+// Avvia server HTTP per API utenti online (porta 3002)
+app.listen(3002, () => {
+    console.log('📡 API utenti online sulla porta 3002');
+});
+
 console.log("🌐 Avvio server HTTP sulla porta 3001...");
 httpServer.listen(3001, () => {
     console.log("✅ Socket.IO Server attivo e pronto!");

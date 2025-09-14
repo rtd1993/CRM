@@ -21,16 +21,30 @@ try {
             $stmt->execute([$user_id]);
             $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Per ora tutti gli utenti sono considerati online (mock)
-            // TODO: Implementare tracking reale con Redis o tabella sessioni
+            // Ottieni utenti realmente online dal server Socket.IO
+            $onlineUserIds = [];
+            try {
+                $context = stream_context_create(['http' => ['timeout' => 2]]);
+                $response = file_get_contents('http://localhost:3002/online-users', false, $context);
+                if ($response) {
+                    $onlineData = json_decode($response, true);
+                    if ($onlineData && $onlineData['success']) {
+                        $onlineUserIds = $onlineData['online_users'];
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Errore connessione Socket.IO server: " . $e->getMessage());
+            }
+            
             $onlineUsers = [];
             foreach ($users as $user) {
+                $isOnline = in_array((int)$user['id'], $onlineUserIds);
                 $onlineUsers[] = [
                     'id' => (int)$user['id'],
                     'name' => $user['nome'],
                     'email' => $user['email'],
                     'role' => $user['ruolo'],
-                    'is_online' => true // Mock - sempre online per ora
+                    'is_online' => $isOnline // Vero stato online dal Socket.IO
                 ];
             }
             
