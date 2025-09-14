@@ -158,8 +158,9 @@ class CompleteChatSystem {
      */
     async initSocketIO() {
         try {
-            // Connettiti al server Socket.IO
-            this.socket = io('http://localhost:3001');
+            // Connettiti al server Socket.IO (usa l'indirizzo del server)
+            const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`;
+            this.socket = io(socketUrl);
             
             this.socket.on('connect', () => {
                 this.socketConnected = true;
