@@ -982,7 +982,7 @@ class CompleteChatSystem {
             this.elements.privatesList.innerHTML = '';
             
             // Carica utenti dal database
-            const response = await fetch('api/utenti_for_chat.php');
+            const response = await fetch(`api/utenti_for_chat.php?user_id=${this.config.userId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
