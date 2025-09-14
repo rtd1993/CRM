@@ -436,12 +436,16 @@ class CompleteChatSystem {
                 conversationId = 1; // Chat globale ha sempre ID 1
             } else if (type === 'pratica') {
                 // Per le pratiche, ottieni il conversation_id dal sistema
+                this.log('🔧 Creando conversazione pratica per cliente:', id);
                 const practiceConv = await this.getOrCreatePracticeConversation(id);
                 conversationId = practiceConv;
+                this.log('✅ Conversation ID pratica ottenuto:', conversationId);
             } else if (type === 'privata') {
                 // Per le chat private, ottieni il conversation_id dal sistema
+                this.log('🔧 Creando conversazione privata per utente:', id);
                 const privateConv = await this.getOrCreatePrivateConversation(id);
                 conversationId = privateConv;
+                this.log('✅ Conversation ID privata ottenuto:', conversationId);
             }
             
             // Lascia room precedente se necessario
@@ -630,6 +634,7 @@ class CompleteChatSystem {
      */
     async getOrCreatePracticeConversation(clientId) {
         try {
+            this.log('🔗 Chiamando API pratica per cliente:', clientId);
             const response = await fetch('./api/get_or_create_practice.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -638,7 +643,9 @@ class CompleteChatSystem {
                 })
             });
             
+            this.log('📡 Risposta API pratica:', response.status);
             const data = await response.json();
+            this.log('📄 Dati API pratica:', data);
             
             if (data.success) {
                 return data.conversation_id;
@@ -661,6 +668,7 @@ class CompleteChatSystem {
      */
     async getOrCreatePrivateConversation(otherUserId) {
         try {
+            this.log('🔗 Chiamando API privata per utente:', otherUserId);
             const response = await fetch('./api/get_or_create_private.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -669,7 +677,9 @@ class CompleteChatSystem {
                 })
             });
             
+            this.log('📡 Risposta API privata:', response.status);
             const data = await response.json();
+            this.log('📄 Dati API privata:', data);
             
             if (data.success) {
                 return data.conversation_id;
