@@ -941,15 +941,24 @@ class CompleteChatSystem {
     async loadPrivateChats() {
         try {
             this.log('👥 Caricamento chat private...');
-            // TODO: Implementare API per chat private
-            this.renderPrivateChats([]);
             
+            // Carica lista utenti dal database
+            const response = await fetch('/api/online_users.php');
+            const data = await response.json();
+            
+            if (data.success && data.users) {
+                // Filtra l'utente corrente dalla lista
+                const otherUsers = data.users.filter(user => user.id != this.config.userId);
+                this.renderPrivateChats(otherUsers);
+            } else {
+                this.renderPrivateChats([]);
+            }
+
         } catch (error) {
             this.log('❌ Errore caricamento chat private:', error);
+            this.renderPrivateChats([]);
         }
-    }
-    
-    /**
+    }    /**
      * Renderizza chat private
      */
     renderPrivateChats(chats) {
