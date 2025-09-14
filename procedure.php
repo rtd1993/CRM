@@ -117,14 +117,34 @@ if (isset($_POST['modifica_procedura'])) {
     }
 }
 
-// Gestione eliminazione
+// Gestione eliminazione procedura
 if (isset($_POST['elimina_procedura'])) {
     $id = (int)$_POST['id'];
-    $stmt = $pdo->prepare("DELETE FROM procedure_crm WHERE id = ?");
-    if ($stmt->execute([$id])) {
-        $success_message = "Procedura eliminata con successo!";
+    
+    if ($id <= 0) {
+        $error_message = 'ID procedura non valido.';
     } else {
-        $error_message = "Errore nell'eliminazione della procedura.";
+        try {
+            // Prima verifica se la procedura esiste e ottieni il nome
+            $exists_stmt = $pdo->prepare("SELECT denominazione FROM procedure_crm WHERE id = ?");
+            $exists_stmt->execute([$id]);
+            $procedura_nome = $exists_stmt->fetchColumn();
+            
+            if (!$procedura_nome) {
+                $error_message = 'La procedura da eliminare non esiste.';
+            } else {
+                // Eliminazione dal database
+                $stmt = $pdo->prepare("DELETE FROM procedure_crm WHERE id = ?");
+                
+                if ($stmt->execute([$id])) {
+                    $success_message = "Procedura '$procedura_nome' eliminata con successo!";
+                } else {
+                    $error_message = 'Errore durante l\'eliminazione della procedura.';
+                }
+            }
+        } catch (Exception $e) {
+            $error_message = 'Errore di connessione al database: ' . $e->getMessage();
+        }
     }
 }
 
