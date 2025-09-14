@@ -1,8 +1,11 @@
 <?php
+// QUESTO FILE È OBSOLETO - USA IL CHAT WIDGET
 require_once __DIR__ . '/includes/auth.php';
 require_login();
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/header.php';
+
+// Reindirizza alla dashboard - Il sistema chat è ora integrato nel widget
+header('Location: dashboard.php?message=Chat system is now integrated in the widget');
+exit;
 
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];

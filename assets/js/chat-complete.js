@@ -1130,12 +1130,13 @@ class CompleteChatSystem {
         } catch (error) {
             this.log('❌ Errore aggiornamento contatori:', error);
             
-            // In caso di errore, prova a mostrare contatori da cache
-            if (this.unreadCounts) {
-                this.updateBadge(this.elements.globalBadge, this.unreadCounts.globale || 0);
-                this.updateBadge(this.elements.practiceBadge, this.unreadCounts.pratiche || 0);
-                this.updateBadge(this.elements.totalBadge, this.unreadCounts.total || 0);
-            }
+            // In caso di errore, nascondi tutti i badge invece di mostrare cache
+            ['#total-unread-badge', '#global-chat-badge', '#practice-chat-badge'].forEach(selector => {
+                const badge = document.querySelector(selector);
+                if (badge) {
+                    badge.classList.add('hidden');
+                }
+            });
         }
     }
     
@@ -1627,6 +1628,15 @@ class CompleteChatSystem {
                     } else if (totalBadge) {
                         totalBadge.classList.add('hidden');
                     }
+                } else {
+                    // Se l'API restituisce un errore (es. non autenticato), nascondi tutti i badge
+                    console.log('API badge error:', data.error || 'Unknown error');
+                    ['#total-unread-badge', '#global-chat-badge', '#practice-chat-badge'].forEach(selector => {
+                        const badge = document.querySelector(selector);
+                        if (badge) {
+                            badge.classList.add('hidden');
+                        }
+                    });
                 }
             })
             .catch(error => {
