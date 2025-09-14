@@ -770,7 +770,7 @@ class CompleteChatSystem {
                 this.elements.messageInput.value = '';
                 
                 // Aggiungi messaggio alla UI (Socket.IO non rimanderà il proprio messaggio)
-                this.addMessageToUI({
+                const messageEl = this.createMessageElement({
                     id: Date.now(),
                     user_id: this.config.userId,
                     user_name: this.config.userName,
@@ -778,10 +778,17 @@ class CompleteChatSystem {
                     created_at: new Date().toISOString(),
                     is_own: true
                 });
-                
-                this.scrollToBottom();
-                
-            } else {
+
+                const messagesContainer = document.getElementById('messages');
+                if (messagesContainer && messageEl) {
+                    messagesContainer.appendChild(messageEl);
+                    
+                    // Aggiorna l'ultimo ID per questa conversazione
+                    this.lastMessageIds[conversationId] = Date.now();
+                    
+                    // Scroll intelligente
+                    this.smartScroll();
+                }            } else {
                 // Fallback ad API REST
                 this.log('📡 Fallback ad API REST');
                 
@@ -858,15 +865,22 @@ class CompleteChatSystem {
                 
                 // Salva messaggio localmente
                 this.saveMessageLocally(fallbackConversationId, messageObj);
-                
-                // Aggiungi messaggio alla UI
-                this.addMessageToUI(messageObj);
-                
+
+                // Aggiungi messaggio alla UI con il nuovo sistema incrementale
+                const messageEl = this.createMessageElement(messageObj);
+                const messagesContainer = document.getElementById('messages');
+                if (messagesContainer && messageEl) {
+                    messagesContainer.appendChild(messageEl);
+                    
+                    // Aggiorna l'ultimo ID per questa conversazione
+                    this.lastMessageIds[fallbackConversationId] = messageObj.id;
+                    
+                    // Scroll intelligente
+                    this.smartScroll();
+                }
+
                 // Pulisci input
-                this.elements.messageInput.value = '';
-                this.scrollToBottom();
-                
-                this.log('✅ Messaggio simulato aggiunto alla UI');
+                this.elements.messageInput.value = '';                this.log('✅ Messaggio simulato aggiunto alla UI');
                 return; // Non mostrare errore
             }
             
