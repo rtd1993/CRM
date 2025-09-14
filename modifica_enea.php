@@ -30,19 +30,28 @@ try {
     $enea_folder_relative = '';
     if (!empty($record['cliente_id'])) {
         try {
-            $cliente_stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome FROM clienti WHERE id = ?");
+            $cliente_stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome, link_cartella FROM clienti WHERE id = ?");
             $cliente_stmt->execute([$record['cliente_id']]);
             $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($cliente_data) {
-                // Crea nome cartella con nuovo formato id_cognome.nome
-                $cliente_folder = $record['cliente_id'] . '_' . 
-                                strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
-                
-                // Aggiungi il nome se presente
-                if (!empty($cliente_data['Nome'])) {
-                    $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
-                    $cliente_folder .= '.' . $nome_clean;
+                // Usa il link_cartella esistente invece di ricreare il percorso
+                if (!empty($cliente_data['link_cartella'])) {
+                    $cliente_path = $cliente_data['link_cartella'];
+                    // Estrai il nome della cartella dal percorso completo
+                    $cliente_folder = basename($cliente_path);
+                } else {
+                    // Fallback: crea il percorso se link_cartella è vuoto
+                    $cliente_folder = $record['cliente_id'] . '_' . 
+                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
+                    
+                    // Aggiungi il nome se presente
+                    if (!empty($cliente_data['Nome'])) {
+                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
+                        $cliente_folder .= '.' . $nome_clean;
+                    }
+                    
+                    $cliente_path = '/var/www/CRM/local_drive/' . $cliente_folder;
                 }
                 
                 // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
@@ -53,7 +62,7 @@ try {
                     $folder_name .= '_' . $desc_clean;
                 }
                 
-                $enea_folder_path = '/var/www/CRM/local_drive/' . $cliente_folder . '/' . $folder_name;
+                $enea_folder_path = $cliente_path . '/' . $folder_name;
                 $enea_folder_relative = $cliente_folder . '/' . $folder_name;
             }
         } catch (Exception $e) {

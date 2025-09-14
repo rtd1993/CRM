@@ -98,24 +98,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Crea cartella ENEA nel Drive del cliente con nuovo formato
             try {
-                // Recupera i dati del cliente per creare il percorso corretto
-                $cliente_stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome FROM clienti WHERE id = ?");
+                // Recupera i dati del cliente e il link_cartella esistente
+                $cliente_stmt = $pdo->prepare("SELECT Cognome_Ragione_sociale, Nome, link_cartella FROM clienti WHERE id = ?");
                 $cliente_stmt->execute([$cliente_id]);
                 $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($cliente_data) {
-                    // Crea nome cartella con nuovo formato id_cognome.nome
-                    $cliente_folder = $cliente_id . '_' . 
-                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
-                    
-                    // Aggiungi il nome se presente
-                    if (!empty($cliente_data['Nome'])) {
-                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
-                        $cliente_folder .= '.' . $nome_clean;
+                    // Usa il link_cartella esistente invece di ricreare il percorso
+                    if (!empty($cliente_data['link_cartella'])) {
+                        $cliente_path = $cliente_data['link_cartella'];
+                    } else {
+                        // Fallback: crea il percorso se link_cartella è vuoto
+                        $cliente_folder = $cliente_id . '_' . 
+                                        strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
+                        
+                        // Aggiungi il nome se presente
+                        if (!empty($cliente_data['Nome'])) {
+                            $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
+                            $cliente_folder .= '.' . $nome_clean;
+                        }
+                        
+                        $base_path = '/var/www/CRM/local_drive';
+                        $cliente_path = $base_path . '/' . $cliente_folder;
+                        
+                        // Aggiorna il cliente con il link_cartella generato
+                        $update_stmt = $pdo->prepare("UPDATE clienti SET link_cartella = ? WHERE id = ?");
+                        $update_stmt->execute([$cliente_path, $cliente_id]);
                     }
-                    
-                    $base_path = '/var/www/CRM/local_drive';
-                    $cliente_path = $base_path . '/' . $cliente_folder;
                     
                     // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
                     $folder_name = 'ENEA_' . $anno_fiscale;
