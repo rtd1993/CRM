@@ -71,7 +71,11 @@ try {
 
     echo json_encode([
         'success' => true,
-        'users' => $result
+        'users' => $result,
+        'current_user_id' => $current_user_id,
+        'online_users_from_socket' => $onlineUserIds,
+        'total' => count($result),
+        'online_count' => count(array_filter($result, function($u) { return $u['is_online']; }))
     ]);
 
 } catch (Exception $e) {
