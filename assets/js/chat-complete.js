@@ -78,6 +78,10 @@ class CompleteChatSystem {
             this.log('⏱️ Avvio polling di fallback...');
             this.startPolling();
             
+            // Carica badge immediatamente
+            this.log('🔔 Caricamento iniziale badge...');
+            this.updateChatBadges();
+            
             this.isInitialized = true;
             this.log('✅ Complete Chat System inizializzato con successo');
 
@@ -1080,7 +1084,7 @@ class CompleteChatSystem {
         try {
             this.log('🔔 Aggiornamento contatori non letti...');
             
-            const response = await fetch('/api/get_all_unread_counts.php', {
+            const response = await fetch('/api/chat_notifications.php?action=unread_counts', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1097,18 +1101,13 @@ class CompleteChatSystem {
                 throw new Error(data.error || 'Errore sconosciuto');
             }
             
-            const counts = data.counts;
-            this.log('📊 Contatori ricevuti:', counts);
+            this.log('📊 Contatori ricevuti:', data);
             
-            // Aggiorna badge
-            this.updateBadge(this.elements.globalBadge, counts.globale);
-            this.updateBadge(this.elements.practiceBadge, counts.pratiche);
-            
-            // Badge totale
-            this.updateBadge(this.elements.totalBadge, counts.total);
+            // Utilizza il metodo updateChatBadges che abbiamo creato
+            this.processBadgeData(data);
             
             // Salva contatori in cache per confronti futuri
-            this.unreadCounts = counts;
+            this.unreadCounts = data.unread_counts;
             
         } catch (error) {
             this.log('❌ Errore aggiornamento contatori:', error);
@@ -1563,66 +1562,52 @@ class CompleteChatSystem {
                     const counts = data.unread_counts;
                     
                     // Badge chat globale
-                    const globalBadge = document.querySelector('.chat-global-badge');
-                    if (counts.global) {
+                    const globalBadge = document.querySelector('#global-chat-badge');
+                    if (counts.global && counts.global > 0) {
                         if (globalBadge) {
                             globalBadge.textContent = counts.global;
-                            globalBadge.style.display = 'inline-block';
-                        } else {
-                            // Crea badge se non esiste
-                            const chatButton = document.querySelector('[onclick="openGlobalChat()"]');
-                            if (chatButton) {
-                                const badge = document.createElement('span');
-                                badge.className = 'badge bg-danger chat-global-badge ms-1';
-                                badge.textContent = counts.global;
-                                badge.style.display = 'inline-block';
-                                chatButton.appendChild(badge);
-                            }
+                            globalBadge.classList.remove('hidden');
                         }
                     } else if (globalBadge) {
-                        globalBadge.style.display = 'none';
+                        globalBadge.classList.add('hidden');
                     }
                     
-                    // Badge chat pratiche
+                    // Badge chat pratiche e private
+                    const practiceBadge = document.querySelector('#practice-chat-badge');
+                    let totalPracticeCount = 0;
+                    
                     Object.keys(counts).forEach(key => {
                         if (key.startsWith('practice_')) {
-                            const practiceId = key.replace('practice_', '');
-                            const badge = document.querySelector(`.practice-chat-badge[data-practice="${practiceId}"]`);
-                            if (badge) {
-                                badge.textContent = counts[key];
-                                badge.style.display = 'inline-block';
-                            }
+                            totalPracticeCount += counts[key];
                         }
                         
                         if (key.startsWith('private_')) {
                             const conversationId = key.replace('private_', '');
-                            const badge = document.querySelector(`.private-chat-badge[data-conversation="${conversationId}"]`);
+                            const badge = document.querySelector(`#private-chat-badge-${conversationId}`);
                             if (badge) {
                                 badge.textContent = counts[key];
-                                badge.style.display = 'inline-block';
+                                badge.classList.remove('hidden');
                             }
                         }
                     });
                     
-                    // Badge totale nel menu principale
-                    const totalBadge = document.querySelector('.total-chat-badge');
+                    // Aggiorna badge pratiche totale
+                    if (totalPracticeCount > 0 && practiceBadge) {
+                        practiceBadge.textContent = totalPracticeCount;
+                        practiceBadge.classList.remove('hidden');
+                    } else if (practiceBadge) {
+                        practiceBadge.classList.add('hidden');
+                    }
+                    
+                    // Badge totale sul toggle button del widget
+                    const totalBadge = document.querySelector('#total-unread-badge');
                     if (data.total > 0) {
                         if (totalBadge) {
                             totalBadge.textContent = data.total;
-                            totalBadge.style.display = 'inline-block';
-                        } else {
-                            // Crea badge totale se non esiste
-                            const mainChatLink = document.querySelector('a[href="chat.php"]');
-                            if (mainChatLink) {
-                                const badge = document.createElement('span');
-                                badge.className = 'badge bg-danger total-chat-badge ms-1';
-                                badge.textContent = data.total;
-                                badge.style.display = 'inline-block';
-                                mainChatLink.appendChild(badge);
-                            }
+                            totalBadge.classList.remove('hidden');
                         }
                     } else if (totalBadge) {
-                        totalBadge.style.display = 'none';
+                        totalBadge.classList.add('hidden');
                     }
                 }
             })
@@ -1652,6 +1637,52 @@ class CompleteChatSystem {
         .catch(error => {
             console.error('Errore marca come letto:', error);
         });
+    }
+    
+    // Processa i dati dei badge dal polling
+    processBadgeData(data) {
+        if (data.success && data.unread_counts) {
+            const counts = data.unread_counts;
+            
+            // Badge chat globale
+            const globalBadge = document.querySelector('#global-chat-badge');
+            if (counts.global && counts.global > 0) {
+                if (globalBadge) {
+                    globalBadge.textContent = counts.global;
+                    globalBadge.classList.remove('hidden');
+                }
+            } else if (globalBadge) {
+                globalBadge.classList.add('hidden');
+            }
+            
+            // Badge totale
+            const totalBadge = document.querySelector('#total-unread-badge');
+            if (data.total > 0) {
+                if (totalBadge) {
+                    totalBadge.textContent = data.total;
+                    totalBadge.classList.remove('hidden');
+                }
+            } else if (totalBadge) {
+                totalBadge.classList.add('hidden');
+            }
+            
+            // Badge pratiche
+            const practiceBadge = document.querySelector('#practice-chat-badge');
+            let totalPracticeCount = 0;
+            
+            Object.keys(counts).forEach(key => {
+                if (key.startsWith('practice_')) {
+                    totalPracticeCount += counts[key];
+                }
+            });
+            
+            if (totalPracticeCount > 0 && practiceBadge) {
+                practiceBadge.textContent = totalPracticeCount;
+                practiceBadge.classList.remove('hidden');
+            } else if (practiceBadge) {
+                practiceBadge.classList.add('hidden');
+            }
+        }
     }
 }
 
