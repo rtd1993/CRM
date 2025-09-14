@@ -54,10 +54,10 @@ try {
         $conversation_name = "Chat: {$current_user_name} ↔ {$other_user['nome']}";
         
         $stmt = $pdo->prepare("
-            INSERT INTO conversations (name, type, created_at, updated_at) 
-            VALUES (?, 'private', NOW(), NOW())
+            INSERT INTO conversations (name, type, created_by, created_at, updated_at) 
+            VALUES (?, 'private', ?, NOW(), NOW())
         ");
-        $stmt->execute([$conversation_name]);
+        $stmt->execute([$conversation_name, $user_id]);
         $conversation_id = $pdo->lastInsertId();
         
         // Aggiungi entrambi gli utenti come partecipanti

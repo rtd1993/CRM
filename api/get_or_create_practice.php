@@ -50,10 +50,10 @@ try {
         $conversation_name = "Pratica - " . $cliente['Cognome_Ragione_sociale'];
         
         $stmt = $pdo->prepare("
-            INSERT INTO conversations (name, type, client_id, created_at, updated_at) 
-            VALUES (?, 'pratica', ?, NOW(), NOW())
+            INSERT INTO conversations (name, type, created_by, client_id, created_at, updated_at) 
+            VALUES (?, 'pratica', ?, ?, NOW(), NOW())
         ");
-        $stmt->execute([$conversation_name, $client_id]);
+        $stmt->execute([$conversation_name, $user_id, $client_id]);
         $conversation_id = $pdo->lastInsertId();
         
         // Aggiungi l'utente corrente come partecipante
