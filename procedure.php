@@ -42,12 +42,19 @@ if (isset($_POST['crea_procedura'])) {
 
 // Gestione modifica procedura
 if (isset($_POST['modifica_procedura'])) {
+    // Debug dei dati ricevuti
+    error_log('Modifica procedura - Dati POST: ' . print_r($_POST, true));
+    
     $id = (int)$_POST['id'];
     $denominazione = trim($_POST['denominazione'] ?? '');
     $valida_dal = $_POST['valida_dal'] ?? '';
     $procedura = trim($_POST['procedura'] ?? '');
     
-    if (empty($denominazione)) {
+    error_log("Modifica procedura ID: $id, Denominazione: $denominazione");
+    
+    if ($id <= 0) {
+        $error_message = 'ID procedura non valido.';
+    } elseif (empty($denominazione)) {
         $error_message = 'La denominazione è obbligatoria.';
     } elseif (empty($valida_dal)) {
         $error_message = 'La data di validità è obbligatoria.';
@@ -55,24 +62,42 @@ if (isset($_POST['modifica_procedura'])) {
         $error_message = 'Il testo della procedura è obbligatorio.';
     } else {
         try {
-            // Verifica se esiste già una procedura con la stessa denominazione (escludendo quella corrente)
-            $check_stmt = $pdo->prepare("SELECT COUNT(*) FROM procedure_crm WHERE denominazione = ? AND id != ?");
-            $check_stmt->execute([$denominazione, $id]);
+            // Prima verifica se la procedura esiste
+            $exists_stmt = $pdo->prepare("SELECT COUNT(*) FROM procedure_crm WHERE id = ?");
+            $exists_stmt->execute([$id]);
             
-            if ($check_stmt->fetchColumn() > 0) {
-                $error_message = 'Esiste già un\'altra procedura con questa denominazione.';
+            if ($exists_stmt->fetchColumn() == 0) {
+                $error_message = 'La procedura da modificare non esiste.';
             } else {
-                // Aggiornamento nel database
-                $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ? WHERE id = ?");
+                // Verifica se esiste già una procedura con la stessa denominazione (escludendo quella corrente)
+                $check_stmt = $pdo->prepare("SELECT COUNT(*) FROM procedure_crm WHERE denominazione = ? AND id != ?");
+                $check_stmt->execute([$denominazione, $id]);
                 
-                if ($stmt->execute([$denominazione, $valida_dal, $procedura, $id])) {
-                    $success_message = "Procedura aggiornata con successo!";
+                if ($check_stmt->fetchColumn() > 0) {
+                    $error_message = 'Esiste già un\'altra procedura con questa denominazione.';
                 } else {
-                    $error_message = 'Errore durante l\'aggiornamento della procedura.';
+                    // Aggiornamento nel database
+                    $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ? WHERE id = ?");
+                    
+                    $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $id]);
+                    $rowsAffected = $stmt->rowCount();
+                    
+                    error_log("Update result: $result, Rows affected: $rowsAffected");
+                    
+                    if ($result && $rowsAffected > 0) {
+                        $success_message = "Procedura aggiornata con successo!";
+                        error_log("Procedura $id aggiornata con successo");
+                    } elseif ($result && $rowsAffected == 0) {
+                        $success_message = "Nessuna modifica necessaria (dati identici).";
+                    } else {
+                        $error_message = 'Errore durante l\'aggiornamento della procedura.';
+                        error_log("Errore aggiornamento procedura $id");
+                    }
                 }
             }
         } catch (Exception $e) {
             $error_message = 'Errore di connessione al database: ' . $e->getMessage();
+            error_log("Eccezione modifica procedura: " . $e->getMessage());
         }
     }
 }
@@ -388,6 +413,37 @@ $procedure = $stmt->fetchAll();
     font-size: 0.85rem;
     color: #6c757d;
     margin-top: 0.3rem;
+}
+
+/* Stili per visualizzazione */
+.view-field {
+    margin-bottom: 1.5rem;
+}
+
+.view-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.view-content {
+    background: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.procedure-text-view {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .btn {
@@ -714,7 +770,73 @@ function getEditModalHTML(proc) {
 }
 
 function viewProcedure(id) {
-    editProcedure(id); // Per ora usa la stessa modal di modifica ma in modalità view
+    // Recupera i dati della procedura per visualizzazione
+    fetch('/get_procedure_data.php?id=' + id, {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const modal = document.getElementById('modalContainer');
+            modal.innerHTML = getViewModalHTML(data.procedure);
+            document.body.style.overflow = 'hidden';
+        } else {
+            alert('Errore nel caricamento della procedura: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        alert('Errore nel caricamento della procedura');
+    });
+}
+
+function getViewModalHTML(proc) {
+    return `
+<div class="modal-backdrop" onclick="closeModal()"></div>
+<div class="modal-content">
+    <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #20c997);">
+        <h3><i class="fas fa-eye me-2"></i>Visualizza Procedura</h3>
+        <button class="btn-close" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="modal-body">
+        <div class="procedure-info">
+            <p><strong>ID:</strong> ${proc.id}</p>
+            <p><strong>Creata il:</strong> ${new Date(proc.data_creazione).toLocaleString('it-IT')}</p>
+            ${proc.data_modifica !== proc.data_creazione ? '<p><strong>Ultima modifica:</strong> ' + new Date(proc.data_modifica).toLocaleString('it-IT') + '</p>' : ''}
+        </div>
+        
+        <div class="view-field">
+            <label class="view-label">Denominazione</label>
+            <div class="view-content">${proc.denominazione}</div>
+        </div>
+        
+        <div class="view-field">
+            <label class="view-label">Valida Dal</label>
+            <div class="view-content">${new Date(proc.valida_dal).toLocaleDateString('it-IT')}</div>
+        </div>
+        
+        <div class="view-field">
+            <label class="view-label">Testo Procedura</label>
+            <div class="view-content procedure-text-view">${proc.procedura.replace(/\n/g, '<br>')}</div>
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">
+            <i class="fas fa-times me-2"></i>Chiudi
+        </button>
+        <button type="button" class="btn btn-primary" onclick="closeModal(); editProcedure(${proc.id})">
+            <i class="fas fa-edit me-2"></i>Modifica
+        </button>
+        <button type="button" class="btn btn-success" onclick="printProcedure(${proc.id})">
+            <i class="fas fa-print me-2"></i>Stampa
+        </button>
+    </div>
+</div>`;
 }
 
 function printProcedure(id) {
@@ -733,7 +855,7 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// Gestione submit form creazione
+// Gestione submit form creazione e modifica
 document.addEventListener('submit', function(e) {
     if (e.target.id === 'createProcedureForm') {
         e.preventDefault();
@@ -742,8 +864,21 @@ document.addEventListener('submit', function(e) {
         formData.append('crea_procedura', '1');
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalHTML = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
         submitBtn.disabled = true;
+        
+        // Validazione
+        const denominazione = formData.get('denominazione');
+        const valida_dal = formData.get('valida_dal');
+        const procedura = formData.get('procedura');
+        
+        if (!denominazione || !valida_dal || !procedura) {
+            alert('Tutti i campi sono obbligatori.');
+            submitBtn.innerHTML = originalHTML;
+            submitBtn.disabled = false;
+            return;
+        }
         
         // Crea un form nascosto e sottometti
         const form = document.createElement('form');
@@ -769,8 +904,30 @@ document.addEventListener('submit', function(e) {
         formData.append('modifica_procedura', '1');
         
         const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalHTML = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
         submitBtn.disabled = true;
+        
+        // Validazione
+        const denominazione = formData.get('denominazione');
+        const valida_dal = formData.get('valida_dal');
+        const procedura = formData.get('procedura');
+        const id = formData.get('id');
+        
+        if (!denominazione || !valida_dal || !procedura || !id) {
+            alert('Tutti i campi sono obbligatori.');
+            submitBtn.innerHTML = originalHTML;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // Debug: mostra i dati che stiamo inviando
+        console.log('Dati modifica:', {
+            id: id,
+            denominazione: denominazione,
+            valida_dal: valida_dal,
+            procedura: procedura.substring(0, 50) + '...'
+        });
         
         // Crea un form nascosto e sottometti
         const form = document.createElement('form');
