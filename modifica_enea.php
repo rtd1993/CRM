@@ -41,17 +41,38 @@ try {
                     // Estrai il nome della cartella dal percorso completo
                     $cliente_folder = basename($cliente_path);
                 } else {
-                    // Fallback: crea il percorso se link_cartella è vuoto
-                    $cliente_folder = $record['cliente_id'] . '_' . 
-                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']));
+                    // Fallback: cerca la cartella esistente nella directory
+                    $base_path = '/var/www/CRM/local_drive';
+                    $cliente_path = null;
                     
-                    // Aggiungi il nome se presente
-                    if (!empty($cliente_data['Nome'])) {
-                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']));
-                        $cliente_folder .= '.' . $nome_clean;
+                    // Cerca cartelle che iniziano con l'ID del cliente
+                    if (is_dir($base_path)) {
+                        $dirs = scandir($base_path);
+                        foreach ($dirs as $dir) {
+                            if ($dir !== '.' && $dir !== '..' && is_dir($base_path . '/' . $dir)) {
+                                // Controlla se la cartella inizia con l'ID del cliente seguito da underscore
+                                if (strpos($dir, $record['cliente_id'] . '_') === 0) {
+                                    $cliente_path = $base_path . '/' . $dir;
+                                    $cliente_folder = $dir;
+                                    break;
+                                }
+                            }
+                        }
                     }
                     
-                    $cliente_path = '/var/www/CRM/local_drive/' . $cliente_folder;
+                    // Se non trova la cartella, genera il nome corretto (mantenendo maiuscole)
+                    if (!$cliente_path) {
+                        $cognome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']);
+                        $cliente_folder = $record['cliente_id'] . '_' . $cognome_clean;
+                        
+                        // Aggiungi il nome se presente
+                        if (!empty($cliente_data['Nome'])) {
+                            $nome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']);
+                            $cliente_folder .= '.' . $nome_clean;
+                        }
+                        
+                        $cliente_path = $base_path . '/' . $cliente_folder;
+                    }
                 }
                 
                 // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
