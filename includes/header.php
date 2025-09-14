@@ -123,6 +123,45 @@ if (isset($_SESSION['user_id'])) {
             background: #e74c3c;
             border-radius: 50%;
         }
+        
+        /* Dropdown Styles */
+        .crm-header .crm-menu .dropdown {
+            position: relative;
+        }
+        .crm-header .crm-menu .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .crm-header .crm-menu .dropdown-menu {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            padding: 8px 0;
+            margin-top: 5px;
+            min-width: 180px;
+        }
+        .crm-header .crm-menu .dropdown-item {
+            color: #fff !important;
+            padding: 8px 20px;
+            transition: all 0.3s ease;
+            border: none;
+            background: transparent;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+        }
+        .crm-header .crm-menu .dropdown-item:hover {
+            background-color: rgba(255,255,255,0.2) !important;
+            color: #fff !important;
+            transform: translateX(5px);
+        }
+        .crm-header .crm-menu .dropdown-divider {
+            border-color: rgba(255,255,255,0.2);
+            margin: 5px 0;
+        }
+        
         @media (max-width: 600px) {
             .crm-header .crm-title {
                 font-size: 1.4rem;
@@ -166,28 +205,77 @@ if (isset($_SESSION['user_id'])) {
     </div>
     <nav>
         <ul class="crm-menu container-fluid">
+            <!-- Dashboard -->
             <li><a href="/dashboard.php"<?php if(basename($_SERVER['PHP_SELF'])=='dashboard.php') echo ' class="active"';?>>Dashboard</a></li>
-            <li><a href="/clienti.php"<?php if(basename($_SERVER['PHP_SELF'])=='clienti.php') echo ' class="active"';?>>Clienti</a></li>
-            <li><a href="/drive.php"<?php if(basename($_SERVER['PHP_SELF'])=='drive.php') echo ' class="active"';?>>Drive</a></li>
-            <li><a href="/calendario.php"<?php if(basename($_SERVER['PHP_SELF'])=='calendario.php') echo ' class="active"';?>>Calendario</a></li>
-            <li><a href="/task.php"<?php if(basename($_SERVER['PHP_SELF'])=='task.php') echo ' class="active"';?>>Task</a></li>
-            <li><a href="/task_clienti.php"<?php if(basename($_SERVER['PHP_SELF'])=='task_clienti.php') echo ' class="active"';?>>Task Clienti</a></li>
-            <li><a href="/conto_termico.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php'])) echo ' class="active"';?>>Conto Termico</a></li>
-            <li><a href="/enea.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['enea.php', 'crea_enea.php', 'modifica_enea.php'])) echo ' class="active"';?>>ENEA</a></li>
-            <li><a href="/richieste.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['richieste.php', 'crea_richiesta.php', 'modifica_richiesta.php'])) echo ' class="active"';?>>Gestione Richieste</a></li>
-            <li><a href="/email_invio.php"<?php if(in_array(basename($_SERVER['PHP_SELF']), ['email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' class="active"';?>>Email</a></li>
-            <li><a href="/info.php"<?php if(basename($_SERVER['PHP_SELF'])=='info.php') echo ' class="active"';?>>Info</a></li>
-            <li><a href="/gestione_utenti.php"<?php if(basename($_SERVER['PHP_SELF'])=='gestione_utenti.php') echo ' class="active"';?>>Utenti</a></li>
-            <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
-                <li><a href="/telegram_config.php"<?php if(basename($_SERVER['PHP_SELF'])=='telegram_config.php') echo ' class="active"';?>>Telegram</a></li>
-                
-            <?php endif; ?>
-            <?php if ($ruolo_utente === 'developer'): ?>
-                <li><a href="/devtools.php"<?php if(basename($_SERVER['PHP_SELF'])=='devtools.php') echo ' class="active"';?>>DevTools</a></li>
-                <li><a href="/admin_wireguard.php"<?php if(basename($_SERVER['PHP_SELF'])=='admin_wireguard.php') echo ' class="active"';?>>WireGuard</a></li>
-            <?php endif; ?>
+            
+            <!-- Clienti Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['clienti.php', 'richieste.php', 'crea_richiesta.php', 'modifica_richiesta.php', 'drive.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                    Clienti <i class="fas fa-chevron-down ms-1"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/clienti.php">Clienti</a></li>
+                    <li><a class="dropdown-item" href="/richieste.php">Richieste</a></li>
+                    <li><a class="dropdown-item" href="/drive.php">Drive</a></li>
+                </ul>
+            </li>
+            
+            <!-- Task & Calendario Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['calendario.php', 'task.php', 'task_clienti.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                    Task & Calendario <i class="fas fa-chevron-down ms-1"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/calendario.php">Calendario</a></li>
+                    <li><a class="dropdown-item" href="/task.php">Task</a></li>
+                    <li><a class="dropdown-item" href="/task_clienti.php">Task Clienti</a></li>
+                </ul>
+            </li>
+            
+            <!-- Pratiche Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                    Pratiche <i class="fas fa-chevron-down ms-1"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/conto_termico.php">Conto Termico</a></li>
+                    <li><a class="dropdown-item" href="/enea.php">ENEA</a></li>
+                </ul>
+            </li>
+            
+            <!-- Info & Email Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['info.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                    Info & Email <i class="fas fa-chevron-down ms-1"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/info.php">Info</a></li>
+                    <li><a class="dropdown-item" href="/email_invio.php">Email</a></li>
+                </ul>
+            </li>
+            
+            <!-- Amministrazione Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['gestione_utenti.php', 'telegram_config.php', 'devtools.php', 'admin_wireguard.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                    Amministrazione <i class="fas fa-chevron-down ms-1"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/gestione_utenti.php">Utenti</a></li>
+                    <?php if ($ruolo_utente === 'admin' || $ruolo_utente === 'developer'): ?>
+                        <li><a class="dropdown-item" href="/telegram_config.php">Telegram</a></li>
+                    <?php endif; ?>
+                    <?php if ($ruolo_utente === 'developer'): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/devtools.php">DevTools</a></li>
+                        <li><a class="dropdown-item" href="/admin_wireguard.php">WireGuard</a></li>
+                    <?php endif; ?>
+                </ul>
+            </li>
         </ul>
     </nav>
 </header>
+
+<!-- Bootstrap JavaScript for dropdown functionality -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <main style="padding: 20px;">
