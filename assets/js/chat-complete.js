@@ -51,7 +51,12 @@ class CompleteChatSystem {
             return; // Non avviare la chat per utenti non autenticati
         }
         
-        if (!this.config.userId || this.config.userId === null) {
+        // Converti userId in numero se è una stringa
+        if (typeof this.config.userId === 'string') {
+            this.config.userId = parseInt(this.config.userId);
+        }
+        
+        if (!this.config.userId || this.config.userId === null || isNaN(this.config.userId) || this.config.userId <= 0) {
             console.error('❌ ERRORE CRITICO: userId non definito! Sessione non valida.');
             console.log('🔍 Debug config:', this.config);
             console.log('🔍 Debug window.completeChatConfig:', window.completeChatConfig);
