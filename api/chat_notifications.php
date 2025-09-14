@@ -6,12 +6,10 @@ require_once __DIR__ . '/../includes/config.php';
 if (!isset($_SESSION['user_id'])) {
     header('Content-Type: application/json');
     echo json_encode([
-        'success' => false,
-        'error' => 'Sessione non valida - utente non loggato',
-        'debug' => [
-            'session_status' => session_status(),
-            'session_id' => session_id()
-        ]
+        'success' => true,
+        'unread_counts' => [],
+        'total' => 0,
+        'debug' => 'Sessione non valida - conteggi azzerati'
     ]);
     exit;
 }

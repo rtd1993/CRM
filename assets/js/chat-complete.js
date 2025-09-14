@@ -565,14 +565,10 @@ class CompleteChatSystem {
                 throw new Error('Impossibile determinare conversation_id');
             }
             
-            // Carica messaggi usando l'API semplificata
-            const response = await fetch('/api/simple-chat/get_messages.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    conversation_id: conversationId,
-                    limit: 50
-                })
+            // Carica messaggi usando la nuova API
+            const response = await fetch(`./api/chat_messages.php?conversation_id=${conversationId}`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
             });
             
             const data = await response.json();
@@ -752,7 +748,7 @@ class CompleteChatSystem {
                 // Fallback ad API REST
                 this.log('📡 Fallback ad API REST');
                 
-                const response = await fetch('/api/simple-chat/send_message.php', {
+                const response = await fetch('./api/send_message.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -1233,8 +1229,13 @@ class CompleteChatSystem {
         if (!this.currentChat) return;
         
         try {
-            // TODO: Implementare controllo nuovi messaggi per chat corrente
             this.log('🔍 Controllo nuovi messaggi per:', this.currentChat);
+            
+            // Ricarica i messaggi per la chat corrente
+            await this.loadChatHistory(this.currentChat.type, this.currentChat.id || this.currentChat.conversation_id);
+            
+            // Aggiorna anche i badge
+            this.updateChatBadges();
             
         } catch (error) {
             this.log('❌ Errore controllo nuovi messaggi:', error);

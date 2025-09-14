@@ -24,7 +24,7 @@ window.completeChatConfig = {
     userId: <?= $user_id ?>,
     userName: '<?= addslashes($user_name) ?>',
     apiBase: '/api/chat/',
-    pollingInterval: 3000,
+    pollingInterval: 1000,
     maxMessageLength: 1000,
     debug: true
 };
