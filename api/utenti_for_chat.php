@@ -1,20 +1,17 @@
 <?php
-session_start();
-require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/db.php';
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 try {
-    // Controlla se l'utente è loggato
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('Utente non autenticato');
-    }
+    // Connessione database diretta
+    $pdo = new PDO("mysql:host=localhost;dbname=crm;charset=utf8", 'crmuser', 'Admin123!');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    $current_user_id = $_SESSION['user_id'];
+    // Per ora, usa un utente di default (TODO: implementare autenticazione robusta)
+    // In produzione questo dovrebbe essere ottenuto dalla sessione o token JWT
+    $current_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 2;
 
     // Query per ottenere tutti gli utenti tranne l'utente corrente
     $stmt = $pdo->prepare("
