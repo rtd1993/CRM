@@ -221,8 +221,9 @@ if (isset($_SESSION['user_id'])) {
             <a href="logout.php" style="color: #ffffff; text-decoration: none; margin-left: 8px;"><b>Logout</b></a>
         </div>
     </div>
-    <nav>
-        <ul class="crm-menu container-fluid">
+        <nav class="navbar navbar-expand-lg crm-nav">
+        <div class="container-fluid">
+        <ul class="navbar-nav crm-menu">
             <!-- Dashboard -->
             <li class="nav-item"><a href="/dashboard.php" class="nav-link<?php if(basename($_SERVER['PHP_SELF'])=='dashboard.php') echo ' active';?>">Dashboard</a></li>
             
@@ -294,6 +295,7 @@ if (isset($_SESSION['user_id'])) {
                 </ul>
             </li>
         </ul>
+        </div>
     </nav>
 </header>
 
