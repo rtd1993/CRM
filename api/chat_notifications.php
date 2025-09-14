@@ -48,27 +48,27 @@ try {
                 
                 // Chat pratiche - ottieni tutte le conversazioni pratiche dell'utente con info cliente
                 $stmt = $pdo->prepare("
-                    SELECT 
-                        c.id, 
-                        c.name, 
+                    SELECT
+                        c.id,
+                        c.name,
                         c.client_id,
-                        cl.nome_azienda,
-                        cl.ragione_sociale,
+                        cl.Cognome_Ragione_sociale,
+                        cl.Nome,
                         COUNT(m.id) as unread_count
                     FROM conversations c
                     JOIN conversation_participants cp ON c.id = cp.conversation_id
                     LEFT JOIN clienti cl ON c.client_id = cl.id
-                    LEFT JOIN messages m ON c.id = m.conversation_id 
-                        AND m.user_id != ? 
+                    LEFT JOIN messages m ON c.id = m.conversation_id
+                        AND m.user_id != ?
                         AND m.created_at > COALESCE(
-                            (SELECT last_seen FROM user_conversation_status 
-                             WHERE user_id = ? AND conversation_id = c.id), 
+                            (SELECT last_seen FROM user_conversation_status
+                             WHERE user_id = ? AND conversation_id = c.id),
                             '1970-01-01'
                         )
-                    WHERE cp.user_id = ? 
+                    WHERE cp.user_id = ?
                     AND c.type IN ('pratica', 'cliente')
                     AND cp.is_active = 1
-                    GROUP BY c.id, c.name, c.client_id, cl.nome_azienda, cl.ragione_sociale
+                    GROUP BY c.id, c.name, c.client_id, cl.Cognome_Ragione_sociale, cl.Nome
                     HAVING unread_count > 0
                 ");
                 $stmt->execute([$user_id, $user_id, $user_id]);
@@ -76,7 +76,7 @@ try {
                 
                 foreach ($practiceChats as $chat) {
                     // Includi informazioni cliente nel badge ID per identificazione
-                    $clientName = $chat['nome_azienda'] ?: $chat['ragione_sociale'] ?: "Cliente #{$chat['client_id']}";
+                    $clientName = $chat['Cognome_Ragione_sociale'] ?: $chat['Nome'] ?: "Cliente #{$chat['client_id']}";
                     $unreadCounts['practice_' . $chat['id']] = [
                         'count' => $chat['unread_count'],
                         'client_name' => $clientName,
