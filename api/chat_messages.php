@@ -1,9 +1,18 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
-require_login();
 require_once __DIR__ . '/../includes/config.php';
 
 header('Content-Type: application/json');
+
+// Debug per sessioni non valide
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode([
+        'success' => false,
+        'error' => 'Sessione non valida - utente non loggato',
+        'debug' => 'Richiedi login per accedere ai messaggi'
+    ]);
+    exit;
+}
 
 try {
     $user_id = $_SESSION['user_id'];

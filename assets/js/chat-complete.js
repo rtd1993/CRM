@@ -626,7 +626,7 @@ class CompleteChatSystem {
      */
     async getOrCreatePracticeConversation(clientId) {
         try {
-            const response = await fetch(this.apiBase + 'conversations/get_practice.php', {
+            const response = await fetch('./api/get_or_create_practice.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -657,7 +657,7 @@ class CompleteChatSystem {
      */
     async getOrCreatePrivateConversation(otherUserId) {
         try {
-            const response = await fetch(this.apiBase + 'conversations/create_private.php', {
+            const response = await fetch('./api/get_or_create_private.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
