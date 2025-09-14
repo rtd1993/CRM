@@ -2,6 +2,7 @@
 require_once '../includes/auth.php';
 require_login();
 require_once '../includes/db.php';
+require_once '../includes/telegram.php';
 
 header('Content-Type: application/json');
 
@@ -57,6 +58,9 @@ try {
         ON DUPLICATE KEY UPDATE last_seen = NOW()
     ");
     $stmt->execute([$user_id, $chat_id]);
+    
+    // Invia notifiche Telegram ai partecipanti offline
+    inviaNotificaTelegramChat($chat_id, $user_id, $message);
     
     echo json_encode([
         'success' => true,
