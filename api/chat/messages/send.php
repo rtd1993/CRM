@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../../includes/auth.php';
 require_login();
 require_once __DIR__ . '/../../../includes/config.php';
 require_once __DIR__ . '/../../../includes/db.php';
+require_once __DIR__ . '/../../../includes/telegram.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -166,6 +167,9 @@ try {
     $stmt->execute([$message_id, $current_user_id]);
     
     $pdo->commit();
+    
+    // Invia notifiche Telegram ai partecipanti offline
+    inviaNotificaTelegramChatV2($conversation_id, $current_user_id, $content);
     
     // Recupera i dati del messaggio appena inserito
     $stmt = $pdo->prepare("
