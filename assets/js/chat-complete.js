@@ -1768,6 +1768,30 @@ document.addEventListener('DOMContentLoaded', function() {
         // Inizializza sistema chat
         window.completeChatSystem = new CompleteChatSystem();
         
+        // BADGE DEBUG: MutationObserver per tracciare modifiche al badge
+        const totalBadge = document.querySelector('#total-unread-badge');
+        if (totalBadge) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' || (mutation.type === 'attributes' && mutation.attributeName === 'class')) {
+                        console.log('🔍 BADGE MODIFIED! Type:', mutation.type);
+                        console.log('🔍 Current content:', totalBadge.textContent);
+                        console.log('🔍 Current classes:', totalBadge.className);
+                        console.log('🔍 Stack trace:', new Error().stack);
+                    }
+                });
+            });
+            
+            observer.observe(totalBadge, {
+                childList: true,
+                attributes: true,
+                attributeFilter: ['class'],
+                subtree: true
+            });
+            
+            console.log('🔍 MutationObserver attivato per badge debugging');
+        }
+        
         // Cleanup su unload
         window.addEventListener('beforeunload', () => {
             if (window.completeChatSystem) {
