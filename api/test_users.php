@@ -6,8 +6,8 @@ try {
     // Connessione database base
     $host = 'localhost';
     $dbname = 'crm';
-    $username = 'crm_user';
-    $password = 'crm_password_2024!';
+    $username = 'crmuser';
+    $password = 'Admin123!';
     
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
