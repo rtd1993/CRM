@@ -99,7 +99,12 @@ try {
                 echo json_encode([
                     'success' => true,
                     'unread_counts' => $unreadCounts,
-                    'total' => array_sum($unreadCounts)
+                    'total' => array_sum($unreadCounts),
+                    'debug_total_calculation' => [
+                        'array_values' => array_values($unreadCounts),
+                        'array_sum' => array_sum($unreadCounts),
+                        'count_elements' => count($unreadCounts)
+                    ]
                 ]);
             } else {
                 // Lista notifiche recenti
