@@ -42,6 +42,8 @@ if (isset($_SESSION['user_id'])) {
             margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-bottom: 3px solid #e67e22;
+            position: relative;
+            z-index: 1050;
         }
         .crm-header .crm-title {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -127,6 +129,7 @@ if (isset($_SESSION['user_id'])) {
         /* Dropdown Styles */
         .crm-header .crm-menu .dropdown {
             position: relative;
+            z-index: 1000;
         }
         .crm-header .crm-menu .dropdown-toggle {
             display: flex;
@@ -141,6 +144,8 @@ if (isset($_SESSION['user_id'])) {
             padding: 8px 0;
             margin-top: 5px;
             min-width: 180px;
+            z-index: 9999 !important;
+            position: absolute !important;
         }
         .crm-header .crm-menu .dropdown-item {
             color: #fff !important;
