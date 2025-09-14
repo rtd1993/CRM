@@ -161,9 +161,52 @@ function getStatoBadge($stato) {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
+// Debug Bootstrap
+console.log('richieste.php - Bootstrap loaded:', typeof bootstrap !== 'undefined');
+console.log('richieste.php - Bootstrap Dropdown available:', typeof bootstrap.Dropdown !== 'undefined');
+
+// Test inizializzazione dropdown con delay per assicurare il caricamento Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        console.log('richieste.php - Checking dropdowns after delay...');
+        const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        console.log('richieste.php - Found dropdowns:', dropdowns.length);
+        
+        if (typeof bootstrap === 'undefined') {
+            console.error('richieste.php - Bootstrap non caricato!');
+            return;
+        }
+        
+        dropdowns.forEach((dropdown, i) => {
+            console.log(`richieste.php - Dropdown ${i + 1}:`, dropdown);
+            
+            // Forza re-inizializzazione
+            try {
+                // Distruggi istanza esistente se presente
+                const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+                if (existingInstance) {
+                    existingInstance.dispose();
+                }
+                
+                // Crea nuova istanza
+                const newInstance = new bootstrap.Dropdown(dropdown);
+                console.log(`richieste.php - Dropdown ${i + 1} re-initialized successfully`);
+                
+                // Test manuale del toggle
+                dropdown.addEventListener('click', function(e) {
+                    console.log(`richieste.php - Dropdown ${i + 1} clicked manually`);
+                    e.preventDefault();
+                    newInstance.toggle();
+                });
+                
+            } catch (error) {
+                console.error(`richieste.php - Error with dropdown ${i + 1}:`, error);
+            }
+        });
+    }, 100); // Attesa di 100ms
+});
+
 // Funzione per aprire il modal di gestione richiesta
 function openRichiestaModal(richiestaId = null) {
     const modal = document.getElementById('richiestaModal');
@@ -195,6 +238,7 @@ function closeRichiestaModal() {
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('richiestaModal');
     modal.addEventListener('click', function(event) {
+        // Solo se si clicca esattamente sul backdrop del modal
         if (event.target === modal) {
             closeRichiestaModal();
         }
