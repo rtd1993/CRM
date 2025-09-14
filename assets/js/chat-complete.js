@@ -1378,11 +1378,9 @@ class CompleteChatSystem {
      */
     createMessageElement(message) {
         const isOwn = message.user_id == this.config.userId;
-        const messageClass = isOwn ? 'message own-message' : 'message other-message';
-        const alignment = isOwn ? 'text-end' : 'text-start';
         
         const messageDiv = document.createElement('div');
-        messageDiv.className = messageClass;
+        messageDiv.className = `message-bubble ${isOwn ? 'own' : ''}`;
         
         // Messaggio di sistema (notifiche chat pratiche)
         if (message.message_type === 'system') {
@@ -1397,14 +1395,12 @@ class CompleteChatSystem {
         } else {
             // Messaggio normale
             messageDiv.innerHTML = `
+                ${!isOwn ? `<div class="message-sender">${this.escapeHtml(message.sender_name || message.user_name)}</div>` : ''}
                 <div class="message-content">
-                    <div class="message-header ${alignment}">
-                        <span class="sender-name">${this.escapeHtml(message.sender_name)}</span>
-                        <span class="message-time">${this.formatTime(message.timestamp || message.created_at)}</span>
-                    </div>
-                    <div class="message-text ${alignment}">
-                        ${this.escapeHtml(message.message)}
-                    </div>
+                    ${this.escapeHtml(message.message)}
+                </div>
+                <div class="message-meta">
+                    <span class="message-time">${this.formatTime(message.timestamp || message.created_at)}</span>
                 </div>
             `;
         }
