@@ -986,6 +986,7 @@ class CompleteChatSystem {
                             </div>
                         </div>
                         <div class="chat-meta">
+                            <span id="private-chat-badge-${user.id}" class="chat-unread-badge hidden">0</span>
                             <div class="user-status">${user.is_online ? '🟢' : '⚫'}</div>
                         </div>
                     </div>
@@ -1615,9 +1616,9 @@ class CompleteChatSystem {
                             totalPracticeCount += counts[key];
                         }
                         
-                        if (key.startsWith('private_')) {
-                            const conversationId = key.replace('private_', '');
-                            const badge = document.querySelector(`#private-chat-badge-${conversationId}`);
+                        if (key.startsWith('private_user_')) {
+                            const userId = key.replace('private_user_', '');
+                            const badge = document.querySelector(`#private-chat-badge-${userId}`);
                             if (badge) {
                                 badge.textContent = counts[key];
                                 badge.classList.remove('hidden');
@@ -1716,6 +1717,15 @@ class CompleteChatSystem {
             Object.keys(counts).forEach(key => {
                 if (key.startsWith('practice_')) {
                     totalPracticeCount += counts[key];
+                }
+                
+                if (key.startsWith('private_user_')) {
+                    const userId = key.replace('private_user_', '');
+                    const badge = document.querySelector(`#private-chat-badge-${userId}`);
+                    if (badge) {
+                        badge.textContent = counts[key];
+                        badge.classList.remove('hidden');
+                    }
                 }
             });
             

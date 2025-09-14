@@ -71,11 +71,15 @@ try {
                     $unreadCounts['practice_' . $chat['id']] = $chat['unread_count'];
                 }
                 
-                // Chat private
+                // Chat private - ottieni conteggi per ogni altro utente
                 $stmt = $pdo->prepare("
-                    SELECT c.id, COUNT(m.id) as unread_count
+                    SELECT 
+                        c.id as conversation_id,
+                        cp2.user_id as other_user_id,
+                        COUNT(m.id) as unread_count
                     FROM conversations c
-                    JOIN conversation_participants cp ON c.id = cp.conversation_id
+                    JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+                    JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
                     LEFT JOIN messages m ON c.id = m.conversation_id 
                         AND m.user_id != ? 
                         AND m.created_at > COALESCE(
@@ -83,28 +87,26 @@ try {
                              WHERE user_id = ? AND conversation_id = c.id), 
                             '1970-01-01'
                         )
-                    WHERE cp.user_id = ? 
+                    WHERE cp1.user_id = ? 
+                    AND cp2.user_id != ?
                     AND c.type = 'private'
-                    AND cp.is_active = 1
-                    GROUP BY c.id
+                    AND cp1.is_active = 1
+                    AND cp2.is_active = 1
+                    GROUP BY c.id, cp2.user_id
                     HAVING unread_count > 0
                 ");
-                $stmt->execute([$user_id, $user_id, $user_id]);
+                $stmt->execute([$user_id, $user_id, $user_id, $user_id]);
                 $privateChats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 foreach ($privateChats as $chat) {
-                    $unreadCounts['private_' . $chat['id']] = $chat['unread_count'];
+                    // Usa l'ID dell'altro utente per il badge
+                    $unreadCounts['private_user_' . $chat['other_user_id']] = $chat['unread_count'];
                 }
                 
                 echo json_encode([
                     'success' => true,
                     'unread_counts' => $unreadCounts,
-                    'total' => array_sum($unreadCounts),
-                    'debug_total_calculation' => [
-                        'array_values' => array_values($unreadCounts),
-                        'array_sum' => array_sum($unreadCounts),
-                        'count_elements' => count($unreadCounts)
-                    ]
+                    'total' => array_sum($unreadCounts)
                 ]);
             } else {
                 // Lista notifiche recenti
