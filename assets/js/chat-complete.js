@@ -190,13 +190,11 @@ class CompleteChatSystem {
             // Gestione utenti online/offline
             this.socket.on('user_online', (data) => {
                 this.log('🟢 Utente online:', data.user_id);
-                this.onlineUsers.set(data.user_id, true);
                 this.updateUserStatus(data.user_id, true);
             });
             
             this.socket.on('user_offline', (data) => {
                 this.log('🔴 Utente offline:', data.user_id);
-                this.onlineUsers.set(data.user_id, false);
                 this.updateUserStatus(data.user_id, false);
             });
             
@@ -1131,9 +1129,12 @@ class CompleteChatSystem {
                         ${user.name.charAt(0).toUpperCase()}
                         <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
                     </div>
-                    <div>
-                        <div class="fw-semibold">${this.escapeHtml(user.name)}</div>
-                        <small class="text-muted">${user.is_online ? 'Online' : 'Offline'}</small>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold d-flex align-items-center justify-content-between">
+                            ${this.escapeHtml(user.name)}
+                            ${user.is_online ? '<span class="badge bg-success-subtle text-success ms-2">●</span>' : ''}
+                        </div>
+                        <small class="text-muted ${user.is_online ? 'text-success' : ''}">${user.is_online ? 'Online' : 'Offline'}</small>
                     </div>
                 </button>
             `;
@@ -1612,12 +1613,31 @@ class CompleteChatSystem {
      * Aggiorna status online/offline utente
      */
     updateUserStatus(userId, isOnline) {
-        // Aggiorna indicatori nella lista chat private
-        const userElements = document.querySelectorAll(`[data-user-id="${userId}"] .user-status`);
-        userElements.forEach(el => {
-            el.className = `user-status ${isOnline ? 'online' : 'offline'}`;
-            el.title = isOnline ? 'Online' : 'Offline';
-        });
+        // Aggiorna lo stato nell'oggetto onlineUsers
+        if (this.onlineUsers.has(parseInt(userId))) {
+            const user = this.onlineUsers.get(parseInt(userId));
+            user.is_online = isOnline;
+            this.onlineUsers.set(parseInt(userId), user);
+        }
+        
+        // Aggiorna indicatori online nella lista utenti
+        const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+        if (userElement) {
+            const onlineIndicator = userElement.querySelector('.online-indicator');
+            const statusText = userElement.querySelector('small');
+            
+            if (onlineIndicator) {
+                onlineIndicator.className = `online-indicator ${isOnline ? '' : 'offline'}`;
+            }
+            
+            if (statusText) {
+                statusText.textContent = isOnline ? 'Online' : 'Offline';
+                statusText.className = `text-muted ${isOnline ? 'text-success' : ''}`;
+            }
+        }
+        
+        // Log per debug
+        this.log(`🔄 Stato utente ${userId} aggiornato: ${isOnline ? 'online' : 'offline'}`);
     }
     
     /**

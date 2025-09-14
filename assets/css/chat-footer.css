@@ -445,18 +445,46 @@ body {
 /* === ONLINE INDICATOR === */
 .online-indicator {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 14px;
-    height: 14px;
-    background: #28a745;
+    bottom: 0px;
+    right: 0px;
+    width: 16px;
+    height: 16px;
+    background: #20c997;
     border: 3px solid white;
     border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    animation: pulse-online 2s infinite;
 }
 
 .online-indicator.offline {
     background: #6c757d;
+    animation: none;
+}
+
+@keyframes pulse-online {
+    0% { 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 0 0 0 rgba(32, 201, 151, 0.7);
+    }
+    70% { 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 0 0 8px rgba(32, 201, 151, 0);
+    }
+    100% { 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 0 0 0 rgba(32, 201, 151, 0);
+    }
+}
+
+/* Badge online negli utenti */
+.badge.bg-success-subtle {
+    background-color: rgba(32, 201, 151, 0.1) !important;
+    color: #20c997 !important;
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+/* Testo di stato online */
+.text-success {
+    color: #20c997 !important;
+    font-weight: 500;
 }
 
 /* === CHAT INFO === */
