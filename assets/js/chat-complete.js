@@ -430,11 +430,29 @@ class CompleteChatSystem {
             // Mostra chat window
             this.showChatWindow();
             
-            // Segna come letti - conversione per API
+            // Gestione Socket.IO room
             let conversationId = id;
             if (type === 'globale') {
                 conversationId = 1; // Chat globale ha sempre ID 1
+            } else if (type === 'pratica') {
+                // Per le pratiche, ottieni il conversation_id dal sistema
+                const practiceConv = await this.getOrCreatePracticeConversation(id);
+                conversationId = practiceConv;
             }
+            
+            // Lascia room precedente se necessario
+            if (this.currentConversationId && this.socketConnected) {
+                this.socket.emit('leave_conversation', this.currentConversationId);
+            }
+            
+            // Unisciti alla nuova room
+            this.currentConversationId = conversationId;
+            if (this.socketConnected) {
+                this.socket.emit('join_conversation', conversationId);
+                this.log('🏠 Unito alla room conversazione:', conversationId);
+            }
+            
+            // Segna come letti
             this.markAsRead(conversationId);
             
             // Focus input
@@ -1523,14 +1541,14 @@ class CompleteChatSystem {
     /**
      * Invia messaggio via Socket.IO
      */
-    sendMessageViaSocket(chatId, message) {
+    sendMessageViaSocket(conversationId, message) {
         if (this.socketConnected && this.socket) {
             this.socket.emit('send_message', {
-                chat_id: chatId,
+                conversation_id: conversationId,
                 message: message,
                 user_id: this.config.userId,
                 user_name: this.config.userName,
-                chat_type: this.currentChat?.type || 'privata'
+                chat_type: this.currentChat?.type || 'private'
             });
             return true;
         }

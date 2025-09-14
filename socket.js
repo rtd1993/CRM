@@ -87,17 +87,28 @@ io.on("connection", socket => {
         });
     });
     
-    // Nuovo sistema messaggi chat
+    // Gestione join/leave room per conversazioni
+    socket.on("join_conversation", (conversation_id) => {
+        socket.join(`conversation_${conversation_id}`);
+        console.log(`👤 Utente ${currentUserId} si è unito alla conversazione ${conversation_id}`);
+    });
+    
+    socket.on("leave_conversation", (conversation_id) => {
+        socket.leave(`conversation_${conversation_id}`);
+        console.log(`👤 Utente ${currentUserId} ha lasciato la conversazione ${conversation_id}`);
+    });
+    
+    // Sistema messaggi con nuovo schema database
     socket.on("send_message", async data => {
-        const { chat_id, message, user_id, user_name } = data;
+        const { conversation_id, message, user_id, user_name } = data;
         const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
         
         try {
-            // Salva messaggio nel database
-            await new Promise((resolve, reject) => {
+            // Salva messaggio nel database (nuova tabella)
+            const result = await new Promise((resolve, reject) => {
                 db.query(
-                    "INSERT INTO chat_messages_new (chat_id, user_id, message, created_at) VALUES (?, ?, ?, ?)", 
-                    [chat_id, user_id, message, timestamp], 
+                    "INSERT INTO messages (conversation_id, user_id, message, created_at) VALUES (?, ?, ?, ?)", 
+                    [conversation_id, user_id, message, timestamp], 
                     (err, result) => {
                         if (err) reject(err);
                         else resolve(result);
@@ -105,11 +116,13 @@ io.on("connection", socket => {
                 );
             });
             
-            // Ottieni partecipanti alla chat
+            const message_id = result.insertId;
+            
+            // Ottieni partecipanti alla conversazione
             const participants = await new Promise((resolve, reject) => {
                 db.query(
-                    "SELECT user_id FROM chat_participants WHERE chat_id = ? AND is_active = 1", 
-                    [chat_id], 
+                    "SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND is_active = 1", 
+                    [conversation_id], 
                     (err, results) => {
                         if (err) reject(err);
                         else resolve(results);
@@ -117,29 +130,45 @@ io.on("connection", socket => {
                 );
             });
             
-            // Invia messaggio a tutti i partecipanti online
+            // Ottieni info conversazione per determinare il tipo
+            const conversation = await new Promise((resolve, reject) => {
+                db.query(
+                    "SELECT name, type FROM conversations WHERE id = ?", 
+                    [conversation_id], 
+                    (err, results) => {
+                        if (err) reject(err);
+                        else resolve(results[0]);
+                    }
+                );
+            });
+            
+            // Invia messaggio a tutti nella room della conversazione
             const messageData = {
-                chat_id,
+                id: message_id,
+                conversation_id,
                 user_id,
                 user_name,
                 message,
                 created_at: timestamp,
-                chat_type: data.chat_type || 'privata'
+                chat_type: conversation ? conversation.type : 'private',
+                chat_name: conversation ? conversation.name : 'Chat'
             };
             
+            // Invio real-time via Socket.IO room
+            io.to(`conversation_${conversation_id}`).emit("new_message", messageData);
+            
+            // Invio notifiche Telegram agli utenti offline
             participants.forEach(participant => {
-                const userSockets = utentiOnline.get(participant.user_id);
-                if (userSockets) {
-                    userSockets.forEach(socketId => {
-                        io.to(socketId).emit("new_message", messageData);
-                    });
-                } else {
-                    // Utente offline, invia notifica Telegram se configurato
-                    sendTelegramNotificationForUser(participant.user_id, user_name, message);
+                if (participant.user_id !== user_id) { // Non inviare a se stesso
+                    const userSockets = utentiOnline.get(participant.user_id);
+                    if (!userSockets || userSockets.size === 0) {
+                        // Utente offline, invia notifica Telegram
+                        sendTelegramNotificationForUser(participant.user_id, user_name, message);
+                    }
                 }
             });
             
-            console.log(`💬 Messaggio inviato nella chat ${chat_id} da ${user_name}`);
+            console.log(`💬 Messaggio ${message_id} inviato nella conversazione ${conversation_id} da ${user_name}`);
             
         } catch (error) {
             console.error("❌ Errore invio messaggio:", error);
