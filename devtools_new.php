@@ -344,8 +344,8 @@ function initializePrivateChats($pdo) {
     $details = [];
     $count = 0;
     
-    // Ottieni tutti gli utenti attivi
-    $stmt = $pdo->prepare("SELECT id, nome FROM utenti WHERE attivo = 1 ORDER BY id");
+    // Ottieni tutti gli utenti
+    $stmt = $pdo->prepare("SELECT id, nome FROM utenti ORDER BY id");
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -422,8 +422,8 @@ function initializePracticeChats($pdo) {
             $stmt->execute([$conversationName, $client['id']]);
             $conversationId = $pdo->lastInsertId();
             
-            // Aggiungi tutti gli utenti attivi come partecipanti della pratica
-            $stmt = $pdo->prepare("SELECT id FROM utenti WHERE attivo = 1");
+            // Aggiungi tutti gli utenti come partecipanti della pratica
+            $stmt = $pdo->prepare("SELECT id FROM utenti");
             $stmt->execute();
             $activeUsers = $stmt->fetchAll(PDO::FETCH_COLUMN);
             

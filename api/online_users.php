@@ -15,8 +15,7 @@ try {
             $stmt = $pdo->prepare("
                 SELECT id, nome, email, ruolo
                 FROM utenti 
-                WHERE attivo = 1 
-                AND id != ?
+                WHERE id != ?
                 ORDER BY nome ASC
             ");
             $stmt->execute([$user_id]);

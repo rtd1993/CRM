@@ -562,8 +562,10 @@ class CompleteChatSystem {
                 break;
                 
             case 'privata':
-                const user = this.onlineUsers.get(parseInt(id));
-                status = user ? (user.is_online ? 'Online' : 'Offline') : 'Sconosciuto';
+                const userId = parseInt(id);
+                const user = this.onlineUsers.get(userId);
+                console.log('🔍 Debug status privata - userId:', userId, 'user found:', user, 'onlineUsers size:', this.onlineUsers.size);
+                status = user ? (user.is_online ? 'Online' : 'Offline') : `Sconosciuto (ID: ${userId})`;
                 break;
         }
         
