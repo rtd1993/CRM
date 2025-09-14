@@ -24,12 +24,26 @@ try {
     $stmt->execute([$current_user_id]);
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Ottieni utenti realmente online dal server Socket.IO
+    $onlineUserIds = [];
+    try {
+        $context = stream_context_create(['http' => ['timeout' => 2]]);
+        $response = file_get_contents('http://localhost:3002/online-users', false, $context);
+        if ($response) {
+            $onlineData = json_decode($response, true);
+            if ($onlineData && $onlineData['success']) {
+                $onlineUserIds = $onlineData['online_users'];
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Errore connessione Socket.IO server: " . $e->getMessage());
+    }
+
     $result = [];
     
     foreach ($users as $user) {
-        // Per ora tutti gli utenti sono considerati offline
-        // TODO: Implementare sistema di presenza online se necessario
-        $is_online = false;
+        // Controlla se l'utente è realmente online
+        $is_online = in_array((int)$user['id'], $onlineUserIds);
         
         // Costruisci il nome completo
         $full_name = trim($user['nome']);
