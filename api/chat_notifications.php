@@ -1,0 +1,149 @@
+<?php
+require_once __DIR__ . '/../includes/auth.php';
+require_login();
+require_once __DIR__ . '/../includes/config.php';
+
+header('Content-Type: application/json');
+
+try {
+    $user_id = $_SESSION['user_id'];
+    
+    switch ($_SERVER['REQUEST_METHOD']) {
+        case 'GET':
+            // Ottieni conteggi messaggi non letti
+            if (isset($_GET['action']) && $_GET['action'] === 'unread_counts') {
+                $unreadCounts = [];
+                
+                // Chat globale (conversation_id = 1)
+                $stmt = $pdo->prepare("
+                    SELECT COUNT(*) as count 
+                    FROM messages_new m 
+                    WHERE m.conversation_id = 1 
+                    AND m.user_id != ? 
+                    AND m.created_at > COALESCE(
+                        (SELECT last_seen FROM user_conversation_status 
+                         WHERE user_id = ? AND conversation_id = 1), 
+                        '1970-01-01'
+                    )
+                ");
+                $stmt->execute([$user_id, $user_id]);
+                $globalCount = $stmt->fetchColumn();
+                
+                if ($globalCount > 0) {
+                    $unreadCounts['global'] = $globalCount;
+                }
+                
+                // Chat pratiche - ottieni tutte le conversazioni pratiche dell'utente
+                $stmt = $pdo->prepare("
+                    SELECT c.id, c.name, COUNT(m.id) as unread_count
+                    FROM conversations c
+                    JOIN conversation_participants cp ON c.id = cp.conversation_id
+                    LEFT JOIN messages_new m ON c.id = m.conversation_id 
+                        AND m.user_id != ? 
+                        AND m.created_at > COALESCE(
+                            (SELECT last_seen FROM user_conversation_status 
+                             WHERE user_id = ? AND conversation_id = c.id), 
+                            '1970-01-01'
+                        )
+                    WHERE cp.user_id = ? 
+                    AND c.type IN ('pratica', 'cliente')
+                    AND cp.is_active = 1
+                    GROUP BY c.id, c.name
+                    HAVING unread_count > 0
+                ");
+                $stmt->execute([$user_id, $user_id, $user_id]);
+                $practiceChats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($practiceChats as $chat) {
+                    $unreadCounts['practice_' . $chat['id']] = $chat['unread_count'];
+                }
+                
+                // Chat private
+                $stmt = $pdo->prepare("
+                    SELECT c.id, COUNT(m.id) as unread_count
+                    FROM conversations c
+                    JOIN conversation_participants cp ON c.id = cp.conversation_id
+                    LEFT JOIN messages_new m ON c.id = m.conversation_id 
+                        AND m.user_id != ? 
+                        AND m.created_at > COALESCE(
+                            (SELECT last_seen FROM user_conversation_status 
+                             WHERE user_id = ? AND conversation_id = c.id), 
+                            '1970-01-01'
+                        )
+                    WHERE cp.user_id = ? 
+                    AND c.type = 'private'
+                    AND cp.is_active = 1
+                    GROUP BY c.id
+                    HAVING unread_count > 0
+                ");
+                $stmt->execute([$user_id, $user_id, $user_id]);
+                $privateChats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($privateChats as $chat) {
+                    $unreadCounts['private_' . $chat['id']] = $chat['unread_count'];
+                }
+                
+                echo json_encode([
+                    'success' => true,
+                    'unread_counts' => $unreadCounts,
+                    'total' => array_sum($unreadCounts)
+                ]);
+            } else {
+                // Lista notifiche recenti
+                $stmt = $pdo->prepare("
+                    SELECT m.id, m.message, m.created_at, u.nome as sender_name, c.name as chat_name, c.type as chat_type
+                    FROM messages_new m
+                    JOIN utenti u ON m.user_id = u.id
+                    JOIN conversations c ON m.conversation_id = c.id
+                    JOIN conversation_participants cp ON c.id = cp.conversation_id
+                    WHERE cp.user_id = ? 
+                    AND m.user_id != ?
+                    AND m.created_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
+                    ORDER BY m.created_at DESC
+                    LIMIT 20
+                ");
+                $stmt->execute([$user_id, $user_id]);
+                $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                echo json_encode([
+                    'success' => true,
+                    'notifications' => $notifications
+                ]);
+            }
+            break;
+            
+        case 'POST':
+            // Marca messaggi come letti
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (isset($input['conversation_id'])) {
+                $conversation_id = $input['conversation_id'];
+                
+                // Aggiorna last_seen per questa conversazione
+                $stmt = $pdo->prepare("
+                    INSERT INTO user_conversation_status (user_id, conversation_id, last_seen) 
+                    VALUES (?, ?, NOW()) 
+                    ON DUPLICATE KEY UPDATE last_seen = NOW()
+                ");
+                $stmt->execute([$user_id, $conversation_id]);
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Messaggi marcati come letti'
+                ]);
+            } else {
+                throw new Exception('conversation_id richiesto');
+            }
+            break;
+            
+        default:
+            throw new Exception('Metodo non supportato');
+    }
+    
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}

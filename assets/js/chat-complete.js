@@ -426,8 +426,12 @@ class CompleteChatSystem {
             // Mostra chat window
             this.showChatWindow();
             
-            // Segna come letti
-            await this.markAsRead(type, id);
+            // Segna come letti - conversione per API
+            let conversationId = id;
+            if (type === 'globale') {
+                conversationId = 1; // Chat globale ha sempre ID 1
+            }
+            this.markAsRead(conversationId);
             
             // Focus input
             setTimeout(() => {
@@ -1392,21 +1396,22 @@ class CompleteChatSystem {
      */
     handleNewMessage(data) {
         try {
-            // Aggiorna contatore messaggi non letti
-            if (data.user_id !== this.config.userId) {
-                this.incrementUnreadCount(data.chat_id);
-            }
-            
             // Se siamo nella chat corrente, mostra il messaggio immediatamente
-            if (this.currentChat && this.currentChat.id === data.chat_id) {
+            if (this.currentChat && this.currentChat.id === data.conversation_id) {
                 this.displayMessage(data);
+                
+                // Marca come letto se stiamo visualizzando la chat
+                if (data.user_id !== this.config.userId) {
+                    this.markAsRead(data.conversation_id);
+                }
+            } else {
+                // Aggiorna badge per messaggi in altre chat
+                this.updateChatBadges();
             }
             
-            // Aggiorna badge totali
-            this.updateTotalBadge();
-            
-            // Mostra notifica se la chat non è aperta
-            if (!this.isVisible || !this.currentChat || this.currentChat.id !== data.chat_id) {
+            // Mostra notifica se la chat non è aperta o se non è il nostro messaggio
+            if (data.user_id !== this.config.userId && 
+                (!this.isVisible || !this.currentChat || this.currentChat.id !== data.conversation_id)) {
                 this.showNotification(data);
             }
             
@@ -1547,6 +1552,106 @@ class CompleteChatSystem {
         
         this.isInitialized = false;
         this.log('Sistema chat distrutto');
+    }
+    
+    // Aggiorna i badge dei messaggi non letti
+    updateChatBadges() {
+        fetch('/api/chat_notifications.php?action=unread_counts')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const counts = data.unread_counts;
+                    
+                    // Badge chat globale
+                    const globalBadge = document.querySelector('.chat-global-badge');
+                    if (counts.global) {
+                        if (globalBadge) {
+                            globalBadge.textContent = counts.global;
+                            globalBadge.style.display = 'inline-block';
+                        } else {
+                            // Crea badge se non esiste
+                            const chatButton = document.querySelector('[onclick="openGlobalChat()"]');
+                            if (chatButton) {
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-danger chat-global-badge ms-1';
+                                badge.textContent = counts.global;
+                                badge.style.display = 'inline-block';
+                                chatButton.appendChild(badge);
+                            }
+                        }
+                    } else if (globalBadge) {
+                        globalBadge.style.display = 'none';
+                    }
+                    
+                    // Badge chat pratiche
+                    Object.keys(counts).forEach(key => {
+                        if (key.startsWith('practice_')) {
+                            const practiceId = key.replace('practice_', '');
+                            const badge = document.querySelector(`.practice-chat-badge[data-practice="${practiceId}"]`);
+                            if (badge) {
+                                badge.textContent = counts[key];
+                                badge.style.display = 'inline-block';
+                            }
+                        }
+                        
+                        if (key.startsWith('private_')) {
+                            const conversationId = key.replace('private_', '');
+                            const badge = document.querySelector(`.private-chat-badge[data-conversation="${conversationId}"]`);
+                            if (badge) {
+                                badge.textContent = counts[key];
+                                badge.style.display = 'inline-block';
+                            }
+                        }
+                    });
+                    
+                    // Badge totale nel menu principale
+                    const totalBadge = document.querySelector('.total-chat-badge');
+                    if (data.total > 0) {
+                        if (totalBadge) {
+                            totalBadge.textContent = data.total;
+                            totalBadge.style.display = 'inline-block';
+                        } else {
+                            // Crea badge totale se non esiste
+                            const mainChatLink = document.querySelector('a[href="chat.php"]');
+                            if (mainChatLink) {
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-danger total-chat-badge ms-1';
+                                badge.textContent = data.total;
+                                badge.style.display = 'inline-block';
+                                mainChatLink.appendChild(badge);
+                            }
+                        }
+                    } else if (totalBadge) {
+                        totalBadge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Errore aggiornamento badge:', error);
+            });
+    }
+    
+    // Marca messaggi come letti per una conversazione
+    markAsRead(conversationId) {
+        fetch('/api/chat_notifications.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                conversation_id: conversationId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Aggiorna badge dopo aver marcato come letto
+                this.updateChatBadges();
+            }
+        })
+        .catch(error => {
+            console.error('Errore marca come letto:', error);
+        });
     }
 }
 
