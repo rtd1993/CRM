@@ -225,7 +225,7 @@ if (isset($_SESSION['user_id'])) {
             <!-- Clienti Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['clienti.php', 'richieste.php', 'crea_richiesta.php', 'modifica_richiesta.php', 'drive.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
-                    Clienti <i class="fas fa-chevron-down ms-1"></i>
+                    Clienti 
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/clienti.php">Clienti</a></li>
@@ -248,12 +248,14 @@ if (isset($_SESSION['user_id'])) {
             
             <!-- Pratiche Dropdown -->
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
+                <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php', 'procedure.php', 'crea_procedura.php', 'modifica_procedura.php', 'stampa_procedura.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
                     Pratiche <i class="fas fa-chevron-down ms-1"></i>
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/conto_termico.php">Conto Termico</a></li>
                     <li><a class="dropdown-item" href="/enea.php">ENEA</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/procedure.php">Procedure</a></li>
                 </ul>
             </li>
             
