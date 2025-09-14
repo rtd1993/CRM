@@ -81,6 +81,9 @@ console.log('🔧 Chat Config caricato:', window.completeChatConfig);
                                 <option value="<?= $cliente['id'] ?>"><?= htmlspecialchars($cliente['nome']) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <button id="open-practice-chat-btn" class="btn btn-sm btn-primary ms-2" disabled>
+                            <i class="fas fa-comments"></i> Apri
+                        </button>
                     </div>
                 </div>
                 <div class="chat-meta">

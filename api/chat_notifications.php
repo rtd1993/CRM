@@ -46,11 +46,18 @@ try {
                     $unreadCounts['global'] = $globalCount;
                 }
                 
-                // Chat pratiche - ottieni tutte le conversazioni pratiche dell'utente
+                // Chat pratiche - ottieni tutte le conversazioni pratiche dell'utente con info cliente
                 $stmt = $pdo->prepare("
-                    SELECT c.id, c.name, COUNT(m.id) as unread_count
+                    SELECT 
+                        c.id, 
+                        c.name, 
+                        c.client_id,
+                        cl.nome_azienda,
+                        cl.ragione_sociale,
+                        COUNT(m.id) as unread_count
                     FROM conversations c
                     JOIN conversation_participants cp ON c.id = cp.conversation_id
+                    LEFT JOIN clienti cl ON c.client_id = cl.id
                     LEFT JOIN messages m ON c.id = m.conversation_id 
                         AND m.user_id != ? 
                         AND m.created_at > COALESCE(
@@ -61,14 +68,20 @@ try {
                     WHERE cp.user_id = ? 
                     AND c.type IN ('pratica', 'cliente')
                     AND cp.is_active = 1
-                    GROUP BY c.id, c.name
+                    GROUP BY c.id, c.name, c.client_id, cl.nome_azienda, cl.ragione_sociale
                     HAVING unread_count > 0
                 ");
                 $stmt->execute([$user_id, $user_id, $user_id]);
                 $practiceChats = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 foreach ($practiceChats as $chat) {
-                    $unreadCounts['practice_' . $chat['id']] = $chat['unread_count'];
+                    // Includi informazioni cliente nel badge ID per identificazione
+                    $clientName = $chat['nome_azienda'] ?: $chat['ragione_sociale'] ?: "Cliente #{$chat['client_id']}";
+                    $unreadCounts['practice_' . $chat['id']] = [
+                        'count' => $chat['unread_count'],
+                        'client_name' => $clientName,
+                        'conversation_name' => $chat['name']
+                    ];
                 }
                 
                 // Chat private - ottieni conteggi per ogni altro utente
@@ -103,10 +116,20 @@ try {
                     $unreadCounts['private_user_' . $chat['other_user_id']] = $chat['unread_count'];
                 }
                 
+                // Calcola il totale gestendo sia oggetti che numeri
+                $total = 0;
+                foreach ($unreadCounts as $value) {
+                    if (is_array($value) && isset($value['count'])) {
+                        $total += $value['count'];
+                    } else {
+                        $total += (int)$value;
+                    }
+                }
+                
                 echo json_encode([
                     'success' => true,
                     'unread_counts' => $unreadCounts,
-                    'total' => array_sum($unreadCounts)
+                    'total' => $total
                 ]);
             } else {
                 // Lista notifiche recenti

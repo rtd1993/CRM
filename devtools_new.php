@@ -40,6 +40,11 @@ if (isset($_POST['ajax_action'])) {
             $type = $_POST['cleanup_type'] ?? '';
             echo json_encode(performCleanup($pdo, $type));
             break;
+            
+        case 'initialize_chats':
+            $type = $_POST['chat_type'] ?? 'all';
+            echo json_encode(initializeChats($pdo, $type));
+            break;
     }
     exit;
 }
@@ -301,6 +306,142 @@ function performCleanup($pdo, $type) {
     } catch (Exception $e) {
         return ['success' => false, 'error' => $e->getMessage()];
     }
+}
+
+function initializeChats($pdo, $type) {
+    try {
+        $details = [];
+        
+        switch ($type) {
+            case 'private':
+                $result = initializePrivateChats($pdo);
+                $details = $result['details'];
+                return ['success' => true, 'message' => "Chat private inizializzate: {$result['count']}", 'details' => $details];
+                
+            case 'practice':
+                $result = initializePracticeChats($pdo);
+                $details = $result['details'];
+                return ['success' => true, 'message' => "Chat pratiche inizializzate: {$result['count']}", 'details' => $details];
+                
+            case 'all':
+                $privateResult = initializePrivateChats($pdo);
+                $practiceResult = initializePracticeChats($pdo);
+                
+                $totalCount = $privateResult['count'] + $practiceResult['count'];
+                $details = array_merge($privateResult['details'], $practiceResult['details']);
+                
+                return ['success' => true, 'message' => "Totale chat inizializzate: $totalCount", 'details' => $details];
+                
+            default:
+                return ['success' => false, 'error' => 'Tipo di inizializzazione non riconosciuto'];
+        }
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+function initializePrivateChats($pdo) {
+    $details = [];
+    $count = 0;
+    
+    // Ottieni tutti gli utenti attivi
+    $stmt = $pdo->prepare("SELECT id, nome FROM utenti WHERE attivo = 1 ORDER BY id");
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Crea conversazioni private tra tutti gli utenti (ogni coppia)
+    for ($i = 0; $i < count($users); $i++) {
+        for ($j = $i + 1; $j < count($users); $j++) {
+            $user1 = $users[$i];
+            $user2 = $users[$j];
+            
+            // Controlla se esiste già una conversazione privata tra questi utenti
+            $stmt = $pdo->prepare("
+                SELECT c.id 
+                FROM conversations c
+                JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+                JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+                WHERE c.type = 'private'
+                AND cp1.user_id = ? AND cp2.user_id = ?
+            ");
+            $stmt->execute([$user1['id'], $user2['id']]);
+            
+            if (!$stmt->fetch()) {
+                // Crea nuova conversazione privata
+                $stmt = $pdo->prepare("
+                    INSERT INTO conversations (name, type, created_by) 
+                    VALUES (?, 'private', ?)
+                ");
+                $conversationName = "Chat privata: {$user1['nome']} - {$user2['nome']}";
+                $stmt->execute([$conversationName, $user1['id']]);
+                $conversationId = $pdo->lastInsertId();
+                
+                // Aggiungi entrambi gli utenti come partecipanti
+                $stmt = $pdo->prepare("
+                    INSERT INTO conversation_participants (conversation_id, user_id, is_active) 
+                    VALUES (?, ?, 1)
+                ");
+                $stmt->execute([$conversationId, $user1['id']]);
+                $stmt->execute([$conversationId, $user2['id']]);
+                
+                $details[] = "Chat privata creata: {$user1['nome']} ↔ {$user2['nome']}";
+                $count++;
+            }
+        }
+    }
+    
+    return ['count' => $count, 'details' => $details];
+}
+
+function initializePracticeChats($pdo) {
+    $details = [];
+    $count = 0;
+    
+    // Ottieni tutti i clienti
+    $stmt = $pdo->prepare("SELECT id, nome_azienda, ragione_sociale FROM clienti ORDER BY id");
+    $stmt->execute();
+    $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($clients as $client) {
+        // Controlla se esiste già una conversazione pratica per questo cliente
+        $stmt = $pdo->prepare("
+            SELECT id FROM conversations 
+            WHERE type = 'pratica' AND client_id = ?
+        ");
+        $stmt->execute([$client['id']]);
+        
+        if (!$stmt->fetch()) {
+            // Crea nuova conversazione pratica
+            $clientName = $client['nome_azienda'] ?: $client['ragione_sociale'] ?: "Cliente #{$client['id']}";
+            $conversationName = "Pratica - $clientName";
+            
+            $stmt = $pdo->prepare("
+                INSERT INTO conversations (name, type, created_by, client_id) 
+                VALUES (?, 'pratica', 1, ?)
+            ");
+            $stmt->execute([$conversationName, $client['id']]);
+            $conversationId = $pdo->lastInsertId();
+            
+            // Aggiungi tutti gli utenti attivi come partecipanti della pratica
+            $stmt = $pdo->prepare("SELECT id FROM utenti WHERE attivo = 1");
+            $stmt->execute();
+            $activeUsers = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $stmt = $pdo->prepare("
+                INSERT INTO conversation_participants (conversation_id, user_id, is_active) 
+                VALUES (?, ?, 1)
+            ");
+            
+            foreach ($activeUsers as $userId) {
+                $stmt->execute([$conversationId, $userId]);
+            }
+            
+            $details[] = "Chat pratica creata: $clientName";
+            $count++;
+        }
+    }
+    
+    return ['count' => $count, 'details' => $details];
 }
 
 // Utility functions
@@ -702,6 +843,55 @@ Esempi:
             </div>
         </div>
     </div>
+
+    <!-- Sezione Gestione Chat -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> Gestione Chat System</h5>
+                    <p class="mb-0">Strumenti per inizializzazione e gestione chat</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="cleanup-item">
+                                <h6><i class="fas fa-users text-primary"></i> Chat Private</h6>
+                                <p class="mb-2">Inizializza conversazioni private per tutti gli utenti esistenti</p>
+                                <button class="btn btn-primary btn-sm" onclick="initializeChats('private')">
+                                    <i class="fas fa-user-plus"></i> Inizializza Private
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="cleanup-item">
+                                <h6><i class="fas fa-briefcase text-success"></i> Chat Pratiche</h6>
+                                <p class="mb-2">Inizializza conversazioni pratiche per tutti i clienti esistenti</p>
+                                <button class="btn btn-success btn-sm" onclick="initializeChats('practice')">
+                                    <i class="fas fa-folder-plus"></i> Inizializza Pratiche
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="cleanup-item">
+                                <h6><i class="fas fa-magic text-info"></i> Tutte le Chat</h6>
+                                <p class="mb-2">Inizializza tutte le conversazioni mancanti (private + pratiche)</p>
+                                <button class="btn btn-info btn-sm" onclick="initializeChats('all')">
+                                    <i class="fas fa-rocket"></i> Inizializza Tutto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="chat-results" class="mt-3">
+                        <!-- Risultati operazioni chat -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1027,6 +1217,40 @@ Esempi:
         loadStats();
         loadResources();
         loadNetwork();
+    }
+
+    function initializeChats(type) {
+        if (!confirm('Sei sicuro di voler inizializzare le chat? Questa operazione può richiedere del tempo.')) {
+            return;
+        }
+        
+        document.getElementById('chat-results').innerHTML = '<div class="alert alert-info">Inizializzazione in corso...</div>';
+        
+        fetch('devtools_new.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `ajax_action=initialize_chats&chat_type=${type}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            let html = '';
+            if (data.success) {
+                html = '<div class="alert alert-success">' + (data.message || 'Operazione completata') + '</div>';
+                if (data.details && data.details.length > 0) {
+                    html += '<ul class="list-group mt-2">';
+                    data.details.forEach(detail => {
+                        html += '<li class="list-group-item">' + detail + '</li>';
+                    });
+                    html += '</ul>';
+                }
+            } else {
+                html = '<div class="alert alert-danger">Errore: ' + (data.error || 'Errore sconosciuto') + '</div>';
+            }
+            document.getElementById('chat-results').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('chat-results').innerHTML = '<div class="alert alert-danger">Errore di connessione: ' + error.message + '</div>';
+        });
     }
 </script>
 

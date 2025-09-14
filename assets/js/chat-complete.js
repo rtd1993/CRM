@@ -112,6 +112,7 @@ class CompleteChatSystem {
             globalItem: document.querySelector('[data-type="globale"]'),
             practiceItem: document.querySelector('[data-type="pratiche"]'),
             clientSelector: document.getElementById('client-selector'),
+            openPracticeChatBtn: document.getElementById('open-practice-chat-btn'),
             privatesList: document.getElementById('private-chats-list'),
             newPrivateBtn: document.getElementById('new-private-chat-btn'),
             
@@ -254,13 +255,33 @@ class CompleteChatSystem {
             this.log('❌ Elemento globalItem non trovato!');
         }
         
-        // Selezione cliente per pratiche
+        // Selezione cliente per pratiche - ora attiva/disattiva solo il pulsante
         if (this.elements.clientSelector) {
             this.elements.clientSelector.addEventListener('change', (e) => {
                 e.stopPropagation(); // Evita chiusura panel
                 const clientId = e.target.value;
-                if (clientId) {
-                    const clientName = e.target.options[e.target.selectedIndex].text;
+                const openBtn = this.elements.openPracticeChatBtn;
+                
+                if (clientId && openBtn) {
+                    openBtn.disabled = false;
+                    openBtn.setAttribute('data-client-id', clientId);
+                    openBtn.setAttribute('data-client-name', e.target.options[e.target.selectedIndex].text);
+                } else if (openBtn) {
+                    openBtn.disabled = true;
+                    openBtn.removeAttribute('data-client-id');
+                    openBtn.removeAttribute('data-client-name');
+                }
+            });
+        }
+        
+        // Pulsante "Apri" chat pratica
+        if (this.elements.openPracticeChatBtn) {
+            this.elements.openPracticeChatBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evita chiusura panel
+                const clientId = e.target.getAttribute('data-client-id');
+                const clientName = e.target.getAttribute('data-client-name');
+                
+                if (clientId && clientName) {
                     this.log('📝 Apertura chat pratica per cliente:', clientName);
                     this.openChat('pratica', clientId, `Pratica: ${clientName}`);
                 }
@@ -1048,14 +1069,31 @@ class CompleteChatSystem {
      */
     async loadOnlineUsers() {
         try {
-            // TODO: Implementare API per utenti online
-            // Per ora usa dati mock
+            const response = await fetch('./api/online_users.php');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Errore sconosciuto');
+            }
+            
             this.onlineUsers.clear();
-            this.onlineUsers.set(1, {id: 1, name: 'Admin', is_online: true});
-            this.onlineUsers.set(2, {id: 2, name: 'Roberto', is_online: true});
+            data.users.forEach(user => {
+                this.onlineUsers.set(user.id, user);
+            });
+            
+            this.log('👥 Utenti caricati:', data.users.length);
             
         } catch (error) {
             this.log('❌ Errore caricamento utenti:', error);
+            // Fallback dati mock in caso di errore
+            this.onlineUsers.clear();
+            this.onlineUsers.set(1, {id: 1, name: 'Admin', is_online: true});
+            this.onlineUsers.set(2, {id: 2, name: 'Roberto', is_online: true});
         }
     }
     
@@ -1732,13 +1770,22 @@ class CompleteChatSystem {
                 console.log('🚫 ProcessBadgeData: Badge content after hiding:', totalBadge.textContent);
             }
             
-            // Badge pratiche
+            // Badge pratiche - con dettagli cliente
             const practiceBadge = document.querySelector('#practice-chat-badge');
             let totalPracticeCount = 0;
+            let practiceDetails = [];
             
             Object.keys(counts).forEach(key => {
                 if (key.startsWith('practice_')) {
-                    totalPracticeCount += counts[key];
+                    const practiceData = counts[key];
+                    if (typeof practiceData === 'object') {
+                        // Nuova struttura con dettagli cliente
+                        totalPracticeCount += practiceData.count;
+                        practiceDetails.push(`${practiceData.client_name} (${practiceData.count})`);
+                    } else {
+                        // Compatibilità con vecchia struttura
+                        totalPracticeCount += practiceData;
+                    }
                 }
                 
                 if (key.startsWith('private_user_')) {
@@ -1754,8 +1801,14 @@ class CompleteChatSystem {
             if (totalPracticeCount > 0 && practiceBadge) {
                 practiceBadge.textContent = totalPracticeCount;
                 practiceBadge.classList.remove('hidden');
+                
+                // Aggiungi tooltip con dettagli delle pratiche
+                if (practiceDetails.length > 0) {
+                    practiceBadge.title = 'Messaggi non letti:\n' + practiceDetails.join('\n');
+                }
             } else if (practiceBadge) {
                 practiceBadge.classList.add('hidden');
+                practiceBadge.title = '';
             }
         }
     }
