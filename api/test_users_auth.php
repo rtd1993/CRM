@@ -1,19 +1,19 @@
 <?php
 session_start();
+
+// Simula essere loggati come Roberto (user_id = 2)
+$_SESSION['user_id'] = 2;
+$_SESSION['nome'] = 'Roberto';
+
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/db.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
 try {
-    // Controlla se l'utente è loggato
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('Utente non autenticato');
-    }
-    
+    // Connessione database
+    $pdo = new PDO("mysql:host=localhost;dbname=crm;charset=utf8", 'crmuser', 'Admin123!');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
     $current_user_id = $_SESSION['user_id'];
 
     // Query per ottenere tutti gli utenti tranne l'utente corrente
@@ -35,7 +35,7 @@ try {
     $onlineUserIds = [];
     try {
         $context = stream_context_create(['http' => ['timeout' => 2]]);
-        $response = file_get_contents('http://localhost:3002/online-users', false, $context);
+        $response = @file_get_contents('http://localhost:3002/online-users', false, $context);
         if ($response) {
             $onlineData = json_decode($response, true);
             if ($onlineData && $onlineData['success']) {
@@ -59,9 +59,10 @@ try {
         }
         
         $result[] = [
-            'id' => $user['id'],
-            'username' => 'user' . $user['id'], // Genera un username basato sull'ID
+            'id' => (int)$user['id'],
+            'username' => 'user' . $user['id'],
             'name' => $full_name,
+            'nome' => $full_name,
             'email' => $user['email'],
             'ruolo' => $user['ruolo'],
             'is_online' => $is_online,
@@ -71,7 +72,11 @@ try {
 
     echo json_encode([
         'success' => true,
-        'users' => $result
+        'users' => $result,
+        'current_user_id' => $current_user_id,
+        'current_user_name' => $_SESSION['nome'],
+        'online_users_from_socket' => $onlineUserIds,
+        'debug' => 'Logged in as Roberto (ID: 2)'
     ]);
 
 } catch (Exception $e) {
@@ -81,8 +86,7 @@ try {
         'error' => $e->getMessage(),
         'debug' => [
             'line' => $e->getLine(),
-            'file' => $e->getFile(),
-            'trace' => $e->getTraceAsString()
+            'file' => $e->getFile()
         ]
     ]);
 }
