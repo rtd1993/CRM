@@ -1015,4 +1015,11 @@ setTimeout(() => {
 }, 900000);
 </script>
 
+<!-- TEST DIRETTO WIDGET CHAT -->
+<script>alert('DASHBOARD JS CARICATO');</script>
+<?php 
+echo "<!-- FORZANDO INCLUSIONE WIDGET -->";
+include __DIR__ . '/includes/chat-widget-complete.php'; 
+?>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
