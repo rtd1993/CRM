@@ -1545,13 +1545,20 @@ class CompleteChatSystem {
     updateTotalBadge() {
         const total = Object.values(this.unreadCounts).reduce((sum, count) => sum + count, 0);
         
+        console.log('🚨 UpdateTotalBadge: this.unreadCounts =', JSON.stringify(this.unreadCounts));
+        console.log('🚨 UpdateTotalBadge: calculated total =', total);
+        
         if (this.elements.totalBadge) {
+            console.log('🚨 UpdateTotalBadge: current badge content before update:', this.elements.totalBadge.textContent);
             if (total > 0) {
                 this.elements.totalBadge.textContent = total;
                 this.elements.totalBadge.classList.remove('hidden');
+                console.log('🚨 UpdateTotalBadge: Badge shown with value:', total);
             } else {
                 this.elements.totalBadge.classList.add('hidden');
+                console.log('🚨 UpdateTotalBadge: Badge hidden');
             }
+            console.log('🚨 UpdateTotalBadge: Badge content after update:', this.elements.totalBadge.textContent);
         }
     }
     
@@ -1689,8 +1696,11 @@ class CompleteChatSystem {
     
     // Processa i dati dei badge dal polling
     processBadgeData(data) {
-        if (data.success && data.unread_counts) {
+        console.log('🔥 ProcessBadgeData INIZIO:', JSON.stringify(data));
+        
+        if (data.success && data.unread_counts !== undefined) {
             const counts = data.unread_counts;
+            console.log('🔥 ProcessBadgeData counts:', JSON.stringify(counts));
             
             // Badge chat globale
             const globalBadge = document.querySelector('#global-chat-badge');
@@ -1703,18 +1713,23 @@ class CompleteChatSystem {
                 globalBadge.classList.add('hidden');
             }
             
-            // Badge totale
+            // Badge totale - USA SOLO data.total dall'API
             const totalBadge = document.querySelector('#total-unread-badge');
             console.log('🎯 ProcessBadgeData: data.total =', data.total, 'type:', typeof data.total);
+            console.log('🎯 ProcessBadgeData: totalBadge element:', totalBadge);
+            console.log('🎯 ProcessBadgeData: current badge content before update:', totalBadge ? totalBadge.textContent : 'null');
+            
             if (data.total > 0) {
                 if (totalBadge) {
                     totalBadge.textContent = data.total;
                     totalBadge.classList.remove('hidden');
                     console.log('✅ ProcessBadgeData: Total badge shown with value:', data.total);
+                    console.log('✅ ProcessBadgeData: Badge content after update:', totalBadge.textContent);
                 }
             } else if (totalBadge) {
                 totalBadge.classList.add('hidden');
                 console.log('🚫 ProcessBadgeData: Total badge hidden (data.total =', data.total, ')');
+                console.log('🚫 ProcessBadgeData: Badge content after hiding:', totalBadge.textContent);
             }
             
             // Badge pratiche
