@@ -74,6 +74,12 @@ function getSystemStats($pdo) {
         // Task
         $stats['task'] = $safeCount('task');
         
+        // Task Clienti
+        $stats['task_clienti'] = $safeCount('task_clienti');
+        
+        // Utenti totali
+        $stats['utenti_totali'] = $safeCount('utenti');
+        
         // Task completati - verifica prima le colonne disponibili
         try {
             // Prova diverse possibili colonne per lo stato
@@ -461,6 +467,9 @@ require_once __DIR__ . '/includes/header.php';
         background: #f8f9fa; 
         border-radius: 5px;
     }
+    .text-purple { 
+        color: #6f42c1 !important; 
+    }
 </style>
 
 <div class="devtools-container">
@@ -814,6 +823,24 @@ Esempi:
                 <div class="stat-box">
                     <h6><i class="fas fa-check-circle text-success"></i> Task Completati</h6>
                     <h3 class="text-success">${stats.task_completati || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-user-tasks text-purple"></i> Task Clienti</h6>
+                    <h3 class="text-purple">${stats.task_clienti || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-user-friends text-dark"></i> Utenti Totali</h6>
+                    <h3 class="text-dark">${stats.utenti_totali || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-user-check text-success"></i> Utenti Attivi</h6>
+                    <h3 class="text-success">${stats.utenti_attivi || 0}</h3>
                 </div>
             </div>
         `;
