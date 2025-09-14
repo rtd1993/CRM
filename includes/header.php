@@ -151,13 +151,12 @@ if (isset($_SESSION['user_id'])) {
             font-weight: bold;
         }
         .crm-header .crm-menu .dropdown-menu {
-            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-            padding: 8px 0;
-            margin-top: 5px;
-            min-width: 180px;
+            /* Stili personalizzati che non interferiscono con Bootstrap */
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%) !important;
+            border: none !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
+            min-width: 180px !important;
             z-index: 9999 !important;
         }
         .crm-header .crm-menu .dropdown-item {

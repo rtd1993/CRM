@@ -162,49 +162,50 @@ function getStatoBadge($stato) {
 </div>
 
 <script>
-// Debug Bootstrap
-console.log('richieste.php - Bootstrap loaded:', typeof bootstrap !== 'undefined');
-console.log('richieste.php - Bootstrap Dropdown available:', typeof bootstrap.Dropdown !== 'undefined');
-
-// Test inizializzazione dropdown con delay per assicurare il caricamento Bootstrap
+// Fix specifico per dropdown in richieste.php
 document.addEventListener('DOMContentLoaded', function() {
+    // Attendi che Bootstrap sia completamente caricato
     setTimeout(function() {
-        console.log('richieste.php - Checking dropdowns after delay...');
+        // Force enable tutti i dropdown
         const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-        console.log('richieste.php - Found dropdowns:', dropdowns.length);
-        
-        if (typeof bootstrap === 'undefined') {
-            console.error('richieste.php - Bootstrap non caricato!');
-            return;
-        }
-        
-        dropdowns.forEach((dropdown, i) => {
-            console.log(`richieste.php - Dropdown ${i + 1}:`, dropdown);
-            
-            // Forza re-inizializzazione
-            try {
-                // Distruggi istanza esistente se presente
-                const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-                if (existingInstance) {
-                    existingInstance.dispose();
+        dropdowns.forEach(function(dropdown) {
+            // Force click handler manuale
+            dropdown.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const menu = dropdown.nextElementSibling;
+                if (menu && menu.classList.contains('dropdown-menu')) {
+                    // Toggle manuale
+                    if (menu.style.display === 'block') {
+                        menu.style.display = 'none';
+                        menu.classList.remove('show');
+                    } else {
+                        // Chiudi altri dropdown
+                        document.querySelectorAll('.dropdown-menu').forEach(function(otherMenu) {
+                            otherMenu.style.display = 'none';
+                            otherMenu.classList.remove('show');
+                        });
+                        
+                        // Apri questo dropdown
+                        menu.style.display = 'block';
+                        menu.classList.add('show');
+                    }
                 }
-                
-                // Crea nuova istanza
-                const newInstance = new bootstrap.Dropdown(dropdown);
-                console.log(`richieste.php - Dropdown ${i + 1} re-initialized successfully`);
-                
-                // Test manuale del toggle
-                dropdown.addEventListener('click', function(e) {
-                    console.log(`richieste.php - Dropdown ${i + 1} clicked manually`);
-                    e.preventDefault();
-                    newInstance.toggle();
+            });
+        });
+        
+        // Chiudi dropdown quando si clicca fuori
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(function(menu) {
+                    menu.style.display = 'none';
+                    menu.classList.remove('show');
                 });
-                
-            } catch (error) {
-                console.error(`richieste.php - Error with dropdown ${i + 1}:`, error);
             }
         });
-    }, 100); // Attesa di 100ms
+        
+    }, 200);
 });
 
 // Funzione per aprire il modal di gestione richiesta
