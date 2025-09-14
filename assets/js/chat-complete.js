@@ -1394,8 +1394,11 @@ class CompleteChatSystem {
             `;
         } else {
             // Messaggio normale
+            const senderName = message.sender_name || message.user_name || 'User';
+            const senderInitial = senderName.charAt(0).toUpperCase();
+            
             messageDiv.innerHTML = `
-                ${!isOwn ? `<div class="message-sender">${this.escapeHtml(message.sender_name || message.user_name)}</div>` : ''}
+                ${!isOwn ? `<div class="message-sender" data-initial="${senderInitial}">${this.escapeHtml(senderName)}</div>` : ''}
                 <div class="message-content">
                     ${this.escapeHtml(message.message)}
                 </div>
