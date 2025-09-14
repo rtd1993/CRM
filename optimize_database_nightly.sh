@@ -55,8 +55,9 @@ TABELLE=(
     "task_clienti"
     "enea"
     "conto_termico"
-    "chat_conversations"
-    "chat_messages"
+    "conversations"
+    "conversation_participants"
+    "messages"
     "email_cronologia"
     "email_templates"
 )
@@ -147,6 +148,25 @@ find /tmp -name "sess_*" -mtime +7 -type f -delete 2>/dev/null
 find /var/lib/php/sessions -name "sess_*" -mtime +7 -type f -delete 2>/dev/null
 
 log_message "🧹 Sessioni PHP scadute eliminate"
+
+# === PULIZIA UTENTI OFFLINE ===
+log_message "--- PULIZIA UTENTI OFFLINE ---"
+
+# Imposta offline gli utenti inattivi da più di 10 minuti
+OFFLINE_COUNT=$(mysql -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -sN -e "
+    SELECT COUNT(*) FROM utenti 
+    WHERE is_online = 1 AND updated_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+")
+
+if [ "$OFFLINE_COUNT" -gt 0 ]; then
+    mysql -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e "
+        UPDATE utenti SET is_online = FALSE 
+        WHERE is_online = 1 AND updated_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    "
+    log_message "🔄 $OFFLINE_COUNT utenti impostati offline (inattivi > 10 minuti)"
+else
+    log_message "✅ Nessun utente da impostare offline"
+fi
 
 # === BACKUP ROTAZIONE ===
 log_message "--- GESTIONE BACKUP ---"
