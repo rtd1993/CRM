@@ -1,7 +1,22 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
-require_login();
 require_once __DIR__ . '/../includes/config.php';
+
+// Debug per identificare problemi
+if (!isset($_SESSION['user_id'])) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => 'Sessione non valida - utente non loggato',
+        'debug' => [
+            'session_status' => session_status(),
+            'session_id' => session_id()
+        ]
+    ]);
+    exit;
+}
+
+require_login();
 
 header('Content-Type: application/json');
 
