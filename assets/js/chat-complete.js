@@ -1555,10 +1555,21 @@ class CompleteChatSystem {
      */
     handleNewMessage(data) {
         try {
-            // Se siamo nella chat corrente, mostra il messaggio immediatamente
+            // Se siamo nella chat corrente, aggiungi solo il nuovo messaggio
             if (this.currentChat && this.currentChat.id === data.conversation_id) {
-                this.displayMessage(data);
-                
+                // Usa il nuovo sistema incrementale
+                const messageEl = this.createMessageElement(data);
+                const messagesContainer = document.getElementById('messages');
+                if (messagesContainer && messageEl) {
+                    messagesContainer.appendChild(messageEl);
+                    
+                    // Aggiorna l'ultimo ID per questa conversazione
+                    this.lastMessageIds[data.conversation_id] = data.id;
+                    
+                    // Scroll intelligente
+                    this.smartScroll();
+                }
+
                 // Marca come letto se stiamo visualizzando la chat
                 if (data.user_id !== this.config.userId) {
                     this.markAsRead(data.conversation_id);
@@ -1567,19 +1578,17 @@ class CompleteChatSystem {
                 // Aggiorna badge per messaggi in altre chat
                 this.updateChatBadges();
             }
-            
+
             // Mostra notifica se la chat non è aperta o se non è il nostro messaggio
-            if (data.user_id !== this.config.userId && 
+            if (data.user_id !== this.config.userId &&
                 (!this.isVisible || !this.currentChat || this.currentChat.id !== data.conversation_id)) {
                 this.showNotification(data);
             }
-            
+
         } catch (error) {
             this.log('❌ Errore gestione nuovo messaggio:', error);
         }
-    }
-    
-    /**
+    }    /**
      * Aggiorna status online/offline utente
      */
     updateUserStatus(userId, isOnline) {
