@@ -1049,11 +1049,14 @@ class CompleteChatSystem {
         } catch (error) {
             this.log('❌ Errore caricamento utenti:', error);
             
-            // Mostra messaggio di errore invece di dati mock
+            // Mostra messaggio di errore dettagliato
             this.elements.privatesList.innerHTML = `
                 <div style="padding: 15px; text-align: center; color: #dc3545; font-size: 13px;">
                     <i class="fas fa-exclamation-triangle mb-2"></i><br>
-                    Errore nel caricamento degli utenti.<br>
+                    Errore caricamento utenti: ${error.message}<br>
+                    <small style="color: #6c757d; font-size: 11px;">
+                        User ID: ${this.config.userId || 'Non definito'}
+                    </small><br>
                     <button onclick="window.completeChatSystem.loadAndRenderAllUsers()" 
                             style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-size: 11px;">
                         Riprova
