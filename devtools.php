@@ -2,51 +2,294 @@
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/header.php';
 
 if ($_SESSION['user_role'] !== 'developer') {
-    die("Accesso riservato ai developer.");
+    header('Location: dashboard.php');
+    exit();
 }
 
-$messaggio = "";
-$risultati = [];
-$campi = [];
+// Gestione AJAX per azioni specifiche
+if (isset($_POST['ajax_action'])) {
+    header('Content-Type: application/json');
+    
+    switch ($_POST['ajax_action']) {
+        case 'get_stats':
+            echo json_encode(getSystemStats($pdo));
+            break;
+            
+        case 'get_resources':
+            echo json_encode(getResourceUsage());
+            break;
+            
+        case 'get_network':
+            echo json_encode(getNetworkStats());
+            break;
+            
+        case 'service_control':
+            $service = $_POST['service'] ?? '';
+            $action = $_POST['action'] ?? '';
+            echo json_encode(controlService($service, $action));
+            break;
+            
+        case 'execute_query':
+            $sql = trim($_POST['sql'] ?? '');
+            echo json_encode(executeQuery($pdo, $sql));
+            break;
+            
+        case 'cleanup_action':
+            $type = $_POST['cleanup_type'] ?? '';
+            echo json_encode(performCleanup($pdo, $type));
+            break;
+    }
+    exit;
+}
 
-// Esegui query SQL manuale
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sql'])) {
-    $sql = trim($_POST['sql']);
+// Funzioni di supporto
+function getSystemStats($pdo) {
     try {
-        $stmt = $pdo->query($sql);
+        $stats = [];
+        
+        // Clienti
+        $stmt = $pdo->query("SELECT COUNT(*) FROM clienti");
+        $stats['clienti'] = $stmt->fetchColumn();
+        
+        // Messaggi chat
+        $stmt = $pdo->query("SELECT COUNT(*) FROM chat_messages");
+        $stats['messaggi'] = $stmt->fetchColumn();
+        
+        // Pratiche ENEA
+        $stmt = $pdo->query("SELECT COUNT(*) FROM enea");
+        $stats['enea'] = $stmt->fetchColumn();
+        
+        // Conto Termico
+        $stmt = $pdo->query("SELECT COUNT(*) FROM conto_termico");
+        $stats['conto_termico'] = $stmt->fetchColumn();
+        
+        // Task
+        $stmt = $pdo->query("SELECT COUNT(*) FROM task");
+        $stats['task'] = $stmt->fetchColumn();
+        
+        // Task completati
+        $stmt = $pdo->query("SELECT COUNT(*) FROM task WHERE stato = 'completato'");
+        $stats['task_completati'] = $stmt->fetchColumn();
+        
+        // Utenti attivi
+        $stmt = $pdo->query("SELECT COUNT(*) FROM utenti WHERE active = 1");
+        $stats['utenti_attivi'] = $stmt->fetchColumn();
+        
+        return ['success' => true, 'data' => $stats];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
 
-        if (stripos($sql, 'SELECT') === 0) {
-            $risultati = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $campi = array_keys($risultati[0] ?? []);
-            $messaggio = "<p style='color: green;'>Query SELECT eseguita con successo.</p>";
-        } else {
-            $messaggio = "<p style='color: green;'>Query eseguita con successo.</p>";
+function getResourceUsage() {
+    try {
+        $resources = [];
+        
+        // Spazio disco
+        $disk_total = disk_total_space('/');
+        $disk_free = disk_free_space('/');
+        $disk_used = $disk_total - $disk_free;
+        
+        $resources['disk'] = [
+            'total' => formatBytes($disk_total),
+            'used' => formatBytes($disk_used),
+            'free' => formatBytes($disk_free),
+            'percent' => round(($disk_used / $disk_total) * 100, 2)
+        ];
+        
+        // Memory usage
+        $memory = memory_get_usage(true);
+        $memory_peak = memory_get_peak_usage(true);
+        
+        $resources['memory'] = [
+            'current' => formatBytes($memory),
+            'peak' => formatBytes($memory_peak)
+        ];
+        
+        // Load average (Linux)
+        if (function_exists('sys_getloadavg')) {
+            $load = sys_getloadavg();
+            $resources['load'] = [
+                '1min' => round($load[0], 2),
+                '5min' => round($load[1], 2),
+                '15min' => round($load[2], 2)
+            ];
         }
-    } catch (PDOException $e) {
-        $messaggio = "<p style='color: red;'>Errore: " . htmlspecialchars($e->getMessage()) . "</p>";
+        
+        // Spazio cartella local_drive
+        $drive_path = __DIR__ . '/local_drive';
+        if (is_dir($drive_path)) {
+            $drive_size = getDirSize($drive_path);
+            $resources['local_drive'] = formatBytes($drive_size);
+        }
+        
+        return ['success' => true, 'data' => $resources];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
     }
 }
 
-// Elenco tabelle per visualizzazione
-$tabelle = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-$tabella_dati = [];
-$campi_tabella = [];
-$tabella_selezionata = $_GET['table'] ?? '';
-
-if ($tabella_selezionata && in_array($tabella_selezionata, $tabelle)) {
-    $stmt = $pdo->query("SELECT * FROM `$tabella_selezionata` LIMIT 100");
-    $tabella_dati = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if (!empty($tabella_dati)) {
-        $campi_tabella = array_keys($tabella_dati[0]);
-    } else {
-        // Recupera i nomi dei campi anche se la tabella è vuota
-        $stmt = $pdo->query("DESCRIBE `$tabella_selezionata`");
-        $campi_tabella = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'Field');
+function getNetworkStats() {
+    try {
+        $network = [];
+        
+        // IP Address
+        $network['server_ip'] = $_SERVER['SERVER_ADDR'] ?? 'N/A';
+        $network['client_ip'] = $_SERVER['REMOTE_ADDR'] ?? 'N/A';
+        
+        // Hostname
+        $network['hostname'] = gethostname() ?: 'N/A';
+        
+        // Ping test (Google DNS)
+        $ping_result = shell_exec('ping -c 1 8.8.8.8 2>/dev/null');
+        if ($ping_result && strpos($ping_result, '1 received') !== false) {
+            preg_match('/time=([0-9.]+)/', $ping_result, $matches);
+            $network['ping_google'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+        } else {
+            $network['ping_google'] = 'FAIL';
+        }
+        
+        // Port status
+        $network['ports'] = [
+            'mysql' => checkPort('localhost', 3306),
+            'apache' => checkPort('localhost', 80),
+            'https' => checkPort('localhost', 443)
+        ];
+        
+        return ['success' => true, 'data' => $network];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
     }
 }
+
+function controlService($service, $action) {
+    $allowed_services = ['apache2', 'mysql', 'nodejs', 'rclone'];
+    $allowed_actions = ['start', 'stop', 'restart', 'status'];
+    
+    if (!in_array($service, $allowed_services) || !in_array($action, $allowed_actions)) {
+        return ['success' => false, 'error' => 'Servizio o azione non validi'];
+    }
+    
+    try {
+        $command = '';
+        switch ($service) {
+            case 'apache2':
+                $command = "systemctl $action apache2 2>&1";
+                break;
+            case 'mysql':
+                $command = "systemctl $action mysql 2>&1";
+                break;
+            case 'nodejs':
+                $command = "systemctl $action nodejs 2>&1";
+                break;
+            case 'rclone':
+                if ($action === 'status') {
+                    $command = "ps aux | grep rclone | grep -v grep";
+                } else {
+                    $command = "systemctl $action rclone 2>&1";
+                }
+                break;
+        }
+        
+        if ($command) {
+            $output = shell_exec($command);
+            return ['success' => true, 'output' => $output ?: 'Comando eseguito'];
+        }
+        
+        return ['success' => false, 'error' => 'Comando non trovato'];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+function executeQuery($pdo, $sql) {
+    try {
+        if (empty($sql)) {
+            return ['success' => false, 'error' => 'Query vuota'];
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        if (stripos($sql, 'SELECT') === 0) {
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ['success' => true, 'type' => 'select', 'data' => $results];
+        } else {
+            $affected = $stmt->rowCount();
+            return ['success' => true, 'type' => 'modify', 'affected_rows' => $affected];
+        }
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+function performCleanup($pdo, $type) {
+    try {
+        switch ($type) {
+            case 'logs':
+                // Pulizia log files
+                $log_files = glob(__DIR__ . '/logs/*.log');
+                $count = 0;
+                foreach ($log_files as $file) {
+                    if (unlink($file)) $count++;
+                }
+                return ['success' => true, 'message' => "Eliminati $count file di log"];
+                
+            case 'old_chats':
+                // Elimina messaggi chat più vecchi di 6 mesi
+                $stmt = $pdo->prepare("DELETE FROM chat_messages WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)");
+                $stmt->execute();
+                $deleted = $stmt->rowCount();
+                return ['success' => true, 'message' => "Eliminati $deleted messaggi vecchi"];
+                
+            case 'optimize_db':
+                // Ottimizza tutte le tabelle
+                $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($tables as $table) {
+                    $pdo->exec("OPTIMIZE TABLE `$table`");
+                }
+                return ['success' => true, 'message' => 'Database ottimizzato'];
+                
+            case 'archive_chats':
+                // Archivia chat vecchie (esempio: sposta in tabella archive)
+                // Implementare logica di archiviazione
+                return ['success' => true, 'message' => 'Chat archiviate (funzione da implementare)'];
+                
+            default:
+                return ['success' => false, 'error' => 'Tipo di pulizia non riconosciuto'];
+        }
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+// Utility functions
+function formatBytes($size, $precision = 2) {
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $i = floor(log($size, 1024));
+    return round($size / pow(1024, $i), $precision) . ' ' . $units[$i];
+}
+
+function getDirSize($directory) {
+    $size = 0;
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory)) as $file) {
+        $size += $file->getSize();
+    }
+    return $size;
+}
+
+function checkPort($host, $port, $timeout = 3) {
+    $connection = @fsockopen($host, $port, $errno, $errstr, $timeout);
+    if ($connection) {
+        fclose($connection);
+        return 'OPEN';
+    }
+    return 'CLOSED';
+}
+
+require_once __DIR__ . '/includes/header.php';
 
 // Esecuzione comandi servizi
 $service_output = "";
