@@ -167,4 +167,83 @@ function inviaNotificaTelegramChat($conversation_id, $mittente_id, $messaggio) {
         return false;
     }
 }
+
+// Funzione per il sistema di chat alternativo (chat_conversations, chat_messages)
+function inviaNotificaTelegramChatV2($conversation_id, $mittente_id, $messaggio) {
+    global $pdo;
+    
+    try {
+        // Ottieni informazioni sulla conversazione
+        $stmt = $pdo->prepare("SELECT type, name, practice_id FROM chat_conversations WHERE id = ?");
+        $stmt->execute([$conversation_id]);
+        $conversazione = $stmt->fetch();
+        
+        if (!$conversazione) {
+            return false;
+        }
+        
+        // Non inviare notifiche per le chat delle pratiche
+        if ($conversazione['type'] === 'practice') {
+            return true; // Successo ma nessun invio
+        }
+        
+        // Ottieni nome mittente
+        $stmt = $pdo->prepare("SELECT nome FROM utenti WHERE id = ?");
+        $stmt->execute([$mittente_id]);
+        $mittente = $stmt->fetch();
+        
+        if (!$mittente) {
+            return false;
+        }
+        
+        $nome_mittente = $mittente['nome'];
+        
+        // Trova tutti i partecipanti offline che non sono il mittente
+        $stmt = $pdo->prepare("
+            SELECT u.nome, u.telegram_chat_id 
+            FROM chat_participants cp
+            JOIN utenti u ON cp.user_id = u.id
+            WHERE cp.conversation_id = ? 
+              AND cp.user_id != ? 
+              AND u.is_online = 0
+              AND u.telegram_chat_id IS NOT NULL 
+              AND u.telegram_chat_id != ''
+        ");
+        $stmt->execute([$conversation_id, $mittente_id]);
+        $partecipanti_offline = $stmt->fetchAll();
+        
+        // Prepara il messaggio in base al tipo di conversazione
+        $testo_notifica = '';
+        
+        if ($conversazione['type'] === 'global') {
+            // Chat globale: "$utente: 'testo messaggio'"
+            $testo_notifica = "🌐 <b>Chat Globale</b>\n\n";
+            $testo_notifica .= "<b>" . htmlspecialchars($nome_mittente) . ":</b> '" . htmlspecialchars($messaggio) . "'\n\n";
+            $testo_notifica .= "📅 " . date('d/m/Y H:i');
+        } 
+        elseif ($conversazione['type'] === 'private') {
+            // Chat privata: "$utente: ti ha scritto in privato - accedi a pratiko"
+            $testo_notifica = "💬 <b>Messaggio Privato</b>\n\n";
+            $testo_notifica .= "<b>" . htmlspecialchars($nome_mittente) . ":</b> ti ha scritto in privato - accedi a Pratiko\n\n";
+            $testo_notifica .= "📅 " . date('d/m/Y H:i');
+        }
+        
+        // Invia notifiche ai partecipanti offline
+        $inviati = 0;
+        foreach ($partecipanti_offline as $partecipante) {
+            if (mandaNotificaTelegram($testo_notifica, $partecipante['telegram_chat_id'])) {
+                $inviati++;
+            }
+        }
+        
+        // Log dell'operazione
+        error_log("Telegram V2: Inviate $inviati notifiche per conversazione {$conversation_id} (tipo: {$conversazione['type']})");
+        
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("Telegram V2: Errore nell'invio notifiche - " . $e->getMessage());
+        return false;
+    }
+}
 ?>
