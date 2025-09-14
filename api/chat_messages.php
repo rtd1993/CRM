@@ -38,16 +38,32 @@ try {
         throw new Exception('Non sei autorizzato ad accedere a questa conversazione');
     }
     
-    // Carica messaggi
-    $stmt = $pdo->prepare("
-        SELECT m.id, m.message, m.created_at, m.user_id, u.nome as sender_name
-        FROM messages m
-        JOIN utenti u ON m.user_id = u.id
-        WHERE m.conversation_id = ?
-        ORDER BY m.created_at ASC
-        LIMIT 100
-    ");
-    $stmt->execute([$conversation_id]);
+    // Carica messaggi - supporta caricamento incrementale
+    $since_id = intval($_GET['since_id'] ?? 0);
+    
+    if ($since_id > 0) {
+        // Caricamento incrementale - solo messaggi più recenti
+        $stmt = $pdo->prepare("
+            SELECT m.id, m.message, m.created_at, m.user_id, u.nome as sender_name, m.message_type
+            FROM messages m
+            JOIN utenti u ON m.user_id = u.id
+            WHERE m.conversation_id = ? AND m.id > ?
+            ORDER BY m.created_at ASC
+            LIMIT 50
+        ");
+        $stmt->execute([$conversation_id, $since_id]);
+    } else {
+        // Caricamento completo iniziale
+        $stmt = $pdo->prepare("
+            SELECT m.id, m.message, m.created_at, m.user_id, u.nome as sender_name, m.message_type
+            FROM messages m
+            JOIN utenti u ON m.user_id = u.id
+            WHERE m.conversation_id = ?
+            ORDER BY m.created_at ASC
+            LIMIT 100
+        ");
+        $stmt->execute([$conversation_id]);
+    }
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Formatta i messaggi

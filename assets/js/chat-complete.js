@@ -22,10 +22,11 @@ class CompleteChatSystem {
         this.currentChat = null;
         this.isVisible = false;
         this.pollingTimer = null;
-        this.lastMessageIds = {};
+        this.lastMessageIds = {}; // Tiene traccia dell'ultimo message_id per ogni chat
         this.unreadCounts = {};
         this.privateChats = new Map();
         this.onlineUsers = new Map();
+        this.currentConversationId = null; // ID della conversazione attualmente aperta
         
         // Socket.IO connection
         this.socket = null;
@@ -445,31 +446,30 @@ class CompleteChatSystem {
             this.elements.sendBtn.disabled = false;
             this.elements.messageInput.placeholder = 'Scrivi un messaggio...';
             
-            // Carica cronologia
-            await this.loadChatHistory(type, id);
-            
-            // Mostra chat window
-            this.showChatWindow();
-            
-            // Gestione Socket.IO room
+            // Determina conversation ID prima del caricamento
             let conversationId = id;
             if (type === 'globale') {
                 conversationId = 1; // Chat globale ha sempre ID 1
             } else if (type === 'pratica') {
                 // Per le pratiche, ottieni il conversation_id dal sistema
                 this.log('🔧 Creando conversazione pratica per cliente:', id);
-                const practiceConv = await this.getOrCreatePracticeConversation(id);
-                conversationId = practiceConv;
+                conversationId = await this.getOrCreatePracticeConversation(id);
                 this.log('✅ Conversation ID pratica ottenuto:', conversationId);
             } else if (type === 'privata') {
                 // Per le chat private, ottieni il conversation_id dal sistema
                 this.log('🔧 Creando conversazione privata per utente:', id);
-                const privateConv = await this.getOrCreatePrivateConversation(id);
-                conversationId = privateConv;
+                conversationId = await this.getOrCreatePrivateConversation(id);
                 this.log('✅ Conversation ID privata ottenuto:', conversationId);
             }
-            
-            // Lascia room precedente se necessario
+
+            // Salva il conversation ID corrente
+            this.currentConversationId = conversationId;
+
+            // Carica cronologia
+            await this.loadChatHistory(type, id);
+
+            // Mostra chat window
+            this.showChatWindow();            // Lascia room precedente se necessario
             if (this.currentConversationId && this.socketConnected) {
                 this.socket.emit('leave_conversation', this.currentConversationId);
             }
@@ -877,7 +877,7 @@ class CompleteChatSystem {
      */
     renderMessages(messages) {
         this.elements.messagesArea.innerHTML = '';
-        
+
         if (!messages || messages.length === 0) {
             // Personalizza il messaggio in base al tipo di chat
             let emptyMessage = 'Nessun messaggio ancora.<br>Inizia la conversazione!';
@@ -905,34 +905,17 @@ class CompleteChatSystem {
             return;
         }
         
-        messages.forEach(msg => this.addMessageToUI(msg));
-    }
-    
-    /**
-     * Aggiungi messaggio alla UI
-     */
-    addMessageToUI(message) {
-        const isOwn = message.user_id == this.config.userId;
-        const messageDate = new Date(message.created_at);
-        const timeString = messageDate.toLocaleTimeString('it-IT', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        messages.forEach(msg => {
+            const messageElement = this.createMessageElement(msg);
+            this.elements.messagesArea.appendChild(messageElement);
         });
-        
-        const messageHTML = `
-            <div class="message-bubble ${isOwn ? 'own' : ''}" data-message-id="${message.id}">
-                ${!isOwn ? `<div class="message-sender">${this.escapeHtml(message.user_name)}</div>` : ''}
-                <div class="message-content">
-                    ${this.escapeHtml(message.message)}
-                </div>
-                <div class="message-meta">
-                    <span class="message-time">${timeString}</span>
-                    ${isOwn ? '<i class="fas fa-check message-status"></i>' : ''}
-                </div>
-            </div>
-        `;
-        
-        this.elements.messagesArea.insertAdjacentHTML('beforeend', messageHTML);
+
+        // Salva l'ID dell'ultimo messaggio per questa conversazione
+        if (messages.length > 0 && this.currentConversationId) {
+            const lastMessage = messages[messages.length - 1];
+            this.lastMessageIds[this.currentConversationId] = lastMessage.id;
+            this.log(`📝 Ultimo messaggio salvato per conversazione ${this.currentConversationId}: ${lastMessage.id}`);
+        }
     }
     
     /**
@@ -1287,32 +1270,125 @@ class CompleteChatSystem {
     }
     
     /**
-     * Controlla nuovi messaggi
+     * Controlla nuovi messaggi (VERSIONE INCREMENTALE)
      */
     async checkNewMessages() {
-        if (!this.currentChat) return;
-        
+        if (!this.currentChat || !this.currentConversationId) return;
+
         try {
-            this.log('🔍 Controllo nuovi messaggi per:', this.currentChat);
+            this.log('🔍 Controllo incrementale nuovi messaggi per conversation:', this.currentConversationId);
+
+            // Ottieni l'ID dell'ultimo messaggio caricato
+            const lastMessageId = this.lastMessageIds[this.currentConversationId] || 0;
             
-            // Ricarica i messaggi per la chat corrente
-            await this.loadChatHistory(this.currentChat.type, this.currentChat.id || this.currentChat.conversation_id);
-            
+            if (lastMessageId === 0) {
+                // Prima volta - usa caricamento completo
+                await this.loadChatHistory(this.currentChat.type, this.currentChat.id);
+                return;
+            }
+
+            // Caricamento incrementale - solo nuovi messaggi
+            const response = await fetch(`./api/chat_messages.php?conversation_id=${this.currentConversationId}&since_id=${lastMessageId}`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
+            });
+
+            if (!response.ok) {
+                throw new Error(`Errore HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.messages && data.messages.length > 0) {
+                this.log(`📩 ${data.messages.length} nuovi messaggi ricevuti`);
+                
+                // Aggiungi solo i nuovi messaggi senza ricaricare tutto
+                this.appendNewMessages(data.messages);
+                
+                // Aggiorna l'ultimo message ID
+                const lastMessage = data.messages[data.messages.length - 1];
+                this.lastMessageIds[this.currentConversationId] = lastMessage.id;
+                
+                // Scroll solo se l'utente è già in fondo
+                this.smartScroll();
+            }
+
             // Aggiorna anche i badge
             this.updateChatBadges();
-            
+
         } catch (error) {
             this.log('❌ Errore controllo nuovi messaggi:', error);
         }
-    }
-    
-    /**
+    }    /**
      * Scroll al bottom
      */
     scrollToBottom() {
         setTimeout(() => {
             this.elements.messagesArea.scrollTop = this.elements.messagesArea.scrollHeight;
         }, 100);
+    }
+
+    /**
+     * Smart scroll - scorri solo se l'utente è già vicino al fondo
+     */
+    smartScroll() {
+        const messagesArea = this.elements.messagesArea;
+        const isNearBottom = messagesArea.scrollTop >= messagesArea.scrollHeight - messagesArea.clientHeight - 100;
+        
+        if (isNearBottom) {
+            this.scrollToBottom();
+        }
+    }
+
+    /**
+     * Aggiungi nuovi messaggi senza ricaricare tutto
+     */
+    appendNewMessages(newMessages) {
+        if (!newMessages || newMessages.length === 0) return;
+
+        newMessages.forEach(message => {
+            const messageElement = this.createMessageElement(message);
+            this.elements.messagesArea.appendChild(messageElement);
+        });
+    }
+
+    /**
+     * Crea elemento messaggio singolo
+     */
+    createMessageElement(message) {
+        const isOwn = message.user_id == this.config.userId;
+        const messageClass = isOwn ? 'message own-message' : 'message other-message';
+        const alignment = isOwn ? 'text-end' : 'text-start';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = messageClass;
+        
+        // Messaggio di sistema (notifiche chat pratiche)
+        if (message.message_type === 'system') {
+            messageDiv.innerHTML = `
+                <div class="system-message" style="text-align: center; padding: 8px; margin: 8px 0; background: #f8f9fa; border-radius: 8px; font-style: italic; color: #6c757d; border-left: 3px solid #007bff;">
+                    <i class="fas fa-info-circle me-2"></i>${this.escapeHtml(message.message)}
+                    <div style="font-size: 0.7em; margin-top: 4px; opacity: 0.8;">
+                        ${this.formatTime(message.timestamp || message.created_at)}
+                    </div>
+                </div>
+            `;
+        } else {
+            // Messaggio normale
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-header ${alignment}">
+                        <span class="sender-name">${this.escapeHtml(message.sender_name)}</span>
+                        <span class="message-time">${this.formatTime(message.timestamp || message.created_at)}</span>
+                    </div>
+                    <div class="message-text ${alignment}">
+                        ${this.escapeHtml(message.message)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        return messageDiv;
     }
     
     /**
