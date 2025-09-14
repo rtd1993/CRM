@@ -1102,7 +1102,7 @@ class CompleteChatSystem {
         try {
             this.log('🔔 Aggiornamento contatori non letti...');
             
-            const response = await fetch('api/chat_notifications.php?action=unread_counts', {
+            const response = await fetch('./api/chat_notifications.php?action=unread_counts', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1573,7 +1573,7 @@ class CompleteChatSystem {
     
     // Aggiorna i badge dei messaggi non letti
     updateChatBadges() {
-        fetch('api/chat_notifications.php?action=unread_counts')
+        fetch('./api/chat_notifications.php?action=unread_counts')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -1636,7 +1636,7 @@ class CompleteChatSystem {
     
     // Marca messaggi come letti per una conversazione
     markAsRead(conversationId) {
-        fetch('api/chat_notifications.php', {
+        fetch('./api/chat_notifications.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
