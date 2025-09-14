@@ -172,8 +172,9 @@ class CompleteChatSystem {
                 this.socketConnected = true;
                 this.log('🔌 Socket.IO connesso!');
                 
-                // Registra utente
+                // Registra utente per tracciamento online
                 this.socket.emit('register', this.config.userId);
+                this.log('👤 Utente registrato per tracking online:', this.config.userId);
             });
             
             this.socket.on('disconnect', () => {
@@ -1021,7 +1022,12 @@ class CompleteChatSystem {
                         </div>
                         <div class="chat-meta">
                             <span id="private-chat-badge-${user.id}" class="chat-unread-badge hidden">0</span>
-                            <div class="user-status">${user.is_online ? '🟢' : '⚫'}</div>
+                            <div class="chat-avatar-container" style="position: relative; width: 32px; height: 32px;">
+                                <div class="chat-avatar small" style="width: 32px; height: 32px; font-size: 12px;">
+                                    ${user.nome.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1620,7 +1626,7 @@ class CompleteChatSystem {
             this.onlineUsers.set(parseInt(userId), user);
         }
         
-        // Aggiorna indicatori online nella lista utenti
+        // Aggiorna indicatori online nella lista utenti (modal)
         const userElement = document.querySelector(`[data-user-id="${userId}"]`);
         if (userElement) {
             const onlineIndicator = userElement.querySelector('.online-indicator');
@@ -1633,6 +1639,15 @@ class CompleteChatSystem {
             if (statusText) {
                 statusText.textContent = isOnline ? 'Online' : 'Offline';
                 statusText.className = `text-muted ${isOnline ? 'text-success' : ''}`;
+            }
+        }
+        
+        // Aggiorna indicatori nella lista chat private
+        const privateUserElement = document.querySelector(`[data-id="${userId}"]`);
+        if (privateUserElement) {
+            const privateOnlineIndicator = privateUserElement.querySelector('.online-indicator');
+            if (privateOnlineIndicator) {
+                privateOnlineIndicator.className = `online-indicator ${isOnline ? '' : 'offline'}`;
             }
         }
         
