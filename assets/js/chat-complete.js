@@ -40,9 +40,16 @@ class CompleteChatSystem {
         this.apiBase = this.config.apiBase || '/api/chat/';
         this.pollingInterval = this.config.pollingInterval || 3000;
         
+        // Debug iniziale
+        console.log('🔄 Inizializzazione CompleteChat');
+        console.log('🔍 Config iniziale:', this.config);
+        console.log('🔍 window.completeChatConfig:', window.completeChatConfig);
+        
         // Verifica userId - fondamentale per il funzionamento
         if (!this.config.userId && window.completeChatConfig) {
+            console.log('📥 Copiando config da window.completeChatConfig');
             this.config = { ...window.completeChatConfig };
+            console.log('📥 Config dopo copia:', this.config);
         }
         
         // Controlla se l'utente è autenticato
@@ -53,13 +60,21 @@ class CompleteChatSystem {
         
         // Converti userId in numero se è una stringa
         if (typeof this.config.userId === 'string') {
+            console.log('🔄 Convertendo userId da stringa a numero');
             this.config.userId = parseInt(this.config.userId);
         }
         
+        console.log('🔍 userId finale:', this.config.userId, 'type:', typeof this.config.userId);
+        
         if (!this.config.userId || this.config.userId === null || isNaN(this.config.userId) || this.config.userId <= 0) {
-            console.error('❌ ERRORE CRITICO: userId non definito! Sessione non valida.');
-            console.log('🔍 Debug config:', this.config);
-            console.log('🔍 Debug window.completeChatConfig:', window.completeChatConfig);
+            console.error('❌ ERRORE CRITICO: userId non valido!');
+            console.log('🔍 Controlli falliti:');
+            console.log('   !this.config.userId:', !this.config.userId);
+            console.log('   userId === null:', this.config.userId === null);
+            console.log('   isNaN(userId):', isNaN(this.config.userId));
+            console.log('   userId <= 0:', this.config.userId <= 0);
+            console.log('🔍 Config completo:', this.config);
+            console.log('🔍 window.completeChatConfig completo:', window.completeChatConfig);
             
             // Mostra messaggio user-friendly
             if (document.getElementById('chat-footer-widget')) {
