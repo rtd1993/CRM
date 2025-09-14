@@ -438,6 +438,10 @@ class CompleteChatSystem {
                 // Per le pratiche, ottieni il conversation_id dal sistema
                 const practiceConv = await this.getOrCreatePracticeConversation(id);
                 conversationId = practiceConv;
+            } else if (type === 'privata') {
+                // Per le chat private, ottieni il conversation_id dal sistema
+                const privateConv = await this.getOrCreatePrivateConversation(id);
+                conversationId = privateConv;
             }
             
             // Lascia room precedente se necessario
