@@ -1655,10 +1655,9 @@ class CompleteChatSystem {
                         globalBadge.classList.add('hidden');
                     }
                     
-                    // Badge chat pratiche e private
-                    const practiceBadge = document.querySelector('#practice-chat-badge');
+                    // Badge rimossi per chat pratiche - solo notifica in chat globale
                     let totalPracticeCount = 0;
-                    
+
                     Object.keys(counts).forEach(key => {
                         if (key.startsWith('practice_')) {
                             totalPracticeCount += counts[key];
