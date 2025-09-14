@@ -2,7 +2,6 @@
 if (session_status() == PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/db.php';
 
 $nome_utente = 'Sconosciuto';
 $ruolo_utente = 'guest';
@@ -295,59 +294,5 @@ if (isset($_SESSION['user_id'])) {
 
 <!-- Bootstrap JavaScript for dropdown functionality -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Custom Dropdown Script -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Gestione dropdown personalizzata per garantire compatibilità
-    const dropdownToggles = document.querySelectorAll('.crm-menu .dropdown-toggle');
-    
-    dropdownToggles.forEach(toggle => {
-        const dropdown = toggle.closest('.dropdown');
-        const menu = dropdown.querySelector('.dropdown-menu');
-        
-        // Toggle dropdown on click
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Toggle questo dropdown
-            const isOpen = menu.classList.contains('show');
-            
-            if (isOpen) {
-                menu.classList.remove('show');
-                toggle.setAttribute('aria-expanded', 'false');
-            } else {
-                // Chiudi tutti gli altri dropdown
-                dropdownToggles.forEach(otherToggle => {
-                    if (otherToggle !== toggle) {
-                        const otherDropdown = otherToggle.closest('.dropdown');
-                        const otherMenu = otherDropdown.querySelector('.dropdown-menu');
-                        otherMenu.classList.remove('show');
-                        otherToggle.setAttribute('aria-expanded', 'false');
-                    }
-                });
-                
-                menu.classList.add('show');
-                toggle.setAttribute('aria-expanded', 'true');
-            }
-        });
-        
-
-    });
-    
-    // Chiudi dropdown quando si clicca fuori
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            dropdownToggles.forEach(toggle => {
-                const dropdown = toggle.closest('.dropdown');
-                const menu = dropdown.querySelector('.dropdown-menu');
-                menu.classList.remove('show');
-                toggle.setAttribute('aria-expanded', 'false');
-            });
-        }
-    });
-});
-</script>
 
 <main style="padding: 20px;">
