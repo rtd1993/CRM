@@ -1,9 +1,20 @@
 <?php
 // Widget Chat Completo come da README_CHAT_SYSTEM.md
+
+// Debug sessione (non avviamo la sessione qui per evitare conflitti)
+error_log("Chat Widget Debug - Session status: " . session_status());
+error_log("Chat Widget Debug - Session ID: " . (session_id() ?: 'NO_SESSION'));
+error_log("Chat Widget Debug - Session vars: " . print_r($_SESSION, true));
+
 // Verifica autenticazione
-$user_authenticated = isset($_SESSION['user_id']);
+$user_authenticated = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $user_id = $user_authenticated ? $_SESSION['user_id'] : 'null';
-$user_name = $user_authenticated ? ($_SESSION['user_name'] ?? 'Utente') : 'Guest';
+$user_name = $user_authenticated ? ($_SESSION['user_name'] ?? $_SESSION['nome'] ?? 'Utente') : 'Guest';
+
+// Debug finale
+error_log("Chat Widget Debug - user_authenticated: " . ($user_authenticated ? 'true' : 'false'));
+error_log("Chat Widget Debug - user_id: " . $user_id);
+error_log("Chat Widget Debug - user_name: " . $user_name);
 
 // Carica lista clienti per chat pratiche
 try {
