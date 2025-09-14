@@ -175,20 +175,18 @@ include 'includes/header.php';
                                         }
                                         $percentuale = round(($completati / count($campi_doc)) * 100);
                                         
-                                        // Calcola percorso cartella ENEA con nuovo formato id_cognome.nome
-                                        $enea_folder_relative = '';
-                                        if (!empty($record['cliente_id_db']) && !empty($record['Cognome_Ragione_sociale'])) {
-                                            // Crea nome cartella cliente nel nuovo formato: id_cognome.nome
-                                            $cliente_folder = $record['cliente_id_db'] . '_' . 
-                                                            strtolower(preg_replace('/[^A-Za-z0-9]/', '', $record['Cognome_Ragione_sociale']));
-                                            
-                                            // Aggiungi il nome se presente
-                                            if (!empty($record['Nome'])) {
-                                                $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $record['Nome']));
-                                                $cliente_folder .= '.' . $nome_clean;
-                                            }
-                                            
-                                            // Crea nome sottocartella ENEA
+                        // Calcola percorso cartella ENEA con formato corretto mantenendo il case
+                        $enea_folder_relative = '';
+                        if (!empty($record['cliente_id_db']) && !empty($record['Cognome_Ragione_sociale'])) {
+                            // Crea nome cartella cliente nel formato: ID_COGNOME.NOME (mantiene maiuscole)
+                            $cliente_folder = $record['cliente_id_db'] . '_' . 
+                                            preg_replace('/[^A-Za-z0-9]/', '', $record['Cognome_Ragione_sociale']);
+                            
+                            // Aggiungi il nome se presente
+                            if (!empty($record['Nome'])) {
+                                $nome_clean = preg_replace('/[^A-Za-z0-9]/', '', $record['Nome']);
+                                $cliente_folder .= '.' . $nome_clean;
+                            }                                            // Crea nome sottocartella ENEA
                                             $folder_name = 'ENEA_' . $record['anno_fiscale'];
                                             if (!empty($record['descrizione'])) {
                                                 $desc_clean = preg_replace('/[^A-Za-z0-9\s]/', '', $record['descrizione']);
