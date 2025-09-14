@@ -44,12 +44,20 @@ class CompleteChatSystem {
         console.log('🔄 Inizializzazione CompleteChat');
         console.log('🔍 Config iniziale:', this.config);
         console.log('🔍 window.completeChatConfig:', window.completeChatConfig);
+        console.log('🔍 window.completeChatConfig.userId:', window.completeChatConfig?.userId);
+        console.log('🔍 Tipo window.completeChatConfig.userId:', typeof window.completeChatConfig?.userId);
         
         // Verifica userId - fondamentale per il funzionamento
         if (!this.config.userId && window.completeChatConfig) {
             console.log('📥 Copiando config da window.completeChatConfig');
+            console.log('📥 Prima della copia - this.config.userId:', this.config.userId);
+            console.log('📥 Prima della copia - window.completeChatConfig.userId:', window.completeChatConfig.userId);
+            
             this.config = { ...window.completeChatConfig };
+            
             console.log('📥 Config dopo copia:', this.config);
+            console.log('📥 Dopo la copia - this.config.userId:', this.config.userId);
+            console.log('📥 Dopo la copia - tipo userId:', typeof this.config.userId);
         }
         
         // Controlla se l'utente è autenticato
