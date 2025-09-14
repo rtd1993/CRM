@@ -27,6 +27,10 @@ class CompleteChatSystem {
         this.privateChats = new Map();
         this.onlineUsers = new Map();
         
+        // Socket.IO connection
+        this.socket = null;
+        this.socketConnected = false;
+        
         // Elementi DOM
         this.elements = {};
         
@@ -62,10 +66,16 @@ class CompleteChatSystem {
             this.log('🎪 Binding eventi...');
             this.bindEvents();
             
-            this.log('💾 Caricamento dati iniziali...');
+            this.log('� Connessione Socket.IO...');
+            await this.initSocketIO();
+            
+            this.log('�💾 Caricamento dati iniziali...');
             await this.loadInitialData();
             
-            this.log('⏱️ Avvio polling...');
+            this.log('🔔 Richiesta permessi notifiche...');
+            this.requestNotificationPermission();
+            
+            this.log('⏱️ Avvio polling di fallback...');
             this.startPolling();
             
             this.isInitialized = true;
@@ -140,6 +150,73 @@ class CompleteChatSystem {
         }
         if (!this.elements.practiceItem) {
             this.log('❌ PracticeItem non trovato! Elemento nel DOM:', document.querySelector('[data-type="pratiche"]'));
+        }
+    }
+    
+    /**
+     * Inizializza connessione Socket.IO
+     */
+    async initSocketIO() {
+        try {
+            // Connettiti al server Socket.IO
+            this.socket = io('http://localhost:3001');
+            
+            this.socket.on('connect', () => {
+                this.socketConnected = true;
+                this.log('🔌 Socket.IO connesso!');
+                
+                // Registra utente
+                this.socket.emit('register', this.config.userId);
+            });
+            
+            this.socket.on('disconnect', () => {
+                this.socketConnected = false;
+                this.log('🔌 Socket.IO disconnesso!');
+            });
+            
+            // Gestione messaggi in tempo reale
+            this.socket.on('new_message', (data) => {
+                this.log('📩 Nuovo messaggio ricevuto:', data);
+                this.handleNewMessage(data);
+            });
+            
+            // Gestione utenti online/offline
+            this.socket.on('user_online', (data) => {
+                this.log('🟢 Utente online:', data.user_id);
+                this.onlineUsers.set(data.user_id, true);
+                this.updateUserStatus(data.user_id, true);
+            });
+            
+            this.socket.on('user_offline', (data) => {
+                this.log('🔴 Utente offline:', data.user_id);
+                this.onlineUsers.set(data.user_id, false);
+                this.updateUserStatus(data.user_id, false);
+            });
+            
+            // Gestione "sta scrivendo"
+            this.socket.on('user_typing', (data) => {
+                this.showTypingIndicator(data.chat_id, data.user_name);
+            });
+            
+            this.socket.on('user_stop_typing', (data) => {
+                this.hideTypingIndicator(data.chat_id, data.user_name);
+            });
+            
+        } catch (error) {
+            this.log('❌ Errore connessione Socket.IO:', error);
+        }
+    }
+    
+    /**
+     * Richiede permesso per notifiche browser
+     */
+    requestNotificationPermission() {
+        if ('Notification' in window) {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    this.log('🔔 Permesso notifiche:', permission);
+                });
+            }
         }
     }
     
@@ -622,26 +699,19 @@ class CompleteChatSystem {
                 throw new Error('Impossibile determinare conversation_id per invio');
             }
             
-            // Invia messaggio usando API semplificata
-            const response = await fetch('/api/simple-chat/send_message.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    conversation_id: conversationId,
-                    message: message
-                })
-            });
+            // Prova prima Socket.IO, poi fallback ad API
+            let messageSent = false;
             
-            const data = await response.json();
-            this.log('📨 Risposta invio:', data);
-            
-            if (data.success) {
+            if (this.sendMessageViaSocket(conversationId, message)) {
+                this.log('📡 Messaggio inviato via Socket.IO');
+                messageSent = true;
+                
                 // Pulisci input
                 this.elements.messageInput.value = '';
                 
-                // Aggiungi messaggio alla UI
+                // Aggiungi messaggio alla UI (Socket.IO non rimanderà il proprio messaggio)
                 this.addMessageToUI({
-                    id: data.message_id || Date.now(),
+                    id: Date.now(),
                     user_id: this.config.userId,
                     user_name: this.config.userName,
                     message: message,
@@ -652,7 +722,42 @@ class CompleteChatSystem {
                 this.scrollToBottom();
                 
             } else {
-                throw new Error(data.error || 'Errore invio messaggio');
+                // Fallback ad API REST
+                this.log('📡 Fallback ad API REST');
+                
+                const response = await fetch('/api/simple-chat/send_message.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        conversation_id: conversationId,
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                this.log('📨 Risposta invio:', data);
+                
+                if (data.success) {
+                    messageSent = true;
+                    
+                    // Pulisci input
+                    this.elements.messageInput.value = '';
+                    
+                    // Aggiungi messaggio alla UI
+                    this.addMessageToUI({
+                        id: data.message_id || Date.now(),
+                        user_id: this.config.userId,
+                        user_name: this.config.userName,
+                        message: message,
+                        created_at: new Date().toISOString(),
+                        is_own: true
+                    });
+                    
+                    this.scrollToBottom();
+                    
+                } else {
+                    throw new Error(data.error || 'Errore invio messaggio');
+                }
             }
             
         } catch (error) {
@@ -1282,11 +1387,161 @@ class CompleteChatSystem {
     }
     
     /**
+     * Gestisce nuovo messaggio ricevuto via Socket.IO
+     */
+    handleNewMessage(data) {
+        try {
+            // Aggiorna contatore messaggi non letti
+            if (data.user_id !== this.config.userId) {
+                this.incrementUnreadCount(data.chat_id);
+            }
+            
+            // Se siamo nella chat corrente, mostra il messaggio immediatamente
+            if (this.currentChat && this.currentChat.id === data.chat_id) {
+                this.displayMessage(data);
+            }
+            
+            // Aggiorna badge totali
+            this.updateTotalBadge();
+            
+            // Mostra notifica se la chat non è aperta
+            if (!this.isVisible || !this.currentChat || this.currentChat.id !== data.chat_id) {
+                this.showNotification(data);
+            }
+            
+        } catch (error) {
+            this.log('❌ Errore gestione nuovo messaggio:', error);
+        }
+    }
+    
+    /**
+     * Aggiorna status online/offline utente
+     */
+    updateUserStatus(userId, isOnline) {
+        // Aggiorna indicatori nella lista chat private
+        const userElements = document.querySelectorAll(`[data-user-id="${userId}"] .user-status`);
+        userElements.forEach(el => {
+            el.className = `user-status ${isOnline ? 'online' : 'offline'}`;
+            el.title = isOnline ? 'Online' : 'Offline';
+        });
+    }
+    
+    /**
+     * Mostra indicatore "sta scrivendo"
+     */
+    showTypingIndicator(chatId, userName) {
+        if (this.currentChat && this.currentChat.id === chatId) {
+            const container = this.elements.messagesContainer;
+            let indicator = container.querySelector('.typing-indicator');
+            
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'typing-indicator';
+                container.appendChild(indicator);
+            }
+            
+            indicator.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${userName} sta scrivendo...`;
+        }
+    }
+    
+    /**
+     * Nasconde indicatore "sta scrivendo"  
+     */
+    hideTypingIndicator(chatId, userName) {
+        if (this.currentChat && this.currentChat.id === chatId) {
+            const indicator = this.elements.messagesContainer.querySelector('.typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    }
+    
+    /**
+     * Mostra notifica browser
+     */
+    showNotification(data) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(`Nuovo messaggio da ${data.user_name}`, {
+                body: data.message,
+                icon: '/assets/images/chat-icon.png',
+                badge: '/assets/images/badge-icon.png'
+            });
+        }
+    }
+    
+    /**
+     * Incrementa contatore messaggi non letti
+     */
+    incrementUnreadCount(chatId) {
+        if (!this.unreadCounts[chatId]) {
+            this.unreadCounts[chatId] = 0;
+        }
+        this.unreadCounts[chatId]++;
+        
+        // Aggiorna badge specifico della chat
+        this.updateChatBadge(chatId);
+    }
+    
+    /**
+     * Aggiorna badge chat specifica
+     */
+    updateChatBadge(chatId) {
+        const count = this.unreadCounts[chatId] || 0;
+        const badge = document.querySelector(`[data-chat-id="${chatId}"] .chat-badge`);
+        
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+    
+    /**
+     * Aggiorna badge totale
+     */
+    updateTotalBadge() {
+        const total = Object.values(this.unreadCounts).reduce((sum, count) => sum + count, 0);
+        
+        if (this.elements.totalBadge) {
+            if (total > 0) {
+                this.elements.totalBadge.textContent = total;
+                this.elements.totalBadge.classList.remove('hidden');
+            } else {
+                this.elements.totalBadge.classList.add('hidden');
+            }
+        }
+    }
+    
+    /**
+     * Invia messaggio via Socket.IO
+     */
+    sendMessageViaSocket(chatId, message) {
+        if (this.socketConnected && this.socket) {
+            this.socket.emit('send_message', {
+                chat_id: chatId,
+                message: message,
+                user_id: this.config.userId,
+                user_name: this.config.userName,
+                chat_type: this.currentChat?.type || 'privata'
+            });
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Cleanup
      */
     destroy() {
         if (this.pollingTimer) {
             clearInterval(this.pollingTimer);
+        }
+        
+        if (this.socket) {
+            this.socket.disconnect();
         }
         
         this.isInitialized = false;
