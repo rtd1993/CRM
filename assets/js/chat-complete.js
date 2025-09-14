@@ -799,12 +799,12 @@ class CompleteChatSystem {
                 
                 if (data.success) {
                     messageSent = true;
-                    
+
                     // Pulisci input
                     this.elements.messageInput.value = '';
-                    
-                    // Aggiungi messaggio alla UI
-                    this.addMessageToUI({
+
+                    // Aggiungi messaggio alla UI con il nuovo sistema incrementale
+                    const messageEl = this.createMessageElement({
                         id: data.message_id || Date.now(),
                         user_id: this.config.userId,
                         user_name: this.config.userName,
@@ -812,10 +812,17 @@ class CompleteChatSystem {
                         created_at: new Date().toISOString(),
                         is_own: true
                     });
-                    
-                    this.scrollToBottom();
-                    
-                } else {
+
+                    const messagesContainer = document.getElementById('messages');
+                    if (messagesContainer && messageEl) {
+                        messagesContainer.appendChild(messageEl);
+                        
+                        // Aggiorna l'ultimo ID per questa conversazione
+                        this.lastMessageIds[conversationId] = data.message_id || Date.now();
+                        
+                        // Scroll intelligente
+                        this.smartScroll();
+                    }                } else {
                     throw new Error(data.error || 'Errore invio messaggio');
                 }
             }
