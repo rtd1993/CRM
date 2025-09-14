@@ -27,7 +27,8 @@ try {
             id,
             nome,
             email,
-            ruolo
+            ruolo,
+            is_online
         FROM utenti 
         WHERE id != ?
         ORDER BY nome ASC
@@ -36,26 +37,26 @@ try {
     $stmt->execute([$current_user_id]);
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Ottieni utenti realmente online dal server Socket.IO
-    $onlineUserIds = [];
+    // Ottieni utenti online da Socket.IO per debug, ma usa database come fonte primaria
+    $socketOnlineUsers = [];
     try {
-        $context = stream_context_create(['http' => ['timeout' => 2]]);
-        $response = file_get_contents('http://localhost:3002/online-users', false, $context);
+        $context = stream_context_create(['http' => ['timeout' => 1]]);
+        $response = @file_get_contents('http://localhost:3002/online-users', false, $context);
         if ($response) {
             $onlineData = json_decode($response, true);
             if ($onlineData && $onlineData['success']) {
-                $onlineUserIds = $onlineData['online_users'];
+                $socketOnlineUsers = $onlineData['online_users'];
             }
         }
     } catch (Exception $e) {
-        error_log("Errore connessione Socket.IO server: " . $e->getMessage());
+        // Ignora errori Socket.IO, usa solo database
     }
 
     $result = [];
     
     foreach ($users as $user) {
-        // Controlla se l'utente è realmente online
-        $is_online = in_array((int)$user['id'], $onlineUserIds);
+        // Usa lo stato online dal database (fonte primaria)
+        $is_online = (bool)$user['is_online'];
         
         // Costruisci il nome completo
         $full_name = trim($user['nome']);
@@ -78,9 +79,10 @@ try {
         'success' => true,
         'users' => $result,
         'current_user_id' => $current_user_id,
-        'online_users_from_socket' => $onlineUserIds,
+        'socket_online_users' => $socketOnlineUsers,
         'total' => count($result),
-        'online_count' => count(array_filter($result, function($u) { return $u['is_online']; }))
+        'online_count' => count(array_filter($result, function($u) { return $u['is_online']; })),
+        'source' => 'database'
     ]);
 
 } catch (Exception $e) {

@@ -362,6 +362,9 @@ class CompleteChatSystem {
             // Carica contatori non letti
             await this.updateUnreadCounts();
             
+            // Avvia heartbeat per mantenere sessione attiva
+            this.startSessionHeartbeat();
+            
             this.log('✅ Dati iniziali caricati con successo');
             
         } catch (error) {
@@ -1283,6 +1286,45 @@ class CompleteChatSystem {
         }, this.pollingInterval);
         
         this.log('⏰ Polling avviato ogni', this.pollingInterval, 'ms');
+    }
+    
+    /**
+     * Avvia heartbeat sessione per mantenere utente online
+     */
+    startSessionHeartbeat() {
+        // Heartbeat ogni 2 minuti
+        setInterval(() => {
+            this.sessionHeartbeat();
+        }, 120000); // 2 minuti
+        
+        // Prima chiamata immediata
+        this.sessionHeartbeat();
+        
+        // Gestisci chiusura finestra/tab
+        window.addEventListener('beforeunload', () => {
+            // Usa navigator.sendBeacon per request affidabile durante chiusura
+            navigator.sendBeacon('api/session_end.php', JSON.stringify({
+                user_id: this.config.userId
+            }));
+        });
+    }
+    
+    /**
+     * Heartbeat sessione
+     */
+    async sessionHeartbeat() {
+        try {
+            const response = await fetch('api/session_heartbeat.php');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.log('💓 Heartbeat sessione OK');
+            } else {
+                this.log('💓 Heartbeat sessione fallito:', data.error);
+            }
+        } catch (error) {
+            this.log('❌ Errore heartbeat sessione:', error);
+        }
     }
     
     /**

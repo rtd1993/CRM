@@ -36,7 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_name'] = $user['nome'];
         $_SESSION['role'] = $user['ruolo'];
         
-        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in, redirecting to dashboard.php");
+        // Imposta utente come online nel database
+        $updateStmt = $pdo->prepare("UPDATE utenti SET is_online = TRUE WHERE id = ?");
+        $updateStmt->execute([$user['id']]);
+        
+        error_log("LOGIN SUCCESS: User " . $user['id'] . " logged in and set online, redirecting to dashboard.php");
         
         // Redirect alla dashboard originale ora che sappiamo il problema
         header('Location: dashboard.php');
