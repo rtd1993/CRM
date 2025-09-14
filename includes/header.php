@@ -237,7 +237,7 @@ if (isset($_SESSION['user_id'])) {
             <!-- Task & Calendario Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['calendario.php', 'task.php', 'task_clienti.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
-                    Task & Calendario <i class="fas fa-chevron-down ms-1"></i>
+                    Task & Calendario 
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/calendario.php">Calendario</a></li>
@@ -249,7 +249,7 @@ if (isset($_SESSION['user_id'])) {
             <!-- Pratiche Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['conto_termico.php', 'crea_conto_termico.php', 'modifica_conto_termico.php', 'enea.php', 'crea_enea.php', 'modifica_enea.php', 'procedure.php', 'crea_procedura.php', 'modifica_procedura.php', 'stampa_procedura.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
-                    Pratiche <i class="fas fa-chevron-down ms-1"></i>
+                    Pratiche 
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/conto_termico.php">Conto Termico</a></li>
@@ -262,7 +262,7 @@ if (isset($_SESSION['user_id'])) {
             <!-- Info & Email Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['link_utili.php', 'contatti.php', 'email_invio.php', 'gestione_email_template.php', 'email_cronologia.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
-                    Info & Email <i class="fas fa-chevron-down ms-1"></i>
+                    Info & Email 
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/link_utili.php">Link Utili</a></li>
@@ -275,7 +275,7 @@ if (isset($_SESSION['user_id'])) {
             <!-- Amministrazione Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle<?php if(in_array(basename($_SERVER['PHP_SELF']), ['gestione_utenti.php', 'telegram_config.php', 'devtools.php', 'admin_wireguard.php'])) echo ' active';?>" data-bs-toggle="dropdown" aria-expanded="false">
-                    Amministrazione <i class="fas fa-chevron-down ms-1"></i>
+                    Amministrazione 
                 </a>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/gestione_utenti.php">Utenti</a></li>
