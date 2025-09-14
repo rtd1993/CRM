@@ -301,15 +301,26 @@ function openCreateModal() {
     const modal = document.getElementById('modalContainer');
     modal.innerHTML = '<div class="modal-backdrop"></div><div class="modal-content"><div class="text-center p-4"><div class="spinner-border text-primary"></div><p class="mt-2">Caricamento...</p></div></div>';
     
-    fetch('/crea_procedura.php')
-        .then(response => response.text())
+    fetch('/crea_procedura.php', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+            }
+            return response.text();
+        })
         .then(html => {
             modal.innerHTML = html;
             document.body.style.overflow = 'hidden';
         })
         .catch(error => {
             console.error('Errore:', error);
-            modal.innerHTML = '<div class="modal-backdrop" onclick="closeModal()"></div><div class="modal-content"><div class="alert alert-danger">Errore nel caricamento della pagina</div></div>';
+            modal.innerHTML = '<div class="modal-backdrop" onclick="closeModal()"></div><div class="modal-content"><div class="alert alert-danger">Errore nel caricamento della pagina: ' + error.message + '</div></div>';
         });
 }
 
@@ -317,15 +328,26 @@ function editProcedure(id) {
     const modal = document.getElementById('modalContainer');
     modal.innerHTML = '<div class="modal-backdrop"></div><div class="modal-content"><div class="text-center p-4"><div class="spinner-border text-primary"></div><p class="mt-2">Caricamento...</p></div></div>';
     
-    fetch('/modifica_procedura.php?id=' + id)
-        .then(response => response.text())
+    fetch('/modifica_procedura.php?id=' + id, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+            }
+            return response.text();
+        })
         .then(html => {
             modal.innerHTML = html;
             document.body.style.overflow = 'hidden';
         })
         .catch(error => {
             console.error('Errore:', error);
-            modal.innerHTML = '<div class="modal-backdrop" onclick="closeModal()"></div><div class="modal-content"><div class="alert alert-danger">Errore nel caricamento della pagina</div></div>';
+            modal.innerHTML = '<div class="modal-backdrop" onclick="closeModal()"></div><div class="modal-content"><div class="alert alert-danger">Errore nel caricamento della pagina: ' + error.message + '</div></div>';
         });
 }
 

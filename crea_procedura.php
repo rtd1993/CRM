@@ -1,6 +1,36 @@
 <?php
+// Debug per sessioni AJAX
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Non mostrare errori nella modal
+
+// Test se è una richiesta AJAX
+$is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
 require_once __DIR__ . '/includes/auth.php';
-require_login();
+
+// Se non è loggato e non è AJAX, redirect normale
+if (!is_logged_in() && !$is_ajax) {
+    header('Location: login.php');
+    exit();
+}
+
+// Se non è loggato ma è AJAX, mostra errore nella modal
+if (!is_logged_in() && $is_ajax) {
+    echo '<div class="modal-backdrop" onclick="parent.closeModal()"></div>';
+    echo '<div class="modal-content">';
+    echo '<div class="modal-header">';
+    echo '<h3>Sessione Scaduta</h3>';
+    echo '<button class="btn-close" onclick="parent.closeModal()"><i class="fas fa-times"></i></button>';
+    echo '</div>';
+    echo '<div class="modal-body">';
+    echo '<div class="alert alert-warning">La sessione è scaduta. Ricarica la pagina per effettuare il login.</div>';
+    echo '</div>';
+    echo '<div class="modal-footer">';
+    echo '<button onclick="parent.location.reload()" class="btn btn-primary">Ricarica Pagina</button>';
+    echo '</div>';
+    echo '</div>';
+    exit();
+}
 
 $error_message = '';
 $success = false;
