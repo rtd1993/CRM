@@ -32,6 +32,9 @@ window.completeChatConfig = {
 console.log('🔧 Chat Config caricato:', window.completeChatConfig);
 </script>
 
+<!-- Socket.IO Library -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <!-- Includi il JavaScript del sistema chat completo -->
 <script src="/assets/js/chat-complete.js?v=<?= time() ?>"></script>
 
