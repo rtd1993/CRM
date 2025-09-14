@@ -9,9 +9,17 @@ try {
     $pdo = new PDO("mysql:host=localhost;dbname=crm;charset=utf8", 'crmuser', 'Admin123!');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Per ora, usa un utente di default (TODO: implementare autenticazione robusta)
-    // In produzione questo dovrebbe essere ottenuto dalla sessione o token JWT
-    $current_user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 2;
+    // Ottieni user_id da GET parameter o sessione
+    session_start();
+    $current_user_id = null;
+    
+    if (isset($_GET['user_id']) && is_numeric($_GET['user_id'])) {
+        $current_user_id = intval($_GET['user_id']);
+    } elseif (isset($_SESSION['user_id'])) {
+        $current_user_id = $_SESSION['user_id'];
+    } else {
+        throw new Exception('Nessun utente identificato');
+    }
 
     // Query per ottenere tutti gli utenti tranne l'utente corrente
     $stmt = $pdo->prepare("
