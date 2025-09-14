@@ -1593,6 +1593,7 @@ class CompleteChatSystem {
         fetch('./api/chat_notifications.php?action=unread_counts')
             .then(response => response.json())
             .then(data => {
+                console.log('🔔 Badge API Response:', data);
                 if (data.success) {
                     const counts = data.unread_counts;
                     
@@ -1636,13 +1637,16 @@ class CompleteChatSystem {
                     
                     // Badge totale sul toggle button del widget
                     const totalBadge = document.querySelector('#total-unread-badge');
+                    console.log('🎯 Updating total badge. data.total =', data.total, 'type:', typeof data.total);
                     if (data.total > 0) {
                         if (totalBadge) {
                             totalBadge.textContent = data.total;
                             totalBadge.classList.remove('hidden');
+                            console.log('✅ Total badge shown with value:', data.total);
                         }
                     } else if (totalBadge) {
                         totalBadge.classList.add('hidden');
+                        console.log('🚫 Total badge hidden (data.total =', data.total, ')');
                     }
                 } else {
                     // Se l'API restituisce un errore (es. non autenticato), nascondi tutti i badge
@@ -1701,13 +1705,16 @@ class CompleteChatSystem {
             
             // Badge totale
             const totalBadge = document.querySelector('#total-unread-badge');
+            console.log('🎯 ProcessBadgeData: data.total =', data.total, 'type:', typeof data.total);
             if (data.total > 0) {
                 if (totalBadge) {
                     totalBadge.textContent = data.total;
                     totalBadge.classList.remove('hidden');
+                    console.log('✅ ProcessBadgeData: Total badge shown with value:', data.total);
                 }
             } else if (totalBadge) {
                 totalBadge.classList.add('hidden');
+                console.log('🚫 ProcessBadgeData: Total badge hidden (data.total =', data.total, ')');
             }
             
             // Badge pratiche
