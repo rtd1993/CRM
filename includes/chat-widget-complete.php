@@ -1,10 +1,5 @@
 <?php
-// Widget Chat Completo come da RE// TEST CARICAMENTO SCRIPT
-alert('SCRIPT WIDGET CARICATO - USER ID: <?= intval($user_id) ?>');
-console.log('🔧 Chat Config caricato:', window.completeChatConfig);
-console.log('🔍 Debug sessione - user_id:', <?= intval($user_id) ?>, 'user_name:', '<?= addslashes($user_name) ?>');
-console.log('🔍 Tipo userId:', typeof window.completeChatConfig.userId);
-console.log('🔍 Valore userId:', window.completeChatConfig.userId);ME_CHAT_SYSTEM.md
+// Widget Chat Completo come da README_CHAT_SYSTEM.md
 
 // Debug sessione (non avviamo la sessione qui per evitare conflitti)
 error_log("Chat Widget Debug - Session status: " . session_status());
