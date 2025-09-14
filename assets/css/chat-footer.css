@@ -697,6 +697,12 @@ body {
     color: white;
     border-bottom-right-radius: 6px;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.2s ease;
+}
+
+.message-bubble.own .message-content:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
 }
 
 /* Nuvolette bianche per gli altri messaggi */
@@ -706,6 +712,13 @@ body {
     border-bottom-left-radius: 6px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     border: 1px solid #f0f1f3;
+    transition: all 0.2s ease;
+}
+
+.message-bubble:not(.own) .message-content:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border-color: #e0e3e7;
 }
 
 .message-meta {
