@@ -25,6 +25,10 @@ if (isset($_POST['ajax_action'])) {
             echo json_encode(getNetworkStats());
             break;
             
+        case 'get_services':
+            echo json_encode(getServicesStatus());
+            break;
+            
         case 'service_control':
             $service = $_POST['service'] ?? '';
             $action = $_POST['action'] ?? '';
@@ -264,8 +268,83 @@ function getNetworkStats() {
     }
 }
 
+function getServicesStatus() {
+    try {
+        $services = [];
+        
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Windows - controllo servizi
+            
+            // Apache
+            $apache_status = shell_exec('sc query apache2 2>nul');
+            $services['apache2'] = (strpos($apache_status, 'RUNNING') !== false) ? 'running' : 'stopped';
+            
+            // MySQL
+            $mysql_status = shell_exec('sc query mysql 2>nul');
+            $services['mysql'] = (strpos($mysql_status, 'RUNNING') !== false) ? 'running' : 'stopped';
+            
+            // Node.js - controlla se il processo è attivo
+            $node_status = shell_exec('tasklist /FI "IMAGENAME eq node.exe" 2>nul');
+            $services['nodejs'] = (strpos($node_status, 'node.exe') !== false) ? 'running' : 'stopped';
+            
+            // Rclone - controlla se il processo è attivo
+            $rclone_status = shell_exec('tasklist /FI "IMAGENAME eq rclone.exe" 2>nul');
+            $services['rclone'] = (strpos($rclone_status, 'rclone.exe') !== false) ? 'running' : 'stopped';
+            
+            // Cloudflare - controlla se cloudflared è attivo
+            $cloudflare_status = shell_exec('tasklist /FI "IMAGENAME eq cloudflared.exe" 2>nul');
+            $services['cloudflare'] = (strpos($cloudflare_status, 'cloudflared.exe') !== false) ? 'running' : 'stopped';
+            
+        } else {
+            // Linux - controllo servizi con systemctl
+            
+            // Apache
+            $apache_status = shell_exec('systemctl is-active apache2 2>/dev/null');
+            $services['apache2'] = (trim($apache_status) === 'active') ? 'running' : 'stopped';
+            
+            // MySQL
+            $mysql_status = shell_exec('systemctl is-active mysql 2>/dev/null');
+            $services['mysql'] = (trim($mysql_status) === 'active') ? 'running' : 'stopped';
+            
+            // Node.js
+            $node_status = shell_exec('systemctl is-active nodejs 2>/dev/null');
+            if (trim($node_status) !== 'active') {
+                // Fallback - controlla processo
+                $node_process = shell_exec('pgrep node 2>/dev/null');
+                $services['nodejs'] = !empty(trim($node_process)) ? 'running' : 'stopped';
+            } else {
+                $services['nodejs'] = 'running';
+            }
+            
+            // Rclone
+            $rclone_status = shell_exec('systemctl is-active rclone 2>/dev/null');
+            if (trim($rclone_status) !== 'active') {
+                // Fallback - controlla processo
+                $rclone_process = shell_exec('pgrep rclone 2>/dev/null');
+                $services['rclone'] = !empty(trim($rclone_process)) ? 'running' : 'stopped';
+            } else {
+                $services['rclone'] = 'running';
+            }
+            
+            // Cloudflare
+            $cloudflare_status = shell_exec('systemctl is-active cloudflared 2>/dev/null');
+            if (trim($cloudflare_status) !== 'active') {
+                // Fallback - controlla processo
+                $cloudflare_process = shell_exec('pgrep cloudflared 2>/dev/null');
+                $services['cloudflare'] = !empty(trim($cloudflare_process)) ? 'running' : 'stopped';
+            } else {
+                $services['cloudflare'] = 'running';
+            }
+        }
+        
+        return ['success' => true, 'data' => $services];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
 function controlService($service, $action) {
-    $allowed_services = ['apache2', 'mysql', 'nodejs', 'rclone'];
+    $allowed_services = ['apache2', 'mysql', 'nodejs', 'rclone', 'cloudflare'];
     $allowed_actions = ['start', 'stop', 'restart', 'status'];
     
     if (!in_array($service, $allowed_services) || !in_array($action, $allowed_actions)) {
@@ -299,6 +378,17 @@ function controlService($service, $action) {
                         $command = "tasklist /FI \"IMAGENAME eq rclone.exe\" 2>&1";
                     }
                     break;
+                case 'cloudflare':
+                    if ($action === 'start') {
+                        $command = "start /B cloudflared tunnel run 2>&1";
+                    } elseif ($action === 'stop') {
+                        $command = "taskkill /F /IM cloudflared.exe 2>&1";
+                    } elseif ($action === 'restart') {
+                        $command = "taskkill /F /IM cloudflared.exe 2>&1 && start /B cloudflared tunnel run 2>&1";
+                    } elseif ($action === 'status') {
+                        $command = "tasklist /FI \"IMAGENAME eq cloudflared.exe\" 2>&1";
+                    }
+                    break;
             }
         } else {
             // Comandi per Linux
@@ -317,6 +407,13 @@ function controlService($service, $action) {
                         $command = "ps aux | grep rclone | grep -v grep";
                     } else {
                         $command = "systemctl $action rclone 2>&1";
+                    }
+                    break;
+                case 'cloudflare':
+                    if ($action === 'status') {
+                        $command = "ps aux | grep cloudflared | grep -v grep";
+                    } else {
+                        $command = "systemctl $action cloudflared 2>&1";
                     }
                     break;
             }
@@ -631,7 +728,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div id="services-content">
                         <div class="service-control">
                             <div>
-                                <span class="status-indicator status-unknown"></span>
+                                <span class="status-indicator status-unknown" id="status-apache2"></span>
                                 <strong>Apache Web Server</strong>
                             </div>
                             <div class="btn-group">
@@ -649,7 +746,7 @@ require_once __DIR__ . '/includes/header.php';
 
                         <div class="service-control">
                             <div>
-                                <span class="status-indicator status-unknown"></span>
+                                <span class="status-indicator status-unknown" id="status-mysql"></span>
                                 <strong>MySQL Database</strong>
                             </div>
                             <div class="btn-group">
@@ -667,7 +764,7 @@ require_once __DIR__ . '/includes/header.php';
 
                         <div class="service-control">
                             <div>
-                                <span class="status-indicator status-unknown"></span>
+                                <span class="status-indicator status-unknown" id="status-nodejs"></span>
                                 <strong>Node.js Server</strong>
                             </div>
                             <div class="btn-group">
@@ -685,7 +782,7 @@ require_once __DIR__ . '/includes/header.php';
 
                         <div class="service-control">
                             <div>
-                                <span class="status-indicator status-unknown"></span>
+                                <span class="status-indicator status-unknown" id="status-rclone"></span>
                                 <strong>Rclone Sync</strong>
                             </div>
                             <div class="btn-group">
@@ -696,6 +793,24 @@ require_once __DIR__ . '/includes/header.php';
                                     <i class="fas fa-redo"></i> Restart
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="controlService('rclone', 'stop')">
+                                    <i class="fas fa-stop"></i> Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="service-control">
+                            <div>
+                                <span class="status-indicator status-unknown" id="status-cloudflare"></span>
+                                <strong>Cloudflare Tunnel</strong>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-success btn-sm" onclick="controlService('cloudflare', 'start')">
+                                    <i class="fas fa-play"></i> Start
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="controlService('cloudflare', 'restart')">
+                                    <i class="fas fa-redo"></i> Restart
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="controlService('cloudflare', 'stop')">
                                     <i class="fas fa-stop"></i> Stop
                                 </button>
                             </div>
@@ -1009,6 +1124,43 @@ Esempi:
         document.getElementById('network-content').innerHTML = html;
     }
 
+    function loadServices() {
+        fetch('devtools.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'ajax_action=get_services'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateServiceStatus(data.data);
+            } else {
+                console.error('Errore caricamento servizi:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Errore connessione servizi:', error);
+        });
+    }
+
+    function updateServiceStatus(services) {
+        // Aggiorna gli indicatori di stato per ogni servizio
+        Object.keys(services).forEach(service => {
+            const indicator = document.getElementById('status-' + service);
+            if (indicator) {
+                // Rimuovi tutte le classi di stato
+                indicator.classList.remove('status-running', 'status-stopped', 'status-unknown');
+                
+                // Aggiungi la classe appropriata
+                if (services[service] === 'running') {
+                    indicator.classList.add('status-running');
+                } else {
+                    indicator.classList.add('status-stopped');
+                }
+            }
+        });
+    }
+
     function controlService(service, action) {
         const button = event.target.closest('button');
         const originalHtml = button.innerHTML;
@@ -1027,6 +1179,8 @@ Esempi:
             
             if (data.success) {
                 alert('Comando eseguito con successo: ' + (data.output || 'OK'));
+                // Ricarica lo stato dei servizi dopo l'azione
+                setTimeout(() => loadServices(), 1000);
             } else {
                 alert('Errore: ' + (data.error || 'Errore sconosciuto'));
             }
