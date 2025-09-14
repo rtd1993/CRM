@@ -4,8 +4,6 @@
  * Supporta: Chat Globale, Chat Pratiche, Chat Private
  */
 
-// TEST CARICAMENTO FILE JS
-alert('JAVASCRIPT CHAT-COMPLETE.JS CARICATO!');
 console.log('🚀 Inizializzazione Complete Chat System');
 
 // Configurazione
@@ -1886,8 +1884,9 @@ class CompleteChatSystem {
                 if (data.success) {
                     const counts = data.unread_counts;
                     
-                    // Badge chat globale
+                    // Definisci badge elements all'inizio
                     const globalBadge = document.querySelector('#global-chat-badge');
+                    
                     if (counts.global && counts.global > 0) {
                         if (globalBadge) {
                             globalBadge.textContent = counts.global;
@@ -1897,14 +1896,8 @@ class CompleteChatSystem {
                         globalBadge.classList.add('hidden');
                     }
                     
-                    // Badge rimossi per chat pratiche - solo notifica in chat globale
-                    let totalPracticeCount = 0;
-
+                    // Gestisci solo badge chat private (pratiche rimosse)
                     Object.keys(counts).forEach(key => {
-                        if (key.startsWith('practice_')) {
-                            totalPracticeCount += counts[key];
-                        }
-                        
                         if (key.startsWith('private_user_')) {
                             const userId = key.replace('private_user_', '');
                             const badge = document.querySelector(`#private-chat-badge-${userId}`);
@@ -1914,14 +1907,6 @@ class CompleteChatSystem {
                             }
                         }
                     });
-                    
-                    // Aggiorna badge pratiche totale
-                    if (totalPracticeCount > 0 && practiceBadge) {
-                        practiceBadge.textContent = totalPracticeCount;
-                        practiceBadge.classList.remove('hidden');
-                    } else if (practiceBadge) {
-                        practiceBadge.classList.add('hidden');
-                    }
                     
                     // Badge totale sul toggle button del widget
                     const totalBadge = document.querySelector('#total-unread-badge');
@@ -2013,24 +1998,8 @@ class CompleteChatSystem {
                 console.log('🚫 ProcessBadgeData: Badge content after hiding:', totalBadge.textContent);
             }
             
-            // Badge pratiche - con dettagli cliente
-            const practiceBadge = document.querySelector('#practice-chat-badge');
-            let totalPracticeCount = 0;
-            let practiceDetails = [];
-            
+            // Gestisci solo badge chat private (pratiche rimosse)
             Object.keys(counts).forEach(key => {
-                if (key.startsWith('practice_')) {
-                    const practiceData = counts[key];
-                    if (typeof practiceData === 'object') {
-                        // Nuova struttura con dettagli cliente
-                        totalPracticeCount += practiceData.count;
-                        practiceDetails.push(`${practiceData.client_name} (${practiceData.count})`);
-                    } else {
-                        // Compatibilità con vecchia struttura
-                        totalPracticeCount += practiceData;
-                    }
-                }
-                
                 if (key.startsWith('private_user_')) {
                     const userId = key.replace('private_user_', '');
                     const badge = document.querySelector(`#private-chat-badge-${userId}`);
@@ -2040,19 +2009,6 @@ class CompleteChatSystem {
                     }
                 }
             });
-            
-            if (totalPracticeCount > 0 && practiceBadge) {
-                practiceBadge.textContent = totalPracticeCount;
-                practiceBadge.classList.remove('hidden');
-                
-                // Aggiungi tooltip con dettagli delle pratiche
-                if (practiceDetails.length > 0) {
-                    practiceBadge.title = 'Messaggi non letti:\n' + practiceDetails.join('\n');
-                }
-            } else if (practiceBadge) {
-                practiceBadge.classList.add('hidden');
-                practiceBadge.title = '';
-            }
         }
     }
 }
