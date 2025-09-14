@@ -211,6 +211,10 @@ include 'includes/header.php';
                                                        class="btn btn-outline-primary" title="Aggiorna pratica">
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
+                                                    <button type="button" onclick="stampaContoTermicoPratica(<?= $record['id'] ?>)" 
+                                                       class="btn btn-outline-success" title="Stampa pratica Conto Termico">
+                                                        <i class="fas fa-print me-1"></i>Stampa
+                                                    </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record?')">
@@ -446,6 +450,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
 window.closeContoTermicoModal = closeContoTermicoModal;
+
+// Funzione per stampare la pratica Conto Termico
+function stampaContoTermicoPratica(contoTermicoId) {
+    const stampaUrl = `stampa_conto_termico.php?id=${contoTermicoId}`;
+    const printWindow = window.open(stampaUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    
+    // Attendi che la pagina si carichi e poi avvia la stampa
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

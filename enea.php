@@ -250,6 +250,10 @@ include 'includes/header.php';
                                                             <i class="fas fa-folder-open me-1"></i>Documenti
                                                         </button>
                                                     <?php endif; ?>
+                                                    <button type="button" onclick="stampaEneaPratica(<?= $record['id'] ?>)" 
+                                                       class="btn btn-outline-success" title="Stampa pratica ENEA">
+                                                        <i class="fas fa-print me-1"></i>Stampa
+                                                    </button>
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record ENEA?')">
@@ -500,6 +504,17 @@ window.closeEneaModal = closeEneaModal;
 function openEneaFolder(folderPath) {
     const driveUrl = `drive.php?path=${encodeURIComponent(folderPath)}`;
     window.open(driveUrl, '_blank');
+}
+
+// Funzione per stampare la pratica ENEA
+function stampaEneaPratica(eneaId) {
+    const stampaUrl = `stampa_enea.php?id=${eneaId}`;
+    const printWindow = window.open(stampaUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    
+    // Attendi che la pagina si carichi e poi avvia la stampa
+    printWindow.onload = function() {
+        printWindow.print();
+    };
 }
 </script>
 
