@@ -4,6 +4,8 @@
  * Supporta: Chat Globale, Chat Pratiche, Chat Private
  */
 
+// TEST CARICAMENTO FILE JS
+alert('JAVASCRIPT CHAT-COMPLETE.JS CARICATO!');
 console.log('🚀 Inizializzazione Complete Chat System');
 
 // Configurazione
