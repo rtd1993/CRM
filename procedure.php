@@ -676,12 +676,52 @@ function getCreateModalHTML() {
             <button type="button" class="btn btn-secondary" onclick="closeModal()">
                 <i class="fas fa-times me-2"></i>Annulla
             </button>
-            <button type="submit" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" onclick="submitCreateForm()">
                 <i class="fas fa-save me-2"></i>Salva Procedura
             </button>
         </div>
     </form>
-</div>`;
+</div>
+<script>
+function submitCreateForm() {
+    const form = document.getElementById('createProcedureForm');
+    const formData = new FormData(form);
+    
+    // Validazione
+    const denominazione = formData.get('denominazione');
+    const valida_dal = formData.get('valida_dal');
+    const procedura = formData.get('procedura');
+    
+    if (!denominazione || !valida_dal || !procedura) {
+        alert('Tutti i campi sono obbligatori.');
+        return;
+    }
+    
+    // Aggiungi il flag di creazione
+    formData.append('crea_procedura', '1');
+    
+    // Disabilita il pulsante
+    const btn = event.target;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
+    btn.disabled = true;
+    
+    // Crea form nascosto per il submit
+    const hiddenForm = document.createElement('form');
+    hiddenForm.method = 'post';
+    hiddenForm.style.display = 'none';
+    
+    for (let pair of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = pair[0];
+        input.value = pair[1];
+        hiddenForm.appendChild(input);
+    }
+    
+    document.body.appendChild(hiddenForm);
+    hiddenForm.submit();
+}
+</script>`;
 }
 
 function editProcedure(id) {
@@ -776,12 +816,59 @@ function getEditModalHTML(proc) {
             <button type="button" class="btn btn-secondary" onclick="closeModal()">
                 <i class="fas fa-times me-2"></i>Annulla
             </button>
-            <button type="submit" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" onclick="submitEditForm()">
                 <i class="fas fa-save me-2"></i>Salva Modifiche
             </button>
         </div>
     </form>
-</div>`;
+</div>
+<script>
+function submitEditForm() {
+    const form = document.getElementById('editProcedureForm');
+    const formData = new FormData(form);
+    
+    // Log per debug
+    console.log('Submit form modifica - Dati form:');
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    // Validazione
+    const id = formData.get('id');
+    const denominazione = formData.get('denominazione');
+    const valida_dal = formData.get('valida_dal');
+    const procedura = formData.get('procedura');
+    
+    if (!id || !denominazione || !valida_dal || !procedura) {
+        alert('Tutti i campi sono obbligatori.');
+        return;
+    }
+    
+    // Aggiungi il flag di modifica
+    formData.append('modifica_procedura', '1');
+    
+    // Disabilita il pulsante
+    const btn = event.target;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
+    btn.disabled = true;
+    
+    // Crea form nascosto per il submit
+    const hiddenForm = document.createElement('form');
+    hiddenForm.method = 'post';
+    hiddenForm.style.display = 'none';
+    
+    for (let pair of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = pair[0];
+        input.value = pair[1];
+        hiddenForm.appendChild(input);
+    }
+    
+    document.body.appendChild(hiddenForm);
+    hiddenForm.submit();
+}
+</script>`;
 }
 
 function viewProcedure(id) {
@@ -870,97 +957,7 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// Gestione submit form creazione e modifica
-document.addEventListener('submit', function(e) {
-    if (e.target.id === 'createProcedureForm') {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        formData.append('crea_procedura', '1');
-        
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        const originalHTML = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
-        submitBtn.disabled = true;
-        
-        // Validazione
-        const denominazione = formData.get('denominazione');
-        const valida_dal = formData.get('valida_dal');
-        const procedura = formData.get('procedura');
-        
-        if (!denominazione || !valida_dal || !procedura) {
-            alert('Tutti i campi sono obbligatori.');
-            submitBtn.innerHTML = originalHTML;
-            submitBtn.disabled = false;
-            return;
-        }
-        
-        // Crea un form nascosto e sottometti
-        const form = document.createElement('form');
-        form.method = 'post';
-        form.style.display = 'none';
-        
-        for (let pair of formData.entries()) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = pair[0];
-            input.value = pair[1];
-            form.appendChild(input);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-    
-    if (e.target.id === 'editProcedureForm') {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        formData.append('modifica_procedura', '1');
-        
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        const originalHTML = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
-        submitBtn.disabled = true;
-        
-        // Validazione
-        const denominazione = formData.get('denominazione');
-        const valida_dal = formData.get('valida_dal');
-        const procedura = formData.get('procedura');
-        const id = formData.get('id');
-        
-        if (!denominazione || !valida_dal || !procedura || !id) {
-            alert('Tutti i campi sono obbligatori.');
-            submitBtn.innerHTML = originalHTML;
-            submitBtn.disabled = false;
-            return;
-        }
-        
-        // Debug: mostra i dati che stiamo inviando
-        console.log('Dati modifica:', {
-            id: id,
-            denominazione: denominazione,
-            valida_dal: valida_dal,
-            procedura: procedura.substring(0, 50) + '...'
-        });
-        
-        // Crea un form nascosto e sottometti
-        const form = document.createElement('form');
-        form.method = 'post';
-        form.style.display = 'none';
-        
-        for (let pair of formData.entries()) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = pair[0];
-            input.value = pair[1];
-            form.appendChild(input);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-});
+// Gli eventi di submit sono ora gestiti direttamente nei modal tramite le funzioni submitCreateForm() e submitEditForm()
 
 // Gestione escape key per chiudere modal
 document.addEventListener('keydown', function(e) {
