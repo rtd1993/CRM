@@ -35,17 +35,23 @@ try {
             $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($cliente_data) {
-                // Usa il link_cartella esistente invece di ricreare il percorso
+                // Gestisce il link_cartella del cliente
+                $base_path = __DIR__ . '/local_drive';
+                $cliente_path = null;
+                $cliente_folder = '';
+                
                 if (!empty($cliente_data['link_cartella'])) {
-                    $cliente_path = $cliente_data['link_cartella'];
-                    // Estrai il nome della cartella dal percorso completo
-                    $cliente_folder = basename($cliente_path);
+                    // Se il link_cartella è nel formato URL "drive.php?path=FOLDER"
+                    if (strpos($cliente_data['link_cartella'], 'drive.php?path=') !== false) {
+                        $cliente_folder = urldecode(str_replace('drive.php?path=', '', $cliente_data['link_cartella']));
+                        $cliente_path = $base_path . '/' . $cliente_folder;
+                    } else {
+                        // Altrimenti usa direttamente il valore come nome cartella
+                        $cliente_folder = $cliente_data['link_cartella'];
+                        $cliente_path = $base_path . '/' . $cliente_folder;
+                    }
                 } else {
                     // Fallback: cerca la cartella esistente nella directory
-                    $base_path = '/var/www/CRM/local_drive';
-                    $cliente_path = null;
-                    
-                    // Cerca cartelle che iniziano con l'ID del cliente
                     if (is_dir($base_path)) {
                         $dirs = scandir($base_path);
                         foreach ($dirs as $dir) {
@@ -60,15 +66,16 @@ try {
                         }
                     }
                     
-                    // Se non trova la cartella, genera il nome corretto (mantenendo maiuscole)
+                    // Se non trova la cartella, usa il formato come in crea_cliente.php (MANTIENE maiuscole)  
                     if (!$cliente_path) {
                         $cognome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']);
-                        $cliente_folder = $record['cliente_id'] . '_' . $cognome_clean;
+                        $nome_clean = !empty($cliente_data['Nome']) ? preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']) : '';
                         
-                        // Aggiungi il nome se presente
-                        if (!empty($cliente_data['Nome'])) {
-                            $nome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']);
-                            $cliente_folder .= '.' . $nome_clean;
+                        // Formato cartella: ID_COGNOME.NOME (stesso formato di crea_cliente.php)
+                        if (!empty($nome_clean)) {
+                            $cliente_folder = $record['cliente_id'] . '_' . $cognome_clean . '.' . $nome_clean;
+                        } else {
+                            $cliente_folder = $record['cliente_id'] . '_' . $cognome_clean;
                         }
                         
                         $cliente_path = $base_path . '/' . $cliente_folder;

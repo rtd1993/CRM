@@ -104,15 +104,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cliente_data = $cliente_stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($cliente_data) {
-                // Usa il link_cartella esistente invece di ricreare il percorso
+                // Gestisce il link_cartella del cliente
+                $base_path = __DIR__ . '/local_drive';
+                $cliente_path = null;
+                
                 if (!empty($cliente_data['link_cartella'])) {
-                    $cliente_path = $cliente_data['link_cartella'];
+                    // Se il link_cartella è nel formato URL "drive.php?path=FOLDER"
+                    if (strpos($cliente_data['link_cartella'], 'drive.php?path=') !== false) {
+                        $folder_name = urldecode(str_replace('drive.php?path=', '', $cliente_data['link_cartella']));
+                        $cliente_path = $base_path . '/' . $folder_name;
+                    } else {
+                        // Altrimenti usa direttamente il valore come nome cartella
+                        $cliente_path = $base_path . '/' . $cliente_data['link_cartella'];
+                    }
                 } else {
                     // Fallback: cerca la cartella esistente nella directory
-                    $base_path = '/var/www/CRM/local_drive';
-                    $cliente_path = null;
-                    
-                    // Cerca cartelle che iniziano con l'ID del cliente
                     if (is_dir($base_path)) {
                         $dirs = scandir($base_path);
                         foreach ($dirs as $dir) {
@@ -120,31 +126,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 // Controlla se la cartella inizia con l'ID del cliente seguito da underscore
                                 if (strpos($dir, $cliente_id . '_') === 0) {
                                     $cliente_path = $base_path . '/' . $dir;
-                                    // Aggiorna il database con il percorso trovato
-                                    $update_stmt = $pdo->prepare("UPDATE clienti SET link_cartella = ? WHERE id = ?");
-                                    $update_stmt->execute([$cliente_path, $cliente_id]);
+                                    // Aggiorna il database con il link nel formato URL
+                                    $link_cartella = 'drive.php?path=' . urlencode($dir);
+                                    $update_stmt = $pdo->prepare("UPDATE clienti SET Link_cartella = ? WHERE id = ?");
+                                    $update_stmt->execute([$link_cartella, $cliente_id]);
                                     break;
                                 }
                             }
                         }
                     }
                     
-                    // Se non trova la cartella, crea con il formato corretto (mantenendo maiuscole)
+                    // Se non trova la cartella, crea il nome usando il formato di crea_cliente.php
                     if (!$cliente_path) {
                         $cognome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Cognome_Ragione_sociale']);
-                        $cliente_folder = $cliente_id . '_' . $cognome_clean;
+                        $nome_clean = !empty($cliente_data['Nome']) ? preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']) : '';
                         
-                        // Aggiungi il nome se presente
-                        if (!empty($cliente_data['Nome'])) {
-                            $nome_clean = preg_replace('/[^A-Za-z0-9]/', '', $cliente_data['Nome']);
-                            $cliente_folder .= '.' . $nome_clean;
+                        // Formato cartella: ID_COGNOME.NOME (stesso formato di crea_cliente.php)
+                        if (!empty($nome_clean)) {
+                            $cliente_folder = $cliente_id . '_' . $cognome_clean . '.' . $nome_clean;
+                        } else {
+                            $cliente_folder = $cliente_id . '_' . $cognome_clean;
                         }
                         
                         $cliente_path = $base_path . '/' . $cliente_folder;
                         
-                        // Aggiorna il cliente con il link_cartella generato
-                        $update_stmt = $pdo->prepare("UPDATE clienti SET link_cartella = ? WHERE id = ?");
-                        $update_stmt->execute([$cliente_path, $cliente_id]);
+                        // Crea la cartella se non esiste
+                        if (!is_dir($cliente_path)) {
+                            mkdir($cliente_path, 0755, true);
+                        }
+                        
+                        // Aggiorna il database con il link nel formato URL
+                        $link_cartella = 'drive.php?path=' . urlencode($cliente_folder);
+                        $update_stmt = $pdo->prepare("UPDATE clienti SET Link_cartella = ? WHERE id = ?");
+                        $update_stmt->execute([$link_cartella, $cliente_id]);
                     }
                 }                    // Nome cartella ENEA: ENEA_ANNO_DESCRIZIONE
                     $folder_name = 'ENEA_' . $anno_fiscale;
