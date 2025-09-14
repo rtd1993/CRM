@@ -146,6 +146,15 @@ if (isset($_SESSION['user_id'])) {
             min-width: 180px;
             z-index: 9999 !important;
             position: absolute !important;
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+        .crm-header .crm-menu .dropdown-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
         }
         .crm-header .crm-menu .dropdown-item {
             color: #fff !important;
@@ -282,5 +291,67 @@ if (isset($_SESSION['user_id'])) {
 
 <!-- Bootstrap JavaScript for dropdown functionality -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom Dropdown Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestione dropdown personalizzata per garantire compatibilità
+    const dropdownToggles = document.querySelectorAll('.crm-menu .dropdown-toggle');
+    
+    dropdownToggles.forEach(toggle => {
+        const dropdown = toggle.closest('.dropdown');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        
+        // Toggle dropdown on click
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Chiudi tutti gli altri dropdown
+            dropdownToggles.forEach(otherToggle => {
+                if (otherToggle !== toggle) {
+                    const otherDropdown = otherToggle.closest('.dropdown');
+                    const otherMenu = otherDropdown.querySelector('.dropdown-menu');
+                    otherMenu.classList.remove('show');
+                    otherToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            // Toggle questo dropdown
+            const isOpen = menu.classList.contains('show');
+            if (isOpen) {
+                menu.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            } else {
+                menu.classList.add('show');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        });
+        
+        // Mostra dropdown on hover (opzionale)
+        dropdown.addEventListener('mouseenter', function() {
+            menu.classList.add('show');
+            toggle.setAttribute('aria-expanded', 'true');
+        });
+        
+        dropdown.addEventListener('mouseleave', function() {
+            menu.classList.remove('show');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+    });
+    
+    // Chiudi dropdown quando si clicca fuori
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            dropdownToggles.forEach(toggle => {
+                const dropdown = toggle.closest('.dropdown');
+                const menu = dropdown.querySelector('.dropdown-menu');
+                menu.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+});
+</script>
 
 <main style="padding: 20px;">
