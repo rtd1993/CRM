@@ -1,12 +1,9 @@
 <?php
 // Widget Chat Completo come da README_CHAT_SYSTEM.md
 // Verifica autenticazione
-if (!isset($_SESSION['user_id'])) {
-    return;
-}
-
-$user_id = $_SESSION['user_id'];
-$user_name = $_SESSION['user_name'] ?? 'Utente';
+$user_authenticated = isset($_SESSION['user_id']);
+$user_id = $user_authenticated ? $_SESSION['user_id'] : 'null';
+$user_name = $user_authenticated ? ($_SESSION['user_name'] ?? 'Utente') : 'Guest';
 
 // Carica lista clienti per chat pratiche
 try {
@@ -18,6 +15,7 @@ try {
 }
 ?>
 
+<?php if ($user_authenticated): ?>
 <script>
 // Configurazione Chat System completo
 window.completeChatConfig = {
@@ -26,7 +24,8 @@ window.completeChatConfig = {
     apiBase: '/api/chat/',
     pollingInterval: 1000,
     maxMessageLength: 1000,
-    debug: true
+    debug: true,
+    authenticated: true
 };
 
 console.log('🔧 Chat Config caricato:', window.completeChatConfig);
@@ -38,6 +37,41 @@ console.log('🔍 Debug sessione - user_id:', <?= $user_id ?>, 'user_name:', '<?
 
 <!-- Includi il JavaScript del sistema chat completo -->
 <script src="/assets/js/chat-complete.js?v=<?= time() ?>"></script>
+
+<?php else: ?>
+<script>
+// Utente non autenticato
+window.completeChatConfig = {
+    userId: null,
+    userName: 'Guest',
+    authenticated: false
+};
+
+console.warn('⚠️ Utente non autenticato - Chat disabilitata');
+
+// Mostra messaggio di login richiesto
+document.addEventListener('DOMContentLoaded', function() {
+    const chatWidget = document.getElementById('chat-footer-widget');
+    if (chatWidget) {
+        chatWidget.innerHTML = `
+            <div style="position: fixed; bottom: 20px; right: 20px; 
+                        background: #dc3545; color: white; padding: 15px; 
+                        border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        font-family: Arial, sans-serif; z-index: 1000;">
+                <strong>Chat non disponibile</strong><br>
+                <small>Effettuare il login per accedere alla chat</small>
+                <button onclick="window.location.href='login.php'" 
+                        style="margin-left: 10px; padding: 5px 10px; 
+                               background: white; color: #dc3545; border: none; 
+                               border-radius: 5px; cursor: pointer;">
+                    Login
+                </button>
+            </div>
+        `;
+    }
+});
+</script>
+<?php endif; ?>
 
 <!-- Footer Chat Widget -->
 <div id="chat-footer-widget" class="chat-widget-container">

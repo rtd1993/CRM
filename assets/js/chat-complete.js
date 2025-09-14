@@ -45,11 +45,35 @@ class CompleteChatSystem {
             this.config = { ...window.completeChatConfig };
         }
         
-        if (!this.config.userId) {
-            console.error('❌ ERRORE CRITICO: userId non definito! Sessione non valida o non autenticato.');
+        // Controlla se l'utente è autenticato
+        if (window.completeChatConfig && window.completeChatConfig.authenticated === false) {
+            console.warn('⚠️ Chat non avviata: utente non autenticato');
+            return; // Non avviare la chat per utenti non autenticati
+        }
+        
+        if (!this.config.userId || this.config.userId === null) {
+            console.error('❌ ERRORE CRITICO: userId non definito! Sessione non valida.');
             console.log('🔍 Debug config:', this.config);
             console.log('🔍 Debug window.completeChatConfig:', window.completeChatConfig);
-            alert('Errore: Sessione non valida. Effettuare il logout e rifare il login.');
+            
+            // Mostra messaggio user-friendly
+            if (document.getElementById('chat-footer-widget')) {
+                document.getElementById('chat-footer-widget').innerHTML = `
+                    <div style="position: fixed; bottom: 20px; right: 20px; 
+                                background: #dc3545; color: white; padding: 15px; 
+                                border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                                font-family: Arial, sans-serif; z-index: 1000;">
+                        <strong>Errore Sessione</strong><br>
+                        <small>Rifare login per accedere alla chat</small>
+                        <button onclick="window.location.href='logout.php'" 
+                                style="margin-left: 10px; padding: 5px 10px; 
+                                       background: white; color: #dc3545; border: none; 
+                                       border-radius: 5px; cursor: pointer;">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            }
             return; // Non avviare la chat se non c'è un userId valido
         }
         
