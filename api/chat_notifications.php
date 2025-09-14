@@ -17,7 +17,7 @@ try {
                 // Chat globale (conversation_id = 1)
                 $stmt = $pdo->prepare("
                     SELECT COUNT(*) as count 
-                    FROM messages_new m 
+                    FROM messages m 
                     WHERE m.conversation_id = 1 
                     AND m.user_id != ? 
                     AND m.created_at > COALESCE(
@@ -38,7 +38,7 @@ try {
                     SELECT c.id, c.name, COUNT(m.id) as unread_count
                     FROM conversations c
                     JOIN conversation_participants cp ON c.id = cp.conversation_id
-                    LEFT JOIN messages_new m ON c.id = m.conversation_id 
+                    LEFT JOIN messages m ON c.id = m.conversation_id 
                         AND m.user_id != ? 
                         AND m.created_at > COALESCE(
                             (SELECT last_seen FROM user_conversation_status 
@@ -63,7 +63,7 @@ try {
                     SELECT c.id, COUNT(m.id) as unread_count
                     FROM conversations c
                     JOIN conversation_participants cp ON c.id = cp.conversation_id
-                    LEFT JOIN messages_new m ON c.id = m.conversation_id 
+                    LEFT JOIN messages m ON c.id = m.conversation_id 
                         AND m.user_id != ? 
                         AND m.created_at > COALESCE(
                             (SELECT last_seen FROM user_conversation_status 
@@ -92,7 +92,7 @@ try {
                 // Lista notifiche recenti
                 $stmt = $pdo->prepare("
                     SELECT m.id, m.message, m.created_at, u.nome as sender_name, c.name as chat_name, c.type as chat_type
-                    FROM messages_new m
+                    FROM messages m
                     JOIN utenti u ON m.user_id = u.id
                     JOIN conversations c ON m.conversation_id = c.id
                     JOIN conversation_participants cp ON c.id = cp.conversation_id
