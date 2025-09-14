@@ -76,15 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Aggiorna anche il task associato se esiste
             $task_update_sql = "UPDATE task SET 
-                                    descrizione = ?,
-                                    stato = ?
+                                    descrizione = ?
                                 WHERE descrizione LIKE ? AND descrizione LIKE ?";
             
-            $nuovo_stato_task = ($stato === 'completata' || $stato === 'chiusa') ? 'completato' : 'da iniziare';
             $task_stmt = $pdo->prepare($task_update_sql);
             $task_stmt->execute([
                 "Gestire richiesta: \"" . $denominazione . "\" (ID: " . $richiesta_id . ")",
-                $nuovo_stato_task,
                 '%Gestire richiesta:%',
                 '%ID: ' . $richiesta_id . '%'
             ]);

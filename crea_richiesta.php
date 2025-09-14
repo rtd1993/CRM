@@ -46,14 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Crea il task associato con scadenza a 30 giorni
             $data_scadenza = date('Y-m-d', strtotime($data_richiesta . ' + 30 days'));
             
-            $task_sql = "INSERT INTO task (utente_id, descrizione, data_scadenza, priorita, stato) 
-                         VALUES (?, ?, ?, 'media', 'da iniziare')";
+            $task_sql = "INSERT INTO task (descrizione, scadenza, assegnato_a) 
+                         VALUES (?, ?, ?)";
             
             $task_stmt = $pdo->prepare($task_sql);
             $task_stmt->execute([
-                $_SESSION['user_id'],
                 "Gestire richiesta: \"" . $denominazione . "\" (ID: " . $richiesta_id . ")",
-                $data_scadenza
+                $data_scadenza,
+                $_SESSION['user_id']
             ]);
             
             $pdo->commit();

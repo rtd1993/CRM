@@ -11,8 +11,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         $stmt->execute([$_GET['id']]);
         
         // Elimina anche il task associato se esiste
-        $task_stmt = $pdo->prepare("DELETE FROM task WHERE descrizione LIKE ? AND descrizione LIKE ?");
-        $task_stmt->execute(['%Gestire richiesta:%', '%' . $_GET['id'] . '%']);
+        $task_stmt = $pdo->prepare("DELETE FROM task WHERE descrizione LIKE ?");
+        $task_stmt->execute(['%Gestire richiesta:%ID: ' . $_GET['id'] . '%']);
         
         echo "<div class='alert alert-success'>Richiesta eliminata con successo!</div>";
     } catch (PDOException $e) {
