@@ -1008,14 +1008,17 @@ class CompleteChatSystem {
             
             // Renderizza ogni utente
             users.forEach(user => {
+                const userName = user.name || user.nome || `Utente ${user.id}`;
+                const userInitial = userName.charAt(0).toUpperCase();
+                
                 const userHTML = `
                     <div class="chat-item" data-type="privata" data-id="${user.id}">
                         <div class="chat-avatar user" style="position: relative;">
-                            ${user.name.charAt(0).toUpperCase()}
+                            ${userInitial}
                             <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
                         </div>
                         <div class="chat-info">
-                            <div class="chat-name">${this.escapeHtml(user.name)}</div>
+                            <div class="chat-name">${this.escapeHtml(userName)}</div>
                             <div class="chat-last-message">
                                 ${user.ruolo ? `${user.ruolo} • ` : ''}${user.username}
                             </div>
@@ -1024,7 +1027,7 @@ class CompleteChatSystem {
                             <span id="private-chat-badge-${user.id}" class="chat-unread-badge hidden">0</span>
                             <div class="chat-avatar-container" style="position: relative; width: 32px; height: 32px;">
                                 <div class="chat-avatar small" style="width: 32px; height: 32px; font-size: 12px;">
-                                    ${user.nome.charAt(0).toUpperCase()}
+                                    ${userInitial}
                                 </div>
                                 <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
                             </div>
@@ -1131,16 +1134,19 @@ class CompleteChatSystem {
             // Non mostrare se stesso
             if (user.id == this.config.userId) return;
             
+            const userName = user.name || user.nome || `Utente ${user.id}`;
+            const userInitial = userName.charAt(0).toUpperCase();
+            
             const userHTML = `
                 <button class="list-group-item list-group-item-action d-flex align-items-center" 
-                        data-user-id="${user.id}" data-user-name="${this.escapeHtml(user.name)}">
+                        data-user-id="${user.id}" data-user-name="${this.escapeHtml(userName)}">
                     <div class="chat-avatar user me-3" style="width: 40px; height: 40px; font-size: 14px; position: relative;">
-                        ${user.name.charAt(0).toUpperCase()}
+                        ${userInitial}
                         <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
                     </div>
                     <div class="flex-grow-1">
                         <div class="fw-semibold d-flex align-items-center justify-content-between">
-                            ${this.escapeHtml(user.name)}
+                            ${this.escapeHtml(userName)}
                             ${user.is_online ? '<span class="badge bg-success-subtle text-success ms-2">●</span>' : ''}
                         </div>
                         <small class="text-muted ${user.is_online ? 'text-success' : ''}">${user.is_online ? 'Online' : 'Offline'}</small>
