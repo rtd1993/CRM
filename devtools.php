@@ -176,9 +176,26 @@ function getNetworkStats() {
     try {
         $network = [];
         
-        // IP Address
-        $network['server_ip'] = $_SERVER['SERVER_ADDR'] ?? 'N/A';
-        $network['client_ip'] = $_SERVER['REMOTE_ADDR'] ?? 'N/A';
+        // IP Address del server - prova diversi metodi
+        $server_ip = $_SERVER['SERVER_ADDR'] ?? null;
+        if (!$server_ip || $server_ip === '::1' || $server_ip === '127.0.0.1') {
+            // Prova a ottenere l'IP esterno
+            $server_ip = gethostbyname(gethostname());
+            if ($server_ip === gethostname()) {
+                // Fallback - prova comando Windows
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $output = shell_exec('ipconfig | findstr /i "IPv4"');
+                    if ($output && preg_match('/(\d+\.\d+\.\d+\.\d+)/', $output, $matches)) {
+                        $server_ip = $matches[1];
+                    } else {
+                        $server_ip = 'N/A';
+                    }
+                } else {
+                    $server_ip = 'N/A';
+                }
+            }
+        }
+        $network['server_ip'] = $server_ip;
         
         // Hostname
         $network['hostname'] = gethostname() ?: 'N/A';
@@ -206,7 +223,7 @@ function getNetworkStats() {
         $network['ports'] = [
             'mysql' => checkPort('localhost', 3306),
             'apache' => checkPort('localhost', 80),
-            'https' => checkPort('localhost', 443)
+            'http' => checkPort('localhost', 8080) // Porta alternativa HTTP
         ];
         
         return ['success' => true, 'data' => $network];
@@ -935,15 +952,11 @@ Esempi:
                 <strong>${network.server_ip || 'N/A'}</strong>
             </div>
             <div class="network-status">
-                <span><i class="fas fa-user text-success"></i> IP Client</span>
-                <strong>${network.client_ip || 'N/A'}</strong>
-            </div>
-            <div class="network-status">
                 <span><i class="fas fa-desktop text-info"></i> Hostname</span>
                 <strong>${network.hostname || 'N/A'}</strong>
             </div>
             <div class="network-status">
-                <span><i class="fas fa-globe text-warning"></i> Ping Google</span>
+                <span><i class="fas fa-globe text-warning"></i> Ping Google DNS</span>
                 <strong class="${network.ping_google === 'FAIL' ? 'text-danger' : 'text-success'}">${network.ping_google || 'N/A'}</strong>
             </div>
             <hr>
@@ -957,8 +970,8 @@ Esempi:
                 <span class="${network.ports && network.ports.apache === 'OPEN' ? 'text-success' : 'text-danger'}">${network.ports ? network.ports.apache : 'N/A'}</span>
             </div>
             <div class="network-status">
-                <span><i class="fas fa-lock"></i> HTTPS (443)</span>
-                <span class="${network.ports && network.ports.https === 'OPEN' ? 'text-success' : 'text-danger'}">${network.ports ? network.ports.https : 'N/A'}</span>
+                <span><i class="fas fa-globe"></i> HTTP Alternativo (8080)</span>
+                <span class="${network.ports && network.ports.http === 'OPEN' ? 'text-success' : 'text-danger'}">${network.ports ? network.ports.http : 'N/A'}</span>
             </div>
         `;
         document.getElementById('network-content').innerHTML = html;
