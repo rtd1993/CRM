@@ -981,8 +981,8 @@ class CompleteChatSystem {
             // Svuota la lista utenti
             this.elements.privatesList.innerHTML = '';
             
-            // Carica utenti dal database (temporaneamente usando test API)
-            const response = await fetch('api/test_multi_online.php');
+            // Carica utenti dal database
+            const response = await fetch('api/utenti_for_chat.php');
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
