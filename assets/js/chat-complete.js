@@ -1028,12 +1028,6 @@ class CompleteChatSystem {
                         </div>
                         <div class="chat-meta">
                             <span id="private-chat-badge-${user.id}" class="chat-unread-badge hidden">0</span>
-                            <div class="chat-avatar-container" style="position: relative; width: 32px; height: 32px;">
-                                <div class="chat-avatar small" style="width: 32px; height: 32px; font-size: 12px;">
-                                    ${userInitial}
-                                </div>
-                                <div class="online-indicator ${user.is_online ? '' : 'offline'}"></div>
-                            </div>
                         </div>
                     </div>
                 `;
