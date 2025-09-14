@@ -263,7 +263,12 @@ $contatti_email = [
     'Agenzia Entrate' => ['email' => 'direzione.piemonte1@agenziaentrate.it', 'descrizione' => 'Direzione Provinciale Piemonte 1'],
     'Camera Commercio Novara' => ['email' => 'info@no.camcom.it', 'descrizione' => 'Camera di Commercio Novara'],
     'Ordine Commercialisti' => ['email' => 'segreteria@odcecnovara.it', 'descrizione' => 'Ordine Commercialisti Novara'],
-    'Provincia Novara' => ['email' => 'urp@provincia.novara.it', 'descrizione' => 'URP Provincia di Novara']
+    'Provincia Novara' => ['email' => 'urp@provincia.novara.it', 'descrizione' => 'URP Provincia di Novara'],
+    'Notaio Vittorio Galliano' => ['email' => 'vgalliano@notaiogalliano.it', 'descrizione' => 'Notaio Vittorio Galliano'],
+    'Notaio Sara Clemente' => ['email' => 'sclemente@notariato.it', 'descrizione' => 'Notaio Sara Clemente - Referente Jessica'],
+    'Manuela CAF Novara' => ['email' => 'novara@enapa.it', 'descrizione' => 'CAF ENAPA - Manuela'],
+    'Carla CAF Confagricoltura' => ['email' => 'mcbagnati.novara@confagricoltura.it', 'descrizione' => 'CAF Confagricoltura - Carla'],
+    'INAS Borgomanero' => ['email' => 'borgomanero@inas.it', 'descrizione' => 'Ufficio INAS Borgomanero']
 ];
 
 $contatti_telefono = [
@@ -273,7 +278,9 @@ $contatti_telefono = [
     'Agenzia Entrate' => ['telefono' => '848.800.444', 'descrizione' => 'Numero Verde Agenzia Entrate'],
     'Camera Commercio Novara' => ['telefono' => '0321.338.111', 'descrizione' => 'Camera di Commercio Novara'],
     'Ordine Commercialisti Novara' => ['telefono' => '0321.35.385', 'descrizione' => 'Ordine Commercialisti Novara'],
-    'Provincia Novara' => ['telefono' => '0321.378.111', 'descrizione' => 'Centralino Provincia Novara']
+    'Provincia Novara' => ['telefono' => '0321.378.111', 'descrizione' => 'Centralino Provincia Novara'],
+    'Notaio Vittorio Galliano' => ['telefono' => '0321.612211', 'descrizione' => 'Notaio Vittorio Galliano - Fax: 0321.612157'],
+    'Notaio Sara Clemente' => ['telefono' => '0114119675', 'descrizione' => 'Notaio Sara Clemente - Referente Jessica']
 ];
 ?>
 
