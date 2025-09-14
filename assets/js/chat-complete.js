@@ -46,9 +46,11 @@ class CompleteChatSystem {
         }
         
         if (!this.config.userId) {
-            // Fallback estremo - usa il valore che vediamo nei log
-            this.config.userId = 2;
-            this.config.userName = 'Roberto';
+            console.error('❌ ERRORE CRITICO: userId non definito! Sessione non valida o non autenticato.');
+            console.log('🔍 Debug config:', this.config);
+            console.log('🔍 Debug window.completeChatConfig:', window.completeChatConfig);
+            alert('Errore: Sessione non valida. Effettuare il logout e rifare il login.');
+            return; // Non avviare la chat se non c'è un userId valido
         }
         
         this.init();

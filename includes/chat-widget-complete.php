@@ -30,6 +30,7 @@ window.completeChatConfig = {
 };
 
 console.log('🔧 Chat Config caricato:', window.completeChatConfig);
+console.log('🔍 Debug sessione - user_id:', <?= $user_id ?>, 'user_name:', '<?= addslashes($user_name) ?>');
 </script>
 
 <!-- Socket.IO Library -->

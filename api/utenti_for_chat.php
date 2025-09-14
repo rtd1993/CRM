@@ -79,10 +79,13 @@ try {
         'success' => true,
         'users' => $result,
         'current_user_id' => $current_user_id,
+        'session_user_id' => $_SESSION['user_id'] ?? 'not_set',
+        'get_user_id' => $_GET['user_id'] ?? 'not_set',
         'socket_online_users' => $socketOnlineUsers,
         'total' => count($result),
         'online_count' => count(array_filter($result, function($u) { return $u['is_online']; })),
-        'source' => 'database'
+        'source' => 'database',
+        'debug_query' => "SELECT id,nome,email,ruolo,is_online FROM utenti WHERE id != $current_user_id ORDER BY nome ASC"
     ]);
 
 } catch (Exception $e) {
