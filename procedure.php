@@ -176,6 +176,7 @@ if (isset($_POST['modifica_procedura'])) {
                         $error_message = 'Errore durante l\'aggiornamento della procedura.';
                         error_log("Errore aggiornamento procedura $id");
                     }
+                    }
                 }
             }
         } catch (Exception $e) {
