@@ -944,6 +944,8 @@ function getEditModalHTML(proc) {
         </div>
     </form>
 </div>
+`;
+}
 
 function submitEditForm() {
     const form = document.getElementById('editProcedureForm');
