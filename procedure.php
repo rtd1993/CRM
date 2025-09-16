@@ -114,8 +114,25 @@ if (isset($_POST['modifica_procedura'])) {
                 } else {
                     $allegato_nome = null;
                     $upload_error = false;
+                    $allegato_eliminato = false;
                     
-                    // Gestione upload allegato se presente
+                    // Gestione eliminazione allegato esistente
+                    if (isset($_POST['elimina_allegato']) && $_POST['elimina_allegato'] == '1') {
+                        // Elimina il vecchio allegato se esistente
+                        $old_allegato_stmt = $pdo->prepare("SELECT allegato FROM procedure_crm WHERE id = ?");
+                        $old_allegato_stmt->execute([$id]);
+                        $old_allegato = $old_allegato_stmt->fetchColumn();
+                        
+                        if ($old_allegato) {
+                            $upload_dir = __DIR__ . '/local_drive/ASContabilmente/procedure/';
+                            if (file_exists($upload_dir . $old_allegato)) {
+                                unlink($upload_dir . $old_allegato);
+                            }
+                            $allegato_eliminato = true;
+                        }
+                    }
+                    
+                    // Gestione upload allegato se presente (solo se è stata richiesta l'eliminazione del vecchio)
                     if (isset($_FILES['allegato']) && $_FILES['allegato']['error'] === UPLOAD_ERR_OK) {
                         $upload_dir = __DIR__ . '/local_drive/ASContabilmente/procedure/';
                         $file_tmp = $_FILES['allegato']['tmp_name'];
@@ -142,12 +159,15 @@ if (isset($_POST['modifica_procedura'])) {
                                 $error_message = 'Errore durante l\'upload del file.';
                                 $upload_error = true;
                             } else {
-                                // Elimina il vecchio allegato se esistente
-                                $old_allegato_stmt = $pdo->prepare("SELECT allegato FROM procedure_crm WHERE id = ?");
-                                $old_allegato_stmt->execute([$id]);
-                                $old_allegato = $old_allegato_stmt->fetchColumn();
-                                if ($old_allegato && file_exists($upload_dir . $old_allegato)) {
-                                    unlink($upload_dir . $old_allegato);
+                                // Elimina il vecchio allegato solo se ne stiamo caricando uno nuovo
+                                // (il vecchio allegato viene già gestito sopra quando è richiesta l'eliminazione)
+                                if (!$allegato_eliminato) {
+                                    $old_allegato_stmt = $pdo->prepare("SELECT allegato FROM procedure_crm WHERE id = ?");
+                                    $old_allegato_stmt->execute([$id]);
+                                    $old_allegato = $old_allegato_stmt->fetchColumn();
+                                    if ($old_allegato && file_exists($upload_dir . $old_allegato)) {
+                                        unlink($upload_dir . $old_allegato);
+                                    }
                                 }
                             }
                         }
@@ -157,9 +177,15 @@ if (isset($_POST['modifica_procedura'])) {
                     if (!$upload_error) {
                         // Aggiornamento nel database
                         if ($allegato_nome) {
+                            // Nuovo allegato caricato
                             $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ?, allegato = ? WHERE id = ?");
                             $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $allegato_nome, $id]);
+                        } elseif ($allegato_eliminato) {
+                            // Allegato eliminato senza nuovo upload
+                            $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ?, allegato = NULL WHERE id = ?");
+                            $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $id]);
                         } else {
+                            // Nessuna modifica agli allegati
                             $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ? WHERE id = ?");
                             $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $id]);
                         }
@@ -167,14 +193,16 @@ if (isset($_POST['modifica_procedura'])) {
                     
                     error_log("Update result: $result, Rows affected: $rowsAffected");
                     
-                    if ($result && ($rowsAffected > 0 || $allegato_nome)) {
+                    if ($result && ($rowsAffected > 0 || $allegato_nome || $allegato_eliminato)) {
                         $message_parts = ["Procedura aggiornata con successo!"];
                         if ($allegato_nome) {
                             $message_parts[] = "Nuovo allegato caricato.";
+                        } elseif ($allegato_eliminato) {
+                            $message_parts[] = "Allegato eliminato.";
                         }
                         $success_message = implode(" ", $message_parts);
-                        error_log("Procedura $id aggiornata con successo" . ($allegato_nome ? " con nuovo allegato" : ""));
-                    } elseif ($result && $rowsAffected == 0 && !$allegato_nome) {
+                        error_log("Procedura $id aggiornata con successo" . ($allegato_nome ? " con nuovo allegato" : ($allegato_eliminato ? " con allegato eliminato" : "")));
+                    } elseif ($result && $rowsAffected == 0 && !$allegato_nome && !$allegato_eliminato) {
                         $success_message = "Nessuna modifica necessaria (dati identici).";
                     } else {
                         $error_message = 'Errore durante l\'aggiornamento della procedura.';
@@ -908,24 +936,44 @@ function getEditModalHTML(proc) {
             </div>
             
             <div class="form-group">
-                <label for="edit_allegato" class="form-label">Nuovo Allegato</label>
+                <label for="edit_allegato" class="form-label">Gestione Allegato</label>
                 ${proc.allegato ? `
-                <div class="mb-2">
-                    <small class="text-muted">Allegato corrente: 
-                        <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="text-decoration-none">
-                            <i class="fas fa-file me-1"></i>${proc.allegato}
-                        </a>
-                    </small>
+                <div class="mb-3 p-3 bg-light border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>Allegato corrente:</strong>
+                            <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="text-decoration-none ms-2">
+                                <i class="fas fa-file me-1"></i>${proc.allegato}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="elimina_allegato" name="elimina_allegato" onchange="toggleFileUpload()">
+                        <label class="form-check-label text-danger" for="elimina_allegato">
+                            <i class="fas fa-trash me-1"></i>Elimina allegato esistente
+                        </label>
+                    </div>
                 </div>
-                ` : ''}
+                <div id="uploadSection" style="display: none;">
+                    <input type="file" 
+                           class="form-control" 
+                           id="edit_allegato" 
+                           name="allegato" 
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png">
+                    <div class="form-help">
+                        Seleziona un nuovo file da caricare. Formati supportati: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG
+                    </div>
+                </div>
+                ` : `
                 <input type="file" 
                        class="form-control" 
                        id="edit_allegato" 
                        name="allegato" 
                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png">
                 <div class="form-help">
-                    Seleziona un nuovo file per sostituire l'allegato esistente (opzionale). Formati supportati: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG
+                    Seleziona un file da allegare alla procedura (opzionale). Formati supportati: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG
                 </div>
+                `}
             </div>
         </div>
         
@@ -960,6 +1008,16 @@ function submitEditForm() {
     
     if (!id || !denominazione || !valida_dal || !procedura) {
         alert('Tutti i campi sono obbligatori.');
+        return;
+    }
+    
+    // Controllo logica allegati: se è presente un allegato e non è stato selezionato per l'eliminazione,
+    // non dovrebbe essere possibile caricare un nuovo file
+    const eliminaAllegato = document.getElementById('elimina_allegato');
+    const fileInput = document.getElementById('edit_allegato');
+    
+    if (eliminaAllegato && !eliminaAllegato.checked && fileInput && fileInput.files.length > 0) {
+        alert('Per caricare un nuovo allegato, è necessario prima eliminare quello esistente.');
         return;
     }
     
@@ -1080,6 +1138,24 @@ function deleteProcedure(id, nome) {
 function closeModal() {
     document.getElementById('modalContainer').innerHTML = '';
     document.body.style.overflow = '';
+}
+
+function toggleFileUpload() {
+    const eliminaCheckbox = document.getElementById('elimina_allegato');
+    const uploadSection = document.getElementById('uploadSection');
+    
+    if (eliminaCheckbox && uploadSection) {
+        if (eliminaCheckbox.checked) {
+            uploadSection.style.display = 'block';
+        } else {
+            uploadSection.style.display = 'none';
+            // Reset del campo file quando nascosto
+            const fileInput = document.getElementById('edit_allegato');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    }
 }
 
 // Gli eventi di submit sono ora gestiti direttamente nei modal tramite le funzioni submitCreateForm() e submitEditForm()
