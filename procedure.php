@@ -822,8 +822,6 @@ function submitCreateForm() {
     document.body.appendChild(hiddenForm);
     hiddenForm.submit();
 }
-</script>`;
-}
 
 function editProcedure(id) {
     // Recupera i dati della procedura dal DOM
@@ -989,8 +987,6 @@ function submitEditForm() {
     
     document.body.appendChild(hiddenForm);
     hiddenForm.submit();
-}
-</script>`;
 }
 
 function viewProcedure(id) {
