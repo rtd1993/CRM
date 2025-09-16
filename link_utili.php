@@ -147,19 +147,29 @@ $links_per_categoria = [
     'Enti Previdenziali' => [
         ['nome'=>'INPS - Istituto Nazionale Previdenza Sociale','link'=>'https://www.inps.it/'],
         ['nome'=>'INAIL - Istituto Nazionale Assicurazione Infortuni','link'=>'https://www.inail.it/'],
+        ['nome'=>'Conflavoro - Gestionale','link'=>'https://gestionale.conflavoro.it'],
     ],
     'Fisco e Agenzie' => [
         ['nome'=>'Agenzia delle Entrate','link'=>'https://www.agenziaentrate.gov.it/'],
-        ['nome'=>'FatturaPA - Fatturazione Elettronica','link'=>'https://www.fatturapa.gov.it/'],
+        ['nome'=>'Equitalia - Riscossioni','link'=>'https://www.equitalia.it/'],
+        ['nome'=>'PEC.it - Posta Elettronica Certificata','link'=>'https://www.pec.it/'],
+        ['nome'=>'Dashboard CGN','link'=>'http://dashboard.cgn.it'],
     ],
     'Imprese e Commercio' => [
-        ['nome'=>'Camera di Commercio','link'=>'https://www.cameradicommercio.it/'],
-        ['nome'=>'Comunicazione Unica d\'Impresa','link'=>'https://www.comunicazioneunicadimpresa.gov.it/'],
-        ['nome'=>'InfoCamere - Registro Imprese','link'=>'https://www.infocamere.it/'],
+        ['nome'=>'MyPage InfoCamere - Telemaco Pay','link'=>'https://mypage.infocamere.it/group/telemacopay'],
+        ['nome'=>'InfoCamere - Login EAC','link'=>'http://login.infocamere.it/eacologin/login.action'],
+        ['nome'=>'Impresa in un Giorno','link'=>'https://www.impresainungiorno.gov.it'],
     ],
-    'Professioni' => [
+    'Ordine dei Commercialisti' => [
         ['nome'=>'Ordine dei Commercialisti','link'=>'https://www.odcec.it/'],
-        ['nome'=>'Consiglio Nazionale Dottori Commercialisti','link'=>'https://www.commercialisti.it/'],
+        ['nome'=>'Formazione Eutekne','link'=>'https://formazione.eutekne.it'],
+        ['nome'=>'OpenDotCom','link'=>'https://opendotcom.it'],
+        ['nome'=>'GB Software Cloud','link'=>'https://gbsoftware.cloud/login-gb-in-web/login'],
+    ],
+    'Pratiche Energetiche' => [
+        ['nome'=>'GSE - Gestore Servizi Energetici','link'=>'https://www.gse.it'],
+        ['nome'=>'ENEA - Detrazioni Fiscali Bonus Casa','link'=>'https://detrazionifiscali.enea.it/bonuscasa.asp'],
+        ['nome'=>'ENEA - Efficienza Energetica Ecobonus','link'=>'https://www.efficienzaenergetica.enea.it/detrazioni-fiscali/ecobonus.html'],
     ],
     'Territorio' => [
         ['nome'=>'Provincia di Novara','link'=>'https://www.provincia.novara.it/']
