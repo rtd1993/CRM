@@ -15,22 +15,7 @@ if (isset($_POST['crea_procedura'])) {
     } elseif (empty($valida_dal)) {
         $error_message = 'La data di validità è obbligatoria.';
     } elseif (empty($procedura)) {
-        $error_message = 'Il testo della procedura è function getEditModalHTML(proc) {
-    console.log('Creazione modal di modifica per procedura:', proc);
-    
-    return `
-<div class="modal-backdrop" onclick="closeModal()"></div>
-<div class="modal-content">
-    <div class="modal-header">
-        <h3><i class="fas fa-edit me-2"></i>Modifica Procedura</h3>
-        <button class="btn-close" onclick="closeModal()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    
-    <form method="post" id="editProcedureForm">
-        <input type="hidden" name="id" value="${proc.id}" id="edit_id">
-        <div class="modal-body">`;;
+        $error_message = 'Il testo della procedura è obbligatorio.';
     } else {
         try {
             // Verifica se esiste già una procedura con la stessa denominazione
