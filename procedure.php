@@ -822,7 +822,9 @@ function submitCreateForm() {
     document.body.appendChild(hiddenForm);
     hiddenForm.submit();
 }
+</script>
 
+<script>
 function editProcedure(id) {
     // Recupera i dati della procedura dal DOM
     const procedureCards = document.querySelectorAll('.procedure-card');
@@ -942,6 +944,8 @@ function getEditModalHTML(proc) {
         </div>
     </form>
 </div>
+</script>
+
 <script>
 function submitEditForm() {
     const form = document.getElementById('editProcedureForm');
@@ -988,7 +992,9 @@ function submitEditForm() {
     document.body.appendChild(hiddenForm);
     hiddenForm.submit();
 }
+</script>
 
+<script>
 function viewProcedure(id) {
     // Recupera i dati della procedura per visualizzazione
     fetch('get_procedure_data.php?id=' + id, {
