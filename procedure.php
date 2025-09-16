@@ -751,7 +751,7 @@ function editProcedure(id) {
     
     // Trova la procedura nel DOM (metodo semplificato)
     // In alternativa potresti fare una fetch per recuperare i dati
-    fetch('/get_procedure_data.php?id=' + id, {
+    fetch('get_procedure_data.php?id=' + id, {
         method: 'GET',
         credentials: 'same-origin'
     })
@@ -893,13 +893,15 @@ function submitEditForm() {
 
 function viewProcedure(id) {
     // Recupera i dati della procedura per visualizzazione
-    fetch('/get_procedure_data.php?id=' + id, {
+    fetch('get_procedure_data.php?id=' + id, {
         method: 'GET',
         credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Data ricevuta:', data);
         if (data.success) {
+            console.log('Procedura ricevuta:', data.procedure);
             const modal = document.getElementById('modalContainer');
             modal.innerHTML = getViewModalHTML(data.procedure);
             document.body.style.overflow = 'hidden';

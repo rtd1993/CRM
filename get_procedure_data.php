@@ -18,6 +18,8 @@ try {
         $procedure_data = $stmt->fetch();
         
         if ($procedure_data) {
+            // Debug log
+            error_log('Procedure data retrieved: ' . print_r($procedure_data, true));
             $response['success'] = true;
             $response['procedure'] = $procedure_data;
         } else {
