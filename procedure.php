@@ -226,19 +226,36 @@ if (isset($_POST['elimina_procedura'])) {
         $error_message = 'ID procedura non valido.';
     } else {
         try {
-            // Prima verifica se la procedura esiste e ottieni il nome
-            $exists_stmt = $pdo->prepare("SELECT denominazione FROM procedure_crm WHERE id = ?");
+            // Prima verifica se la procedura esiste e ottieni il nome e l'allegato
+            $exists_stmt = $pdo->prepare("SELECT denominazione, allegato FROM procedure_crm WHERE id = ?");
             $exists_stmt->execute([$id]);
-            $procedura_nome = $exists_stmt->fetchColumn();
+            $procedura_data = $exists_stmt->fetch();
             
-            if (!$procedura_nome) {
+            if (!$procedura_data) {
                 $error_message = 'La procedura da eliminare non esiste.';
             } else {
+                $procedura_nome = $procedura_data['denominazione'];
+                $allegato_nome = $procedura_data['allegato'];
+                
                 // Eliminazione dal database
                 $stmt = $pdo->prepare("DELETE FROM procedure_crm WHERE id = ?");
                 
                 if ($stmt->execute([$id])) {
-                    $success_message = "Procedura '$procedura_nome' eliminata con successo!";
+                    // Se la procedura aveva un allegato, eliminalo fisicamente
+                    if ($allegato_nome) {
+                        $upload_dir = __DIR__ . '/local_drive/ASContabilmente/procedure/';
+                        $allegato_path = $upload_dir . $allegato_nome;
+                        
+                        if (file_exists($allegato_path)) {
+                            if (unlink($allegato_path)) {
+                                error_log("Allegato eliminato: $allegato_path");
+                            } else {
+                                error_log("Errore nell'eliminazione dell'allegato: $allegato_path");
+                            }
+                        }
+                    }
+                    
+                    $success_message = "Procedura '$procedura_nome' eliminata con successo!" . ($allegato_nome ? " Allegato rimosso." : "");
                 } else {
                     $error_message = 'Errore durante l\'eliminazione della procedura.';
                 }
