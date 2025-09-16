@@ -1050,16 +1050,20 @@ function getViewModalHTML(proc) {
             <div class="view-content procedure-text-view">${proc.procedura.replace(/\n/g, '<br>')}</div>
         </div>
         
-        ${proc.allegato ? `
         <div class="view-field">
             <label class="view-label">Allegato</label>
             <div class="view-content">
-                <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-file-download me-2"></i>${proc.allegato}
-                </a>
+                ${proc.allegato ? `
+                    <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-download me-2"></i>${proc.allegato}
+                    </a>
+                ` : `
+                    <span class="text-muted">
+                        <i class="fas fa-file-times me-2"></i>Nessun allegato presente
+                    </span>
+                `}
             </div>
         </div>
-        ` : ''}
     </div>
     
     <div class="modal-footer">
