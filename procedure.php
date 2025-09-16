@@ -853,8 +853,7 @@ function editProcedure(id) {
 }
 
 function getEditModalHTML(proc) {
-
-    
+    return `
 <div class="modal-backdrop" onclick="closeModal()"></div>
 <div class="modal-content">
     <div class="modal-header">
