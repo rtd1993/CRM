@@ -164,7 +164,7 @@ $links_per_categoria = [
         ['nome'=>'Ordine dei Commercialisti','link'=>'https://www.odcec.it/'],
         ['nome'=>'Formazione Eutekne','link'=>'https://formazione.eutekne.it'],
         ['nome'=>'OpenDotCom','link'=>'https://opendotcom.it'],
-        ['nome'=>'GB Software Cloud','link'=>'https://gbsoftware.cloud/login-gb-in-web/login'],
+        ['nome'=>'GB Software Cloud','link'=>'https://gbsoftware.cloud/login-gb-in-web/login?url=aHR0cHM6Ly9nYnNvZnR3YXJlLmNsb3VkL3VzZXI%2FdmVkaVJmNsbVkL2dic3VwcG9ydC8ydGBvL3dlYlYXBwL3dIYmluIUYX%2FdmVkaW9wZXJhdGlvbnMvLndGMGJnNUxzT0xJndIYnNpZD0xNzE3VwcG9ydG8yYXBBwL3dIYmxuIXXI%'],
     ],
     'Pratiche Energetiche' => [
         ['nome'=>'GSE - Gestore Servizi Energetici','link'=>'https://www.gse.it'],
