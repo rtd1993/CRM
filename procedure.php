@@ -862,7 +862,7 @@ function getEditModalHTML(proc) {
         </button>
     </div>
     
-    <form method="post" id="editProcedureForm">
+    <form method="post" id="editProcedureForm" enctype="multipart/form-data">
         <input type="hidden" name="id" value="${proc.id}">
         <div class="modal-body">
             <div class="procedure-info">
@@ -908,6 +908,27 @@ function getEditModalHTML(proc) {
                           required>${proc.procedura}</textarea>
                 <div class="form-help">
                     Descrizione dettagliata della procedura con tutti i passaggi necessari
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_allegato" class="form-label">Nuovo Allegato</label>
+                ${proc.allegato ? `
+                <div class="mb-2">
+                    <small class="text-muted">Allegato corrente: 
+                        <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="text-decoration-none">
+                            <i class="fas fa-file me-1"></i>${proc.allegato}
+                        </a>
+                    </small>
+                </div>
+                ` : ''}
+                <input type="file" 
+                       class="form-control" 
+                       id="edit_allegato" 
+                       name="allegato" 
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png">
+                <div class="form-help">
+                    Seleziona un nuovo file per sostituire l'allegato esistente (opzionale). Formati supportati: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG
                 </div>
             </div>
         </div>
