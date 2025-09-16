@@ -25,13 +25,49 @@ if (isset($_POST['crea_procedura'])) {
             if ($check_stmt->fetchColumn() > 0) {
                 $error_message = 'Esiste già una procedura con questa denominazione.';
             } else {
-                // Inserimento nel database
-                $stmt = $pdo->prepare("INSERT INTO procedure_crm (denominazione, valida_dal, procedura) VALUES (?, ?, ?)");
+                $allegato_nome = null;
                 
-                if ($stmt->execute([$denominazione, $valida_dal, $procedura])) {
-                    $success_message = "Procedura creata con successo!";
-                } else {
-                    $error_message = 'Errore durante il salvataggio della procedura.';
+                // Gestione upload allegato
+                if (isset($_FILES['allegato']) && $_FILES['allegato']['error'] === UPLOAD_ERR_OK) {
+                    $upload_dir = __DIR__ . '/local_drive/ASContabilmente/procedure/';
+                    $file_tmp = $_FILES['allegato']['tmp_name'];
+                    $file_name = $_FILES['allegato']['name'];
+                    $file_size = $_FILES['allegato']['size'];
+                    $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                    
+                    // Validazione file
+                    $allowed_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'];
+                    $max_size = 10 * 1024 * 1024; // 10MB
+                    
+                    if (!in_array($file_ext, $allowed_extensions)) {
+                        $error_message = 'Formato file non supportato. Formati consentiti: ' . implode(', ', $allowed_extensions);
+                    } elseif ($file_size > $max_size) {
+                        $error_message = 'Il file è troppo grande. Dimensione massima: 10MB';
+                    } else {
+                        // Genera nome file unico
+                        $allegato_nome = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file_name);
+                        $upload_path = $upload_dir . $allegato_nome;
+                        
+                        if (!move_uploaded_file($file_tmp, $upload_path)) {
+                            $error_message = 'Errore durante l\'upload del file.';
+                        }
+                    }
+                }
+                
+                // Se non ci sono errori nell'upload, procedi con l'inserimento
+                if (!isset($error_message)) {
+                    // Inserimento nel database
+                    $stmt = $pdo->prepare("INSERT INTO procedure_crm (denominazione, valida_dal, procedura, allegato) VALUES (?, ?, ?, ?)");
+                    
+                    if ($stmt->execute([$denominazione, $valida_dal, $procedura, $allegato_nome])) {
+                        $success_message = "Procedura creata con successo!" . ($allegato_nome ? " Allegato caricato." : "");
+                    } else {
+                        $error_message = 'Errore durante il salvataggio della procedura.';
+                        // Se c'è stato un errore nel DB e abbiamo caricato un file, eliminalo
+                        if ($allegato_nome && file_exists($upload_dir . $allegato_nome)) {
+                            unlink($upload_dir . $allegato_nome);
+                        }
+                    }
                 }
             }
         } catch (Exception $e) {
@@ -635,7 +671,7 @@ function getCreateModalHTML() {
         </button>
     </div>
     
-    <form method="post" id="createProcedureForm" action="">
+    <form method="post" id="createProcedureForm" action="" enctype="multipart/form-data">
         <div class="modal-body">
             <div class="form-group">
                 <label for="create_denominazione" class="form-label required">Denominazione</label>
@@ -673,6 +709,18 @@ function getCreateModalHTML() {
                           required></textarea>
                 <div class="form-help">
                     Descrizione dettagliata della procedura con tutti i passaggi necessari
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="create_allegato" class="form-label">Allegato</label>
+                <input type="file" 
+                       class="form-control" 
+                       id="create_allegato" 
+                       name="allegato" 
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png">
+                <div class="form-help">
+                    File allegato alla procedura (opzionale). Formati supportati: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG
                 </div>
             </div>
         </div>
@@ -932,6 +980,17 @@ function getViewModalHTML(proc) {
             <label class="view-label">Testo Procedura</label>
             <div class="view-content procedure-text-view">${proc.procedura.replace(/\n/g, '<br>')}</div>
         </div>
+        
+        ${proc.allegato ? `
+        <div class="view-field">
+            <label class="view-label">Allegato</label>
+            <div class="view-content">
+                <a href="local_drive/ASContabilmente/procedure/${proc.allegato}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-download me-2"></i>${proc.allegato}
+                </a>
+            </div>
+        </div>
+        ` : ''}
     </div>
     
     <div class="modal-footer">
