@@ -167,10 +167,14 @@ if (isset($_POST['modifica_procedura'])) {
                     
                     error_log("Update result: $result, Rows affected: $rowsAffected");
                     
-                    if ($result && $rowsAffected > 0) {
-                        $success_message = "Procedura aggiornata con successo!";
-                        error_log("Procedura $id aggiornata con successo");
-                    } elseif ($result && $rowsAffected == 0) {
+                    if ($result && ($rowsAffected > 0 || $allegato_nome)) {
+                        $message_parts = ["Procedura aggiornata con successo!"];
+                        if ($allegato_nome) {
+                            $message_parts[] = "Nuovo allegato caricato.";
+                        }
+                        $success_message = implode(" ", $message_parts);
+                        error_log("Procedura $id aggiornata con successo" . ($allegato_nome ? " con nuovo allegato" : ""));
+                    } elseif ($result && $rowsAffected == 0 && !$allegato_nome) {
                         $success_message = "Nessuna modifica necessaria (dati identici).";
                     } else {
                         $error_message = 'Errore durante l\'aggiornamento della procedura.';
@@ -800,29 +804,20 @@ function submitCreateForm() {
         return;
     }
     
-    // Aggiungi il flag di creazione
-    formData.append('crea_procedura', '1');
-    
     // Disabilita il pulsante
     const btn = event.target;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
     btn.disabled = true;
     
-    // Crea form nascosto per il submit
-    const hiddenForm = document.createElement('form');
-    hiddenForm.method = 'post';
-    hiddenForm.style.display = 'none';
+    // Aggiungi il flag di creazione e invia il form
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'crea_procedura';
+    hiddenInput.value = '1';
+    form.appendChild(hiddenInput);
     
-    for (let pair of formData.entries()) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = pair[0];
-        input.value = pair[1];
-        hiddenForm.appendChild(input);
-    }
-    
-    document.body.appendChild(hiddenForm);
-    hiddenForm.submit();
+    // Invia direttamente il form originale (che supporta file upload)
+    form.submit();
 }
 
 function editProcedure(id) {
@@ -968,29 +963,20 @@ function submitEditForm() {
         return;
     }
     
-    // Aggiungi il flag di modifica
-    formData.append('modifica_procedura', '1');
-    
     // Disabilita il pulsante
     const btn = event.target;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvataggio...';
     btn.disabled = true;
     
-    // Crea form nascosto per il submit
-    const hiddenForm = document.createElement('form');
-    hiddenForm.method = 'post';
-    hiddenForm.style.display = 'none';
+    // Aggiungi il flag di modifica e invia il form
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'modifica_procedura';
+    hiddenInput.value = '1';
+    form.appendChild(hiddenInput);
     
-    for (let pair of formData.entries()) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = pair[0];
-        input.value = pair[1];
-        hiddenForm.appendChild(input);
-    }
-    
-    document.body.appendChild(hiddenForm);
-    hiddenForm.submit();
+    // Invia direttamente il form originale (che supporta file upload)
+    form.submit();
 }
 
 function viewProcedure(id) {
