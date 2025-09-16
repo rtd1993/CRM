@@ -112,11 +112,58 @@ if (isset($_POST['modifica_procedura'])) {
                 if ($check_stmt->fetchColumn() > 0) {
                     $error_message = 'Esiste già un\'altra procedura con questa denominazione.';
                 } else {
-                    // Aggiornamento nel database
-                    $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ? WHERE id = ?");
+                    $allegato_nome = null;
+                    $upload_error = false;
                     
-                    $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $id]);
-                    $rowsAffected = $stmt->rowCount();
+                    // Gestione upload allegato se presente
+                    if (isset($_FILES['allegato']) && $_FILES['allegato']['error'] === UPLOAD_ERR_OK) {
+                        $upload_dir = __DIR__ . '/local_drive/ASContabilmente/procedure/';
+                        $file_tmp = $_FILES['allegato']['tmp_name'];
+                        $file_name = $_FILES['allegato']['name'];
+                        $file_size = $_FILES['allegato']['size'];
+                        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                        
+                        // Validazione file
+                        $allowed_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'];
+                        $max_size = 10 * 1024 * 1024; // 10MB
+                        
+                        if (!in_array($file_ext, $allowed_extensions)) {
+                            $error_message = 'Formato file non supportato. Formati consentiti: ' . implode(', ', $allowed_extensions);
+                            $upload_error = true;
+                        } elseif ($file_size > $max_size) {
+                            $error_message = 'Il file è troppo grande. Dimensione massima: 10MB';
+                            $upload_error = true;
+                        } else {
+                            // Genera nome file unico
+                            $allegato_nome = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file_name);
+                            $upload_path = $upload_dir . $allegato_nome;
+                            
+                            if (!move_uploaded_file($file_tmp, $upload_path)) {
+                                $error_message = 'Errore durante l\'upload del file.';
+                                $upload_error = true;
+                            } else {
+                                // Elimina il vecchio allegato se esistente
+                                $old_allegato_stmt = $pdo->prepare("SELECT allegato FROM procedure_crm WHERE id = ?");
+                                $old_allegato_stmt->execute([$id]);
+                                $old_allegato = $old_allegato_stmt->fetchColumn();
+                                if ($old_allegato && file_exists($upload_dir . $old_allegato)) {
+                                    unlink($upload_dir . $old_allegato);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Procedi con l'aggiornamento se non ci sono errori
+                    if (!$upload_error) {
+                        // Aggiornamento nel database
+                        if ($allegato_nome) {
+                            $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ?, allegato = ? WHERE id = ?");
+                            $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $allegato_nome, $id]);
+                        } else {
+                            $stmt = $pdo->prepare("UPDATE procedure_crm SET denominazione = ?, valida_dal = ?, procedura = ? WHERE id = ?");
+                            $result = $stmt->execute([$denominazione, $valida_dal, $procedura, $id]);
+                        }
+                        $rowsAffected = $stmt->rowCount();
                     
                     error_log("Update result: $result, Rows affected: $rowsAffected");
                     
