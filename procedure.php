@@ -226,14 +226,6 @@ if (isset($_POST['modifica_procedura'])) {
                                 $params[] = $search;
                                 $params[] = $search;
                             }
-                            if (!empty($_GET['valida_dal_da'])) {
-                                $where[] = "valida_dal >= ?";
-                                $params[] = $_GET['valida_dal_da'];
-                            }
-                            if (!empty($_GET['valida_dal_a'])) {
-                                $where[] = "valida_dal <= ?";
-                                $params[] = $_GET['valida_dal_a'];
-                            }
                             if (isset($_GET['allegato']) && $_GET['allegato'] !== '') {
                                 if ($_GET['allegato'] === 'presente') {
                                     $where[] = "allegato IS NOT NULL AND allegato != ''";
