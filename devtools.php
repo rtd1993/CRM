@@ -465,6 +465,82 @@ function executeQuery($pdo, $sql) {
 }
 
 function performCleanup($pdo, $type) {
+            case 'clear_all_chats':
+                // Elimina tutti i messaggi di tutte le chat
+                $stmt = $pdo->prepare("DELETE FROM chat_messages");
+                $stmt->execute();
+                $deleted = $stmt->rowCount();
+                return ['success' => true, 'message' => "Eliminati $deleted messaggi da tutte le chat"];
+
+            case 'archive_and_clear_chats':
+                // Archivia tutti i messaggi chat in uno zip e poi li elimina
+                $date = date('Ymd_His');
+                $archiveDir = __DIR__ . "/logs/chat_archive_$date";
+                if (!is_dir($archiveDir)) mkdir($archiveDir, 0777, true);
+
+                // Chat globale
+                $stmt = $pdo->query("SELECT * FROM chat_messages WHERE type = 'globale'");
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $globaleFile = $archiveDir . "/chatglobale.txt";
+                $fh = fopen($globaleFile, 'w');
+                foreach ($rows as $row) {
+                    fwrite($fh, "[{$row['created_at']}] {$row['sender']}: {$row['message']}\n");
+                }
+                fclose($fh);
+
+                // Chat private per cliente
+                $stmt = $pdo->query("SELECT DISTINCT cliente FROM chat_messages WHERE type = 'privata' AND cliente IS NOT NULL");
+                $clienti = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($clienti as $cliente) {
+                    $stmt2 = $pdo->prepare("SELECT * FROM chat_messages WHERE type = 'privata' AND cliente = ?");
+                    $stmt2->execute([$cliente]);
+                    $rows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+                    $file = $archiveDir . "/chat_" . preg_replace('/[^a-zA-Z0-9]/', '_', $cliente) . ".txt";
+                    $fh = fopen($file, 'w');
+                    foreach ($rows as $row) {
+                        fwrite($fh, "[{$row['created_at']}] {$row['sender']}: {$row['message']}\n");
+                    }
+                    fclose($fh);
+                }
+
+                // Chat private tra utenti
+                $stmt = $pdo->query("SELECT DISTINCT sender, receiver FROM chat_messages WHERE type = 'privata' AND cliente IS NULL");
+                $pairs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $done = [];
+                foreach ($pairs as $pair) {
+                    $key = $pair['sender'] . '_' . $pair['receiver'];
+                    $revkey = $pair['receiver'] . '_' . $pair['sender'];
+                    if (in_array($key, $done) || in_array($revkey, $done)) continue;
+                    $stmt2 = $pdo->prepare("SELECT * FROM chat_messages WHERE type = 'privata' AND sender = ? AND receiver = ?");
+                    $stmt2->execute([$pair['sender'], $pair['receiver']]);
+                    $rows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+                    $file = $archiveDir . "/chat_" . preg_replace('/[^a-zA-Z0-9]/', '_', $pair['sender']) . "_" . preg_replace('/[^a-zA-Z0-9]/', '_', $pair['receiver']) . ".txt";
+                    $fh = fopen($file, 'w');
+                    foreach ($rows as $row) {
+                        fwrite($fh, "[{$row['created_at']}] {$row['sender']} -> {$row['receiver']}: {$row['message']}\n");
+                    }
+                    fclose($fh);
+                    $done[] = $key;
+                }
+
+                // Crea lo zip
+                $zipFile = $archiveDir . ".zip";
+                $zip = new ZipArchive();
+                if ($zip->open($zipFile, ZipArchive::CREATE) === TRUE) {
+                    foreach (glob($archiveDir . '/*.txt') as $file) {
+                        $zip->addFile($file, basename($file));
+                    }
+                    $zip->close();
+                }
+                // Rimuovi i file txt e la cartella
+                foreach (glob($archiveDir . '/*.txt') as $file) unlink($file);
+                rmdir($archiveDir);
+
+                // Elimina tutti i messaggi chat
+                $stmt = $pdo->prepare("DELETE FROM chat_messages");
+                $stmt->execute();
+                $deleted = $stmt->rowCount();
+                return ['success' => true, 'message' => "Archivio creato: " . basename($zipFile) . ". Eliminati $deleted messaggi da tutte le chat"];
     try {
         switch ($type) {
             case 'logs':
@@ -684,6 +760,21 @@ require_once __DIR__ . '/includes/header.php';
                     <p class="mb-0">Panoramica dei dati nel database e utilizzo del sistema</p>
                 </div>
                 <div class="section-content">
+                    <div class="cleanup-item">
+                        <h6><i class="fas fa-trash-alt text-danger"></i> Ripulisci Chat Completo</h6>
+                        <p class="mb-2">Elimina tutti i messaggi di tutte le chat presenti nel sistema</p>
+                        <button class="btn btn-danger btn-sm" onclick="performCleanup('clear_all_chats')">
+                            <i class="fas fa-trash"></i> Ripulisci Chat
+                        </button>
+                    </div>
+
+                    <div class="cleanup-item">
+                        <h6><i class="fas fa-archive text-secondary"></i> Ripulisci e Archivia Chat</h6>
+                        <p class="mb-2">Salva tutti i messaggi chat in un archivio zip e poi elimina tutte le chat</p>
+                        <button class="btn btn-secondary btn-sm" onclick="performCleanup('archive_and_clear_chats')">
+                            <i class="fas fa-archive"></i> Archivia e Ripulisci
+                        </button>
+                    </div>
                     <div class="row" id="stats-content">
                         <div class="col-12 text-center">
                             <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
