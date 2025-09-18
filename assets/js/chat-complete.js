@@ -32,6 +32,9 @@ class CompleteChatSystem {
         this.socket = null;
         this.socketConnected = false;
         
+        // Timer per aggiornamento conteggio utenti online
+        this.onlineCountTimer = null;
+        
         // Elementi DOM
         this.elements = {};
         
@@ -541,6 +544,12 @@ class CompleteChatSystem {
      * Mostra lista chat
      */
     showChatList() {
+        // Pulizia timer conteggio utenti online
+        if (this.onlineCountTimer) {
+            clearInterval(this.onlineCountTimer);
+            this.onlineCountTimer = null;
+        }
+        
         // Forza un reflow per assicurare che le transizioni funzionino correttamente
         this.elements.panel.offsetHeight;
         
@@ -574,8 +583,18 @@ class CompleteChatSystem {
         
         switch (type) {
             case 'globale':
-                const onlineCount = Array.from(this.onlineUsers.values()).filter(u => u.is_online).length;
-                status = `${onlineCount} utenti online`;
+                // Recupera il conteggio degli utenti online dal database
+                this.updateGlobalChatStatus();
+                // Avvia aggiornamento periodico ogni 30 secondi per la chat globale
+                if (this.onlineCountTimer) {
+                    clearInterval(this.onlineCountTimer);
+                }
+                this.onlineCountTimer = setInterval(() => {
+                    if (this.currentChat && this.currentChat.type === 'globale') {
+                        this.updateGlobalChatStatus();
+                    }
+                }, 30000);
+                status = 'Chat Globale'; // Placeholder temporaneo
                 break;
                 
             case 'pratica':
@@ -1628,6 +1647,35 @@ class CompleteChatSystem {
             this.log('🗑️ Messaggi locali rimossi per:', conversationId);
         } catch (error) {
             this.log('❌ Errore pulizia messaggi locali:', error);
+        }
+    }
+
+    /**
+     * Recupera il conteggio degli utenti online dal database
+     */
+    async getOnlineCountFromDB() {
+        try {
+            const response = await fetch('/api/online_count.php');
+            const data = await response.json();
+            
+            if (data.success) {
+                return data.online_count;
+            } else {
+                return 0;
+            }
+        } catch (error) {
+            return 0;
+        }
+    }
+
+    /**
+     * Aggiorna il status della chat globale con il conteggio utenti online
+     */
+    async updateGlobalChatStatus() {
+        const count = await this.getOnlineCountFromDB();
+        const statusElement = document.getElementById('chat-window-status');
+        if (statusElement) {
+            statusElement.textContent = `${count} utenti online`;
         }
     }
 
