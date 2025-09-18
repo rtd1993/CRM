@@ -759,9 +759,9 @@ $sezioni = [
                     <div class="form-group">
                         <label>Cartella Local Drive</label>
                         <?php
-                        $codice_fiscale = $cliente['Codice_fiscale'] ?? '';
-                        $cartella_path = __DIR__ . '/local_drive/' . $codice_fiscale;
-                        $cartella_esiste = !empty($codice_fiscale) && is_dir($cartella_path);
+                        $link_cartella = $cliente['link_cartella'] ?? '';
+                        $cartella_path = !empty($link_cartella) ? __DIR__ . '/local_drive/' . $link_cartella : '';
+                        $cartella_esiste = !empty($link_cartella) && is_dir($cartella_path);
                         ?>
                         
                         <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
@@ -769,17 +769,17 @@ $sezioni = [
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.2em;"></i>
                                     <span style="color: #28a745; font-weight: bold;">Cartella trovata</span>
-                                    <a href="drive.php?path=<?php echo urlencode($codice_fiscale); ?>" 
+                                    <a href="drive.php?path=<?php echo urlencode($link_cartella); ?>" 
                                        class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
                                         <i class="fas fa-folder-open"></i> Apri Cartella
                                     </a>
                                 </div>
-                            <?php elseif (!empty($codice_fiscale)): ?>
+                            <?php elseif (!empty($link_cartella)): ?>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 1.2em;"></i>
                                     <span style="color: #ffc107; font-weight: bold;">Cartella non trovata</span>
                                     <button type="button" 
-                                            onclick="creaCartella('<?php echo htmlspecialchars($codice_fiscale); ?>')" 
+                                            onclick="creaCartella('<?php echo htmlspecialchars($link_cartella); ?>')" 
                                             class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
                                         <i class="fas fa-plus"></i> Crea Cartella
                                     </button>
@@ -787,16 +787,15 @@ $sezioni = [
                             <?php else: ?>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 1.2em;"></i>
-                                    <span style="color: #17a2b8; font-weight: bold;">Inserire prima il Codice Fiscale per gestire la cartella</span>
+                                    <span style="color: #17a2b8; font-weight: bold;">Cartella non presente</span>
                                 </div>
                             <?php endif; ?>
                         </div>
                         
                         <?php if (!empty($codice_fiscale)): ?>
                             <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                                <strong>Percorso:</strong> <?php echo htmlspecialchars(__DIR__ . '/local_drive/' . $codice_fiscale); ?>
+                                <strong>Percorso:</strong> <?php echo !empty($link_cartella) ? htmlspecialchars(__DIR__ . '/local_drive/' . $link_cartella) : 'non presente'; ?>
                             </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
