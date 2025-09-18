@@ -793,6 +793,7 @@ $sezioni = [
     <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
         <strong>Percorso:</strong> <?php echo $cartella_esiste ? htmlspecialchars($cartella_path) : 'non presente'; ?>
     </div>
+<?php endif; ?>
             </div>
 </div>
 
