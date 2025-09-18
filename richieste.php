@@ -123,7 +123,8 @@ function getStatoBadge($stato) {
                             <a href="richieste.php" class="btn btn-link">✕ Cancella filtro</a>
                         <?php endif; ?>
                     </div>
-                    <div class="advanced-filters" id="advanced-filters" style="display: none; background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                    <!-- Filtri avanzati sempre visibili sotto la barra di ricerca -->
+                    <div class="advanced-filters" style="background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
                         <div class="filter-row" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <select name="stato" class="form-select" style="max-width: 180px;">
                                 <option value="">Tutti gli stati</option>
@@ -150,10 +151,6 @@ function getStatoBadge($stato) {
                         </div>
                     </div>
                 </form>
-                <div class="action-buttons mt-2" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-outline-primary" onclick="toggleAdvancedFilters()">🔧 Filtri Avanzati</button>
-                    <button type="button" class="btn btn-outline-success" onclick="printTable()">🖨️ Stampa</button>
-                </div>
             </div>
 
             <?php if (empty($richieste)): ?>
