@@ -86,32 +86,23 @@ class CompleteChatSystem {
      */
     async init() {
         try {
-            this.log('🔧 Inizio inizializzazione Complete Chat System...');
             
-            this.log('📌 Binding elementi DOM...');
             this.bindElements();
             
-            this.log('🎪 Binding eventi...');
             this.bindEvents();
             
-            this.log('� Connessione Socket.IO...');
             await this.initSocketIO();
             
-            this.log('�💾 Caricamento dati iniziali...');
             await this.loadInitialData();
             
-            this.log('🔔 Richiesta permessi notifiche...');
             this.requestNotificationPermission();
             
-            this.log('⏱️ Avvio polling di fallback...');
             this.startPolling();
             
             // Carica badge immediatamente
-            this.log('🔔 Caricamento iniziale badge...');
             this.updateChatBadges();
             
             this.isInitialized = true;
-            this.log('✅ Complete Chat System inizializzato con successo');
 
         } catch (error) {
             console.error('Stack trace:', error.stack);
