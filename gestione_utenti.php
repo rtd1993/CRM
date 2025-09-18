@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 require_once __DIR__ . '/includes/db.php';
@@ -46,13 +47,16 @@ if (isset($_GET['delete_id']) && $is_admin_or_dev) {
                 if ($result && $stmt->rowCount() > 0) {
                     // Eliminazione riuscita
                     header("Location: gestione_utenti.php");
+                    exit;
                 } else {
                     // Eliminazione fallita
                     header("Location: gestione_utenti.php");
+                    exit;
                 }
             } else {
                 // Utente non trovato
                 header("Location: gestione_utenti.php");
+                exit;
             }
         } catch (Exception $e) {
             // Errore database
