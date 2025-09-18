@@ -211,18 +211,15 @@ class CompleteChatSystem {
             
             // Gestione messaggi in tempo reale
             this.socket.on('new_message', (data) => {
-                this.log('📩 Nuovo messaggio ricevuto:', data);
                 this.handleNewMessage(data);
             });
             
             // Gestione utenti online/offline
             this.socket.on('user_online', (data) => {
-                this.log('🟢 Utente online:', data.user_id);
                 this.updateUserStatus(data.user_id, true);
             });
             
             this.socket.on('user_offline', (data) => {
-                this.log('🔴 Utente offline:', data.user_id);
                 this.updateUserStatus(data.user_id, false);
             });
             
@@ -247,7 +244,6 @@ class CompleteChatSystem {
         if ('Notification' in window) {
             if (Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
-                    this.log('🔔 Permesso notifiche:', permission);
                 });
             }
         }
@@ -260,7 +256,6 @@ class CompleteChatSystem {
         // Toggle panel
         this.elements.toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.log('🎯 Toggle panel clicked');
             this.togglePanel();
         });
         
@@ -274,8 +269,6 @@ class CompleteChatSystem {
         if (this.elements.globalItem) {
             this.elements.globalItem.addEventListener('click', (e) => {
                 e.stopPropagation(); // Evita chiusura panel
-                this.log('📞 CLICK RICEVUTO su chat globale!');
-                this.log('📞 Apertura chat globale');
                 this.openChat('globale', 1, 'Chat Generale');
             });
         } else {
@@ -593,7 +586,6 @@ class CompleteChatSystem {
             case 'privata':
                 const userId = parseInt(id);
                 const user = this.onlineUsers.get(userId);
-                console.log('🔍 Debug status privata - userId:', userId, 'user found:', user, 'onlineUsers size:', this.onlineUsers.size);
                 status = user ? (user.is_online ? 'Online' : 'Offline') : `Sconosciuto (ID: ${userId})`;
                 break;
         }
@@ -1642,12 +1634,13 @@ class CompleteChatSystem {
 
     /**
      * Logging
-     */
-    log(...args) {
+     * log(...args) {
         if (this.config.debug) {
             console.log('[CompleteChat]', ...args);
         }
     }
+     */
+    
     
     /**
      * Gestisce nuovo messaggio ricevuto via Socket.IO
@@ -1806,20 +1799,14 @@ class CompleteChatSystem {
     updateTotalBadge() {
         const total = Object.values(this.unreadCounts).reduce((sum, count) => sum + count, 0);
         
-        console.log('🚨 UpdateTotalBadge: this.unreadCounts =', JSON.stringify(this.unreadCounts));
-        console.log('🚨 UpdateTotalBadge: calculated total =', total);
         
         if (this.elements.totalBadge) {
-            console.log('🚨 UpdateTotalBadge: current badge content before update:', this.elements.totalBadge.textContent);
             if (total > 0) {
                 this.elements.totalBadge.textContent = total;
                 this.elements.totalBadge.classList.remove('hidden');
-                console.log('🚨 UpdateTotalBadge: Badge shown with value:', total);
             } else {
                 this.elements.totalBadge.classList.add('hidden');
-                console.log('🚨 UpdateTotalBadge: Badge hidden');
             }
-            console.log('🚨 UpdateTotalBadge: Badge content after update:', this.elements.totalBadge.textContent);
         }
     }
     
@@ -1861,7 +1848,6 @@ class CompleteChatSystem {
         fetch('./api/chat_notifications.php?action=unread_counts')
             .then(response => response.json())
             .then(data => {
-                console.log('🔔 Badge API Response:', data);
                 if (data.success) {
                     const counts = data.unread_counts;
                     
@@ -1891,20 +1877,16 @@ class CompleteChatSystem {
                     
                     // Badge totale sul toggle button del widget
                     const totalBadge = document.querySelector('#total-unread-badge');
-                    console.log('🎯 Updating total badge. data.total =', data.total, 'type:', typeof data.total);
                     if (data.total > 0) {
                         if (totalBadge) {
                             totalBadge.textContent = data.total;
                             totalBadge.classList.remove('hidden');
-                            console.log('✅ Total badge shown with value:', data.total);
                         }
                     } else if (totalBadge) {
                         totalBadge.classList.add('hidden');
-                        console.log('🚫 Total badge hidden (data.total =', data.total, ')');
                     }
                 } else {
                     // Se l'API restituisce un errore (es. non autenticato), nascondi tutti i badge
-                    console.log('API badge error:', data.error || 'Unknown error');
                     ['#total-unread-badge', '#global-chat-badge', '#practice-chat-badge'].forEach(selector => {
                         const badge = document.querySelector(selector);
                         if (badge) {
@@ -1943,11 +1925,9 @@ class CompleteChatSystem {
     
     // Processa i dati dei badge dal polling
     processBadgeData(data) {
-        console.log('🔥 ProcessBadgeData INIZIO:', JSON.stringify(data));
         
         if (data.success && data.unread_counts !== undefined) {
             const counts = data.unread_counts;
-            console.log('🔥 ProcessBadgeData counts:', JSON.stringify(counts));
             
             // Badge chat globale
             const globalBadge = document.querySelector('#global-chat-badge');
@@ -1962,21 +1942,15 @@ class CompleteChatSystem {
             
             // Badge totale - USA SOLO data.total dall'API
             const totalBadge = document.querySelector('#total-unread-badge');
-            console.log('🎯 ProcessBadgeData: data.total =', data.total, 'type:', typeof data.total);
-            console.log('🎯 ProcessBadgeData: totalBadge element:', totalBadge);
-            console.log('🎯 ProcessBadgeData: current badge content before update:', totalBadge ? totalBadge.textContent : 'null');
+            
             
             if (data.total > 0) {
                 if (totalBadge) {
                     totalBadge.textContent = data.total;
                     totalBadge.classList.remove('hidden');
-                    console.log('✅ ProcessBadgeData: Total badge shown with value:', data.total);
-                    console.log('✅ ProcessBadgeData: Badge content after update:', totalBadge.textContent);
                 }
             } else if (totalBadge) {
                 totalBadge.classList.add('hidden');
-                console.log('🚫 ProcessBadgeData: Total badge hidden (data.total =', data.total, ')');
-                console.log('🚫 ProcessBadgeData: Badge content after hiding:', totalBadge.textContent);
             }
             
             // Gestisci solo badge chat private (pratiche rimosse)
@@ -2007,10 +1981,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'childList' || (mutation.type === 'attributes' && mutation.attributeName === 'class')) {
-                        console.log('🔍 BADGE MODIFIED! Type:', mutation.type);
-                        console.log('🔍 Current content:', totalBadge.textContent);
-                        console.log('🔍 Current classes:', totalBadge.className);
-                        console.log('🔍 Stack trace:', new Error().stack);
                     }
                 });
             });
@@ -2022,7 +1992,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 subtree: true
             });
             
-            console.log('🔍 MutationObserver attivato per badge debugging');
         }
         
         // Cleanup su unload
