@@ -1623,13 +1623,11 @@ class CompleteChatSystem {
     }
 
     /**
-     * Logging
-     * log(...args) {
-        if (this.config.debug) {
-            console.log('[CompleteChat]', ...args);
-        }
-    }
+     * Logging - Metodo vuoto per evitare errori
      */
+    log(...args) {
+        // Debug disabilitato - metodo vuoto
+    }
     
     
     /**
