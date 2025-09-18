@@ -114,7 +114,6 @@ class CompleteChatSystem {
             this.log('✅ Complete Chat System inizializzato con successo');
 
         } catch (error) {
-            this.log('❌ Errore inizializzazione chat:', error);
             console.error('Stack trace:', error.stack);
         }
     }
