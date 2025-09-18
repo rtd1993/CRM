@@ -2231,18 +2231,20 @@ function closeTaskClientModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Chiudi modal cliccando fuori
-window.onclick = function(event) {
+// Chiudi modal cliccando fuori - specifico per i nostri modali
+document.addEventListener('click', function(event) {
     const taskModal = document.getElementById('taskModal');
     const taskClientModal = document.getElementById('taskClientModal');
     
-    if (event.target === taskModal && taskModal) {
-        closeTaskModal();
+    // Solo se il click è esattamente sul modal (non sui suoi elementi figli)
+    if (event.target === taskModal && taskModal && taskModal.style.display === 'block') {
+        // closeTaskModal(); // Funzione non definita, commentata per evitare errori
+        taskModal.style.display = 'none';
     }
-    if (event.target === taskClientModal) {
+    if (event.target === taskClientModal && taskClientModal.style.display === 'block') {
         closeTaskClientModal();
     }
-}
+});
 
 // Chiudi modal con ESC
 document.addEventListener('keydown', function(event) {
@@ -2251,7 +2253,8 @@ document.addEventListener('keydown', function(event) {
         const taskClientModal = document.getElementById('taskClientModal');
         
         if (taskModal && taskModal.style.display === 'block') {
-            closeTaskModal();
+            // closeTaskModal(); // Funzione non definita, commentata per evitare errori
+            taskModal.style.display = 'none';
         }
         if (taskClientModal && taskClientModal.style.display === 'block') {
             closeTaskClientModal();
@@ -2259,8 +2262,5 @@ document.addEventListener('keydown', function(event) {
     }
 });
 </script>
-
-<!-- Bootstrap JS Bundle with Popper - Caricato PRIMA del footer -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
