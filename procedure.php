@@ -610,23 +610,7 @@ $procedure = $stmt->fetchAll();
     display: inline-flex;
     align-items: center;
     
-    <!-- Barra di ricerca e filtri -->
-    <form method="get" class="mb-4">
-        <div class="search-wrapper" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <input type="text" name="search" class="form-control" style="max-width: 320px;" placeholder="🔍 Cerca per denominazione o testo procedura..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
-            <input type="date" name="valida_dal_da" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['valida_dal_da']) ? htmlspecialchars($_GET['valida_dal_da']) : '' ?>" placeholder="Valida dal (da)">
-            <input type="date" name="valida_dal_a" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['valida_dal_a']) ? htmlspecialchars($_GET['valida_dal_a']) : '' ?>" placeholder="Valida dal (a)">
-            <select name="allegato" class="form-select" style="max-width: 180px;">
-                <option value="">Tutti</option>
-                <option value="presente" <?= (isset($_GET['allegato']) && $_GET['allegato'] == 'presente') ? 'selected' : '' ?>>Con allegato</option>
-                <option value="assente" <?= (isset($_GET['allegato']) && $_GET['allegato'] == 'assente') ? 'selected' : '' ?>>Senza allegato</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Cerca</button>
-            <?php if (!empty($_GET)): ?>
-                <a href="procedure.php" class="btn btn-link">✕ Cancella filtro</a>
-            <?php endif; ?>
-        </div>
-    </form>
+    
 }
 
 .btn-primary {
@@ -682,7 +666,23 @@ $procedure = $stmt->fetchAll();
 </style>
 
 <main class="container mt-4">
-    
+    <!-- Barra di ricerca e filtri -->
+    <form method="get" class="mb-4">
+        <div class="search-wrapper" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" name="search" class="form-control" style="max-width: 320px;" placeholder="🔍 Cerca per denominazione o testo procedura..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+            <input type="date" name="valida_dal_da" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['valida_dal_da']) ? htmlspecialchars($_GET['valida_dal_da']) : '' ?>" placeholder="Valida dal (da)">
+            <input type="date" name="valida_dal_a" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['valida_dal_a']) ? htmlspecialchars($_GET['valida_dal_a']) : '' ?>" placeholder="Valida dal (a)">
+            <select name="allegato" class="form-select" style="max-width: 180px;">
+                <option value="">Tutti</option>
+                <option value="presente" <?= (isset($_GET['allegato']) && $_GET['allegato'] == 'presente') ? 'selected' : '' ?>>Con allegato</option>
+                <option value="assente" <?= (isset($_GET['allegato']) && $_GET['allegato'] == 'assente') ? 'selected' : '' ?>>Senza allegato</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Cerca</button>
+            <?php if (!empty($_GET)): ?>
+                <a href="procedure.php" class="btn btn-link">✕ Cancella filtro</a>
+            <?php endif; ?>
+        </div>
+    </form>
 
     <?php if (isset($success_message)): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
