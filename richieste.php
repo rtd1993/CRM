@@ -45,11 +45,53 @@ function getStatoBadge($stato) {
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-headset me-2"></i>Gestione Richieste</h2>
                 <button type="button" class="btn btn-primary" onclick="openRichiestaModal()">
                     <i class="fas fa-plus me-1"></i>Nuova Richiesta
                 </button>
+            </div>
+
+            <!-- Barra di ricerca e filtri avanzati -->
+            <div class="mb-4">
+                <form method="get" class="search-form">
+                    <div class="search-wrapper" style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" name="search" class="form-control" placeholder="🔍 Cerca per denominazione, email, telefono, codice..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+                        <button type="submit" class="btn btn-primary">Cerca</button>
+                        <?php if (isset($_GET['search']) && $_GET['search']): ?>
+                            <a href="richieste.php" class="btn btn-link">✕ Cancella filtro</a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="advanced-filters" id="advanced-filters" style="display: none; background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                        <div class="filter-row" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <select name="stato" class="form-select" style="max-width: 180px;">
+                                <option value="">Tutti gli stati</option>
+                                <option value="aperta" <?= (isset($_GET['stato']) && $_GET['stato'] == 'aperta') ? 'selected' : '' ?>>Aperta</option>
+                                <option value="in_lavorazione" <?= (isset($_GET['stato']) && $_GET['stato'] == 'in_lavorazione') ? 'selected' : '' ?>>In lavorazione</option>
+                                <option value="completata" <?= (isset($_GET['stato']) && $_GET['stato'] == 'completata') ? 'selected' : '' ?>>Completata</option>
+                                <option value="chiusa" <?= (isset($_GET['stato']) && $_GET['stato'] == 'chiusa') ? 'selected' : '' ?>>Chiusa</option>
+                            </select>
+                            <input type="date" name="data_da" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_da']) ? htmlspecialchars($_GET['data_da']) : '' ?>" placeholder="Da data">
+                            <input type="date" name="data_a" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_a']) ? htmlspecialchars($_GET['data_a']) : '' ?>" placeholder="A data">
+                            <select name="tipo" class="form-select" style="max-width: 180px;">
+                                <option value="">Tutti i tipi</option>
+                                <option value="pagamento" <?= (isset($_GET['tipo']) && $_GET['tipo'] == 'pagamento') ? 'selected' : '' ?>>A pagamento</option>
+                                <option value="gratuita" <?= (isset($_GET['tipo']) && $_GET['tipo'] == 'gratuita') ? 'selected' : '' ?>>Gratuita</option>
+                            </select>
+                            <select name="order" class="form-select" style="max-width: 180px;">
+                                <option value="data_richiesta" <?= (!isset($_GET['order']) || $_GET['order'] == 'data_richiesta') ? 'selected' : '' ?>>Ordina per data richiesta</option>
+                                <option value="created_at" <?= (isset($_GET['order']) && $_GET['order'] == 'created_at') ? 'selected' : '' ?>>Ordina per data creazione</option>
+                                <option value="denominazione" <?= (isset($_GET['order']) && $_GET['order'] == 'denominazione') ? 'selected' : '' ?>>Ordina per denominazione</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Applica Filtri</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="action-buttons mt-2" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline-primary" onclick="toggleAdvancedFilters()">🔧 Filtri Avanzati</button>
+                    <button type="button" class="btn btn-outline-success" onclick="printTable()">🖨️ Stampa</button>
+                </div>
             </div>
 
             <?php if (empty($richieste)): ?>
