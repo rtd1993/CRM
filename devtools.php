@@ -796,22 +796,7 @@ require_once __DIR__ . '/includes/header.php';
                     <h3><i class="fas fa-chart-bar"></i> Statistiche Sistema</h3>
                     <p class="mb-0">Panoramica dei dati nel database e utilizzo del sistema</p>
                 </div>
-                <div class="section-content">
-                    <div class="cleanup-item">
-                        <h6><i class="fas fa-trash-alt text-danger"></i> Ripulisci Chat Completo</h6>
-                        <p class="mb-2">Elimina tutti i messaggi di tutte le chat presenti nel sistema</p>
-                        <button class="btn btn-danger btn-sm" onclick="performCleanup('clear_all_chats')">
-                            <i class="fas fa-trash"></i> Ripulisci Chat
-                        </button>
-                    </div>
-
-                    <div class="cleanup-item">
-                        <h6><i class="fas fa-archive text-secondary"></i> Ripulisci e Archivia Chat</h6>
-                        <p class="mb-2">Salva tutti i messaggi chat in un archivio zip e poi elimina tutte le chat</p>
-                        <button class="btn btn-secondary btn-sm" onclick="performCleanup('archive_and_clear_chats')">
-                            <i class="fas fa-archive"></i> Archivia e Ripulisci
-                        </button>
-                    </div>
+                
                     <div class="row" id="stats-content">
                         <div class="col-12 text-center">
                             <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
@@ -1043,7 +1028,22 @@ Esempi:
                             <i class="fas fa-box-open"></i> Archivia
                         </button>
                     </div>
+                    <div class="section-content">
+                    <div class="cleanup-item">
+                        <h6><i class="fas fa-trash-alt text-danger"></i> Ripulisci Chat Completo</h6>
+                        <p class="mb-2">Elimina tutti i messaggi di tutte le chat presenti nel sistema</p>
+                        <button class="btn btn-danger btn-sm" onclick="performCleanup('clear_all_chats')">
+                            <i class="fas fa-trash"></i> Ripulisci Chat
+                        </button>
+                    </div>
 
+                    <div class="cleanup-item">
+                        <h6><i class="fas fa-archive text-secondary"></i> Ripulisci e Archivia Chat</h6>
+                        <p class="mb-2">Salva tutti i messaggi chat in un archivio zip e poi elimina tutte le chat</p>
+                        <button class="btn btn-secondary btn-sm" onclick="performCleanup('archive_and_clear_chats')">
+                            <i class="fas fa-archive"></i> Archivia e Ripulisci
+                        </button>
+                    </div>
                     <div id="cleanup-results" class="mt-3">
                         <!-- Risultati operazioni di pulizia -->
                     </div>
@@ -1161,7 +1161,7 @@ Esempi:
                 </div>
             </div>
         `;
-        
+
         document.getElementById('stats-content').innerHTML = html;
     }
 
