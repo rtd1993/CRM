@@ -142,29 +142,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($result) {
                 $success_message = "Cliente aggiornato con successo!";
-                
-                // Gestione file note se presente con nuovo formato cartella
+
+                // Gestione file note e creazione/aggiornamento cartella secondo lo standard
                 if (isset($_POST['note'])) {
                     $note_content = trim($_POST['note']);
-                    
-                    // Crea nome cartella con nuovo formato id_cognome.nome
-                    $cliente_folder = $cliente['id'] . '_' . 
-                                    strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale']));
-                    
-                    // Aggiungi il nome se presente
-                    if (!empty($cliente['Nome'])) {
-                        $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome']));
+
+                    // Standard id_Cognome.Nome
+                    $cognome_clean = !empty($cliente['Cognome_Ragione_sociale']) ? ucfirst(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Cognome_Ragione_sociale'])) : '';
+                    $nome_clean = !empty($cliente['Nome']) ? ucfirst(preg_replace('/[^A-Za-z0-9]/', '', $cliente['Nome'])) : '';
+                    $cliente_folder = $cliente['id'] . '_' . $cognome_clean;
+                    if (!empty($nome_clean)) {
                         $cliente_folder .= '.' . $nome_clean;
                     }
-                    
                     $cartella_path = __DIR__ . '/local_drive/' . $cliente_folder;
                     $note_file = $cartella_path . '/note_' . $cliente['id'] . '.txt';
-                    
+
+                    // Rimuovi eventuale vecchia cartella se esiste e diversa
+                    if (!empty($cliente['link_cartella']) && $cliente['link_cartella'] !== $cliente_folder) {
+                        $old_path = __DIR__ . '/local_drive/' . $cliente['link_cartella'];
+                        if (is_dir($old_path)) {
+                            // Rimuovi solo se vuota per sicurezza
+                            @rmdir($old_path);
+                        }
+                    }
+
                     // Crea la cartella se non esiste
                     if (!is_dir($cartella_path)) {
                         mkdir($cartella_path, 0755, true);
                     }
-                    
+
+                    // Aggiorna il campo link_cartella nel database
+                    $stmt_update = $pdo->prepare("UPDATE clienti SET link_cartella = ? WHERE id = ?");
+                    $stmt_update->execute([$cliente_folder, $cliente['id']]);
+
                     if (!empty($note_content)) {
                         file_put_contents($note_file, $note_content);
                     } else {
