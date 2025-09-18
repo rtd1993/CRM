@@ -760,8 +760,10 @@ $sezioni = [
                         <label>Cartella Local Drive</label>
                         <?php
                         $link_cartella = $cliente['link_cartella'] ?? '';
-                        $cartella_path = !empty($link_cartella) ? __DIR__ . '/local_drive/' . $link_cartella : '';
-                        $cartella_esiste = !empty($link_cartella) && is_dir($cartella_path);
+                        // Standard: id_Cognome.Nome
+                        $cartella_standard = $cliente['id'] . '_' . preg_replace('/\s+/', '', $cliente['Cognome_Ragione_sociale']) . '.' . preg_replace('/\s+/', '', $cliente['Nome']);
+                        $cartella_path = !empty($link_cartella) ? __DIR__ . '/local_drive/' . $link_cartella : __DIR__ . '/local_drive/' . $cartella_standard;
+                        $cartella_esiste = is_dir($cartella_path);
                         ?>
                         
                         <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
@@ -769,38 +771,28 @@ $sezioni = [
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.2em;"></i>
                                     <span style="color: #28a745; font-weight: bold;">Cartella trovata</span>
-                                    <a href="drive.php?path=<?php echo urlencode($link_cartella); ?>" 
+                                    <a href="drive.php?path=<?php echo urlencode($link_cartella ? $link_cartella : $cartella_standard); ?>" 
                                        class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
                                         <i class="fas fa-folder-open"></i> Apri Cartella
                                     </a>
                                 </div>
-                            <?php elseif (!empty($link_cartella)): ?>
+                            <?php else: ?>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 1.2em;"></i>
                                     <span style="color: #ffc107; font-weight: bold;">Cartella non trovata</span>
                                     <button type="button" 
-                                            onclick="creaCartella('<?php echo htmlspecialchars($link_cartella); ?>')" 
+                                            onclick="creaCartella('<?php echo htmlspecialchars($cartella_standard); ?>')" 
                                             class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
                                         <i class="fas fa-plus"></i> Crea Cartella
                                     </button>
-                                </div>
-                            <?php else: ?>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 1.2em;"></i>
-                                    <span style="color: #17a2b8; font-weight: bold;">Cartella non presente</span>
                                 </div>
                             <?php endif; ?>
                         </div>
                         
                         <?php if (!empty($link_cartella)): ?>
     <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-        <strong>Percorso:</strong> <?php echo htmlspecialchars(__DIR__ . '/local_drive/' . $link_cartella); ?>
+        <strong>Percorso:</strong> <?php echo $cartella_esiste ? htmlspecialchars($cartella_path) : 'non presente'; ?>
     </div>
-<?php else: ?>
-    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-        <strong>Percorso:</strong> non presente
-    </div>
-<?php endif; ?>
             </div>
 </div>
 
