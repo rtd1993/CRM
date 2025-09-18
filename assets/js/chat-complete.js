@@ -181,8 +181,17 @@ class CompleteChatSystem {
      */
     async initSocketIO() {
         try {
-            // Connettiti al server Socket.IO (usa l'indirizzo del server)
-            const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`;
+            // Connettiti al server Socket.IO (usa il protocollo corretto)
+            let socketUrl;
+            if (window.location.hostname === 'localhost') {
+                socketUrl = 'http://localhost:3001';
+            } else if (window.location.protocol === 'https:') {
+                // Per HTTPS, disabilita Socket.IO temporaneamente per evitare errori mixed content
+                this.log('⚠️ Socket.IO disabilitato per HTTPS (mixed content policy)');
+                return;
+            } else {
+                socketUrl = `http://${window.location.hostname}:3001`;
+            }
             this.socket = io(socketUrl);
             
             this.socket.on('connect', () => {
