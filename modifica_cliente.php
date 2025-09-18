@@ -750,53 +750,7 @@ $sezioni = [
             </form>
 
             <!-- Sezione Gestione Cartella -->
-            <div class="section" style="margin-top: 30px;">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <span><i class="fas fa-folder"></i> Gestione Cartella Cliente</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="section-content">
-                    <div class="form-group">
-                        <label>Cartella Local Drive</label>
-                        <?php
-                        $link_cartella = $cliente['link_cartella'] ?? '';
-                        // Standard: id_Cognome.Nome
-                        $cartella_standard = $cliente['id'] . '_' . preg_replace('/\s+/', '', $cliente['Cognome_Ragione_sociale']) . '.' . preg_replace('/\s+/', '', $cliente['Nome']);
-                        $cartella_path = !empty($link_cartella) ? __DIR__ . '/local_drive/' . $link_cartella : __DIR__ . '/local_drive/' . $cartella_standard;
-                        $cartella_esiste = is_dir($cartella_path);
-                        ?>
-                        
-                        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
-                            <?php if ($cartella_esiste): ?>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.2em;"></i>
-                                    <span style="color: #28a745; font-weight: bold;">Cartella trovata</span>
-                                    <a href="drive.php?path=<?php echo urlencode($link_cartella ? $link_cartella : $cartella_standard); ?>" 
-                                       class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
-                                        <i class="fas fa-folder-open"></i> Apri Cartella
-                                    </a>
-                                </div>
-                            <?php else: ?>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 1.2em;"></i>
-                                    <span style="color: #ffc107; font-weight: bold;">Cartella non trovata</span>
-                                    <button type="button" 
-                                            onclick="creaCartella('<?php echo htmlspecialchars($cartella_standard); ?>')" 
-                                            class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;">
-                                        <i class="fas fa-plus"></i> Crea Cartella
-                                    </button>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <?php if (!empty($link_cartella)): ?>
-    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-        <strong>Percorso:</strong> <?php echo $cartella_esiste ? htmlspecialchars($cartella_path) : 'non presente'; ?>
-    </div>
-<?php endif; ?>
-            </div>
-</div>
-
+            
 <div id="notification" class="notification"></div>
 
     <script>
