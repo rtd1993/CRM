@@ -133,8 +133,8 @@ function getStatoBadge($stato) {
                                 <option value="completata" <?= (isset($_GET['stato']) && $_GET['stato'] == 'completata') ? 'selected' : '' ?>>Completata</option>
                                 <option value="chiusa" <?= (isset($_GET['stato']) && $_GET['stato'] == 'chiusa') ? 'selected' : '' ?>>Chiusa</option>
                             </select>
-                            <input type="date" name="data_da" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_da']) ? htmlspecialchars($_GET['data_da']) : '' ?>" placeholder="Da data">
-                            <input type="date" name="data_a" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_a']) ? htmlspecialchars($_GET['data_a']) : '' ?>" placeholder="A data">
+                            dal <input type="date" name="data_da" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_da']) ? htmlspecialchars($_GET['data_da']) : '' ?>" placeholder="Da data">
+                            al <input type="date" name="data_a" class="form-control" style="max-width: 160px;" value="<?= isset($_GET['data_a']) ? htmlspecialchars($_GET['data_a']) : '' ?>" placeholder="A data">
                             <select name="tipo" class="form-select" style="max-width: 180px;">
                                 <option value="">Tutti i tipi</option>
                                 <option value="pagamento" <?= (isset($_GET['tipo']) && $_GET['tipo'] == 'pagamento') ? 'selected' : '' ?>>A pagamento</option>
