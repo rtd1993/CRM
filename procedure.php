@@ -217,6 +217,30 @@ if (isset($_POST['modifica_procedura'])) {
         }
     }
 }
+// Costruzione query con filtri
+                            $where = [];
+                            $params = [];
+                            if (!empty($_GET['search'])) {
+                                $search = '%' . trim($_GET['search']) . '%';
+                                $where[] = "(denominazione LIKE ? OR procedura LIKE ?)";
+                                $params[] = $search;
+                                $params[] = $search;
+                            }
+                            if (!empty($_GET['valida_dal_da'])) {
+                                $where[] = "valida_dal >= ?";
+                                $params[] = $_GET['valida_dal_da'];
+                            }
+                            if (!empty($_GET['valida_dal_a'])) {
+                                $where[] = "valida_dal <= ?";
+                                $params[] = $_GET['valida_dal_a'];
+                            }
+                            if (isset($_GET['allegato']) && $_GET['allegato'] !== '') {
+                                if ($_GET['allegato'] === 'presente') {
+                                    $where[] = "allegato IS NOT NULL AND allegato != ''";
+                                } elseif ($_GET['allegato'] === 'assente') {
+                                    $where[] = "(allegato IS NULL OR allegato = '')";
+                                }
+                            }
 
 // Gestione eliminazione procedura
 if (isset($_POST['elimina_procedura'])) {
