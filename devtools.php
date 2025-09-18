@@ -63,26 +63,45 @@ function getSystemStats($pdo) {
             }
         };
         
-        // Clienti
+        // Clienti registrati
         $stats['clienti'] = $safeCount('clienti');
-        
-        // Messaggi chat
-        $stats['messaggi'] = $safeCount('chat_messages');
-        
+
+        // Messaggi chat globale
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) FROM chat_messages WHERE type = 'globale'");
+            $stats['messaggi_globale'] = $stmt->fetchColumn();
+        } catch (Exception $e) {
+            $stats['messaggi_globale'] = 0;
+        }
+
+        // Messaggi privati
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) FROM chat_messages WHERE type = 'privata'");
+            $stats['messaggi_privati'] = $stmt->fetchColumn();
+        } catch (Exception $e) {
+            $stats['messaggi_privati'] = 0;
+        }
+
         // Pratiche ENEA
         $stats['enea'] = $safeCount('enea');
-        
+
         // Conto Termico
         $stats['conto_termico'] = $safeCount('conto_termico');
-        
-        // Task
+
+        // Task totali
         $stats['task'] = $safeCount('task');
-        
-        // Task Clienti
+
+        // Task Clienti totali
         $stats['task_clienti'] = $safeCount('task_clienti');
-        
-        // Utenti totali
+
+        // Utenti registrati
         $stats['utenti_totali'] = $safeCount('utenti');
+
+        // Procedure
+        $stats['procedure'] = $safeCount('procedure_crm');
+
+        // Template email
+        $stats['template_email'] = $safeCount('email_template');
         
         // Task completati - verifica prima le colonne disponibili
         try {
@@ -108,18 +127,12 @@ function getSystemStats($pdo) {
             $stats['task_completati'] = 0;
         }
         
-        // Utenti attivi - gestione sicura
+        // Utenti online
         try {
-            $stmt = $pdo->query("SELECT COUNT(*) FROM utenti WHERE active = 1");
-            $stats['utenti_attivi'] = $stmt->fetchColumn();
+            $stmt = $pdo->query("SELECT COUNT(*) FROM utenti WHERE is_online = 1");
+            $stats['utenti_online'] = $stmt->fetchColumn();
         } catch (Exception $e) {
-            // Prova senza filtro active se la colonna non esiste
-            try {
-                $stmt = $pdo->query("SELECT COUNT(*) FROM utenti");
-                $stats['utenti_attivi'] = $stmt->fetchColumn();
-            } catch (Exception $e2) {
-                $stats['utenti_attivi'] = 0;
-            }
+            $stats['utenti_online'] = 0;
         }
         
         return ['success' => true, 'data' => $stats];
@@ -960,8 +973,14 @@ Esempi:
             </div>
             <div class="col-md-4">
                 <div class="stat-box">
-                    <h6><i class="fas fa-comments text-success"></i> Messaggi Chat</h6>
-                    <h3 class="text-success">${stats.messaggi || 0}</h3>
+                    <h6><i class="fas fa-comments text-success"></i> Messaggi Chat Globale</h6>
+                    <h3 class="text-success">${stats.messaggi_globale || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-comment-dots text-info"></i> Messaggi Chat Privata</h6>
+                    <h3 class="text-info">${stats.messaggi_privati || 0}</h3>
                 </div>
             </div>
             <div class="col-md-4">
@@ -1002,8 +1021,20 @@ Esempi:
             </div>
             <div class="col-md-4">
                 <div class="stat-box">
-                    <h6><i class="fas fa-user-check text-success"></i> Utenti Attivi</h6>
-                    <h3 class="text-success">${stats.utenti_attivi || 0}</h3>
+                    <h6><i class="fas fa-user-check text-success"></i> Utenti Online</h6>
+                    <h3 class="text-success">${stats.utenti_online || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-list-alt text-warning"></i> Procedure</h6>
+                    <h3 class="text-warning">${stats.procedure || 0}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-box">
+                    <h6><i class="fas fa-envelope text-info"></i> Template Email</h6>
+                    <h3 class="text-info">${stats.template_email || 0}</h3>
                 </div>
             </div>
         `;
@@ -1104,6 +1135,18 @@ Esempi:
             <div class="network-status">
                 <span><i class="fas fa-globe text-warning"></i> Ping Google DNS</span>
                 <strong class="${network.ping_google === 'FAIL' ? 'text-danger' : 'text-success'}">${network.ping_google || 'N/A'}</strong>
+            </div>
+            <div class="network-status">
+                <span><i class="fas fa-globe text-info"></i> Ping ascontabilemente.homes</span>
+                <strong class="${network.ping_ascontabilemente === 'FAIL' ? 'text-danger' : 'text-success'}">${network.ping_ascontabilemente || 'N/A'}</strong>
+            </div>
+            <div class="network-status">
+                <span><i class="fas fa-globe text-info"></i> Ping porkbun.com</span>
+                <strong class="${network.ping_porkbun === 'FAIL' ? 'text-danger' : 'text-success'}">${network.ping_porkbun || 'N/A'}</strong>
+            </div>
+            <div class="network-status">
+                <span><i class="fas fa-globe text-info"></i> Ping cloudflare.com</span>
+                <strong class="${network.ping_cloudflare === 'FAIL' ? 'text-danger' : 'text-success'}">${network.ping_cloudflare || 'N/A'}</strong>
             </div>
             <hr>
             <h6>Stato Porte</h6>
