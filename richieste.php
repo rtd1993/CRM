@@ -20,10 +20,70 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// Recupera tutte le richieste
+
+// Ricerca e filtri avanzati
+$where = [];
+$params = [];
+
+if (!empty($_GET['search'])) {
+    $search = '%' . trim($_GET['search']) . '%';
+    $where[] = "(
+        denominazione LIKE ? OR
+        email LIKE ? OR
+        telefono LIKE ? OR
+        richiesta LIKE ?
+    )";
+    $params = array_merge($params, [$search, $search, $search, $search]);
+}
+
+if (!empty($_GET['stato'])) {
+    $where[] = "stato = ?";
+    $params[] = $_GET['stato'];
+}
+
+if (isset($_GET['tipo']) && $_GET['tipo'] !== '') {
+    if ($_GET['tipo'] === 'pagamento') {
+        $where[] = "attivita_pagamento = 1";
+    } elseif ($_GET['tipo'] === 'gratuita') {
+        $where[] = "attivita_pagamento = 0";
+    }
+}
+
+if (!empty($_GET['importo_da'])) {
+    $where[] = "importo >= ?";
+    $params[] = floatval($_GET['importo_da']);
+}
+if (!empty($_GET['importo_a'])) {
+    $where[] = "importo <= ?";
+    $params[] = floatval($_GET['importo_a']);
+}
+
+if (!empty($_GET['data_da'])) {
+    $where[] = "data_richiesta >= ?";
+    $params[] = $_GET['data_da'];
+}
+if (!empty($_GET['data_a'])) {
+    $where[] = "data_richiesta <= ?";
+    $params[] = $_GET['data_a'];
+}
+
+$sql = "SELECT * FROM richieste";
+if ($where) {
+    $sql .= " WHERE " . implode(' AND ', $where);
+}
+
+// Ordinamento
+$order = 'data_richiesta DESC, created_at DESC';
+if (!empty($_GET['order'])) {
+    if ($_GET['order'] === 'created_at') $order = 'created_at DESC';
+    elseif ($_GET['order'] === 'denominazione') $order = 'denominazione ASC';
+    elseif ($_GET['order'] === 'data_richiesta') $order = 'data_richiesta DESC';
+}
+$sql .= " ORDER BY $order";
+
 try {
-    $sql = "SELECT * FROM richieste ORDER BY data_richiesta DESC, created_at DESC";
-    $stmt = $pdo->query($sql);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $richieste = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $richieste = [];
@@ -79,6 +139,8 @@ function getStatoBadge($stato) {
                                 <option value="pagamento" <?= (isset($_GET['tipo']) && $_GET['tipo'] == 'pagamento') ? 'selected' : '' ?>>A pagamento</option>
                                 <option value="gratuita" <?= (isset($_GET['tipo']) && $_GET['tipo'] == 'gratuita') ? 'selected' : '' ?>>Gratuita</option>
                             </select>
+                            <input type="number" step="0.01" name="importo_da" class="form-control" style="max-width: 120px;" placeholder="Importo da" value="<?= isset($_GET['importo_da']) ? htmlspecialchars($_GET['importo_da']) : '' ?>">
+                            <input type="number" step="0.01" name="importo_a" class="form-control" style="max-width: 120px;" placeholder="Importo a" value="<?= isset($_GET['importo_a']) ? htmlspecialchars($_GET['importo_a']) : '' ?>">
                             <select name="order" class="form-select" style="max-width: 180px;">
                                 <option value="data_richiesta" <?= (!isset($_GET['order']) || $_GET['order'] == 'data_richiesta') ? 'selected' : '' ?>>Ordina per data richiesta</option>
                                 <option value="created_at" <?= (isset($_GET['order']) && $_GET['order'] == 'created_at') ? 'selected' : '' ?>>Ordina per data creazione</option>
