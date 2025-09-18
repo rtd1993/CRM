@@ -82,32 +82,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
         die("Non autorizzato a modificare altri utenti.");
     }
     
-    // Gli utenti base non possono cambiare il proprio ruolo
-    // Gli admin non possono cambiare il proprio ruolo (solo i developer possono)
-    if (!$is_admin_or_dev || ($utente_loggato_ruolo === 'admin' && $id === $utente_loggato_id)) {
-        // Recupera il ruolo attuale dall'utente
-        $stmt = $pdo->prepare("SELECT ruolo FROM utenti WHERE id = ?");
-        $stmt->execute([$id]);
-        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
-        $ruolo = $user_data['ruolo']; // Mantieni il ruolo esistente
+    // Recupera i dati dell'utente target per verifiche di autorizzazione
+    $stmt = $pdo->prepare("SELECT ruolo, colore FROM utenti WHERE id = ?");
+    $stmt->execute([$id]);
+    $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    $target_user_ruolo = $user_data['ruolo'];
+    
+    // Regole per cambio ruolo:
+    // - Utenti base non possono cambiare il proprio ruolo
+    // - Admin e Developer non possono cambiare il proprio ruolo
+    // - Admin non può cambiare ruolo di Developer
+    // - Solo Developer può cambiare ruolo di chiunque (anche altri admin)
+    $can_change_role = false;
+    if ($utente_loggato_ruolo === 'developer' && $id !== $utente_loggato_id) {
+        $can_change_role = true; // Developer può cambiare ruolo di tutti tranne se stesso
+    } elseif ($utente_loggato_ruolo === 'admin' && $id !== $utente_loggato_id && $target_user_ruolo !== 'developer') {
+        $can_change_role = true; // Admin può cambiare ruolo di tutti tranne se stesso e i developer
+    }
+    
+    if (!$can_change_role) {
+        $ruolo = $target_user_ruolo; // Mantieni il ruolo esistente
+    }
+    
+    // Regole per cambio colore:
+    // - Utenti base possono cambiare solo il proprio colore
+    // - Admin e Developer non possono cambiare il proprio colore
+    // - Admin non può cambiare colore di Developer
+    // - Solo Developer può cambiare colore di chiunque (anche altri admin)
+    $can_change_color = false;
+    if ($utente_loggato_ruolo === 'developer' && $id !== $utente_loggato_id) {
+        $can_change_color = true; // Developer può cambiare colore di tutti tranne se stesso
+    } elseif ($utente_loggato_ruolo === 'admin' && $id !== $utente_loggato_id && $target_user_ruolo !== 'developer') {
+        $can_change_color = true; // Admin può cambiare colore di tutti tranne se stesso e i developer
+    } elseif (!$is_admin_or_dev && $id === $utente_loggato_id) {
+        $can_change_color = true; // Utente base può cambiare il proprio colore
+    }
+    
+    if (!$can_change_color) {
+        // Recupera il colore attuale
+        $colore = $user_data['colore'] ?? '#007BFF'; // Mantieni il colore esistente
     }
 
     $stmt = $pdo->prepare("UPDATE utenti SET nome = ?, email = ?, ruolo = ?, telegram_chat_id = ?, colore = ? WHERE id = ?");
     $ok = $stmt->execute([$nome, $email, $ruolo, $telegram_chat_id, $colore, $id]);
 
-    // Solo admin/developer possono cambiare password di altri utenti
-    if (!empty($password)) {
-        if ($id === $utente_loggato_id) {
-            // Cambio della propria password
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
-            $stmt->execute([$hash, $id]);
-        } elseif ($is_admin_or_dev) {
-            // Admin/Developer può cambiare password di altri utenti
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
-            $stmt->execute([$hash, $id]);
-        }
+    // Gestione password personalizzata:
+    // - Ogni utente può cambiare la propria password
+    // - Admin/Developer NON possono impostare password personalizzate per altri (solo reset)
+    if (!empty($password) && $id === $utente_loggato_id) {
+        // Solo cambio della propria password è consentito tramite form
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE utenti SET password = ? WHERE id = ?");
+        $stmt->execute([$hash, $id]);
     }
 
     if ($ok) {
@@ -897,7 +923,16 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                 
                 <div class="form-group">
                     <label class="form-label">🎭 Ruolo:</label>
-                    <?php if ($is_admin_or_dev && ($utente_selezionato['id'] !== $utente_loggato_id || $utente_loggato_ruolo === 'developer')): ?>
+                    <?php 
+                    // Determina se l'utente corrente può cambiare il ruolo dell'utente selezionato
+                    $can_change_role_ui = false;
+                    if ($utente_loggato_ruolo === 'developer' && $utente_selezionato['id'] !== $utente_loggato_id) {
+                        $can_change_role_ui = true; // Developer può cambiare ruolo di tutti tranne se stesso
+                    } elseif ($utente_loggato_ruolo === 'admin' && $utente_selezionato['id'] !== $utente_loggato_id && $utente_selezionato['ruolo'] !== 'developer') {
+                        $can_change_role_ui = true; // Admin può cambiare ruolo di tutti tranne se stesso e i developer
+                    }
+                    ?>
+                    <?php if ($can_change_role_ui): ?>
                     <select name="ruolo" class="form-select" required>
                         <?php foreach (["guest", "employee", "admin", "developer"] as $ruolo): ?>
                             <option value="<?= $ruolo ?>" <?= $utente_selezionato['ruolo'] === $ruolo ? 'selected' : '' ?>>
@@ -908,6 +943,11 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                     <?php else: ?>
                     <input type="text" class="form-input" value="<?= $utente_selezionato['ruolo'] === 'employee' ? 'Impiegato' : ucfirst($utente_selezionato['ruolo']) ?>" readonly style="background-color: #f8f9fa;">
                     <input type="hidden" name="ruolo" value="<?= $utente_selezionato['ruolo'] ?>">
+                    <?php if ($utente_selezionato['id'] === $utente_loggato_id): ?>
+                        <small class="form-text text-muted">💡 Non puoi cambiare il tuo ruolo</small>
+                    <?php elseif ($utente_loggato_ruolo === 'admin' && $utente_selezionato['ruolo'] === 'developer'): ?>
+                        <small class="form-text text-muted">💡 Solo i developer possono modificare il ruolo di altri developer</small>
+                    <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 
@@ -919,6 +959,16 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                 <div class="form-group">
                     <label class="form-label">🎨 Colore Utente:</label>
                     <?php
+                    // Determina se l'utente corrente può cambiare il colore dell'utente selezionato
+                    $can_change_color_ui = false;
+                    if ($utente_loggato_ruolo === 'developer' && $utente_selezionato['id'] !== $utente_loggato_id) {
+                        $can_change_color_ui = true; // Developer può cambiare colore di tutti tranne se stesso
+                    } elseif ($utente_loggato_ruolo === 'admin' && $utente_selezionato['id'] !== $utente_loggato_id && $utente_selezionato['ruolo'] !== 'developer') {
+                        $can_change_color_ui = true; // Admin può cambiare colore di tutti tranne se stesso e i developer
+                    } elseif (!$is_admin_or_dev && $utente_selezionato['id'] === $utente_loggato_id) {
+                        $can_change_color_ui = true; // Utente base può cambiare il proprio colore
+                    }
+                    
                     $colori_standard = [
                         '#007BFF' => 'Blu',
                         '#28A745' => 'Verde',
@@ -939,6 +989,8 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                     
                     $colore_attuale = $utente_selezionato['colore'] ?? '#007BFF';
                     ?>
+                    
+                    <?php if ($can_change_color_ui): ?>
                     <div class="color-selection-grid">
                         <?php foreach ($colori_standard as $colore => $nome): ?>
                             <?php 
@@ -961,17 +1013,30 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                             </label>
                         <?php endforeach; ?>
                     </div>
+                    <?php else: ?>
+                    <!-- Colore non modificabile -->
+                    <div class="color-display" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                        <div class="color-swatch" style="width: 30px; height: 30px; background-color: <?= $colore_attuale ?>; border-radius: 50%; border: 2px solid #dee2e6;"></div>
+                        <span><?= $colori_standard[$colore_attuale] ?? 'Colore personalizzato' ?></span>
+                    </div>
+                    <input type="hidden" name="colore" value="<?= $colore_attuale ?>">
+                    <?php if ($utente_selezionato['id'] === $utente_loggato_id && $is_admin_or_dev): ?>
+                        <small class="form-text text-muted">💡 Non puoi cambiare il tuo colore</small>
+                    <?php elseif ($utente_loggato_ruolo === 'admin' && $utente_selezionato['ruolo'] === 'developer'): ?>
+                        <small class="form-text text-muted">💡 Solo i developer possono modificare il colore di altri developer</small>
+                    <?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 
                 <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
-                <!-- Reset password e cambio password per admin/developer su altri utenti -->
+                <!-- Solo reset password per admin/developer su altri utenti -->
                 <div class="form-group">
-                    <label class="form-label">🔒 Password:</label>
-                    <input type="password" name="password" class="form-input" placeholder="Inserisci nuova password per cambiarla">
-                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: #e3f2fd; border-radius: 6px; font-size: 0.9rem; color: #1976d2;">
-                        💡 <strong>Alternativa rapida:</strong> Usa il pulsante "Reset Password" per impostare automaticamente "Password01!"
+                    <label class="form-label">🔒 Reset Password:</label>
+                    <div style="padding: 0.8rem; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">
+                        ⚠️ <strong>Admin e Developer possono solo resettare le password di altri utenti, non impostare password personalizzate.</strong><br>
+                        Il reset imposta automaticamente la password a "<strong>Password01!</strong>"
                     </div>
-                    <form method="post" style="display: inline; margin-top: 1rem;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
+                    <form method="post" style="display: inline;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
                         <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
                         <button type="submit" name="reset_password" class="reset-password-btn">
                             🔄 Reset Password a "Password01!"
@@ -983,6 +1048,7 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                 <div class="form-group">
                     <label class="form-label">🔒 Cambia password:</label>
                     <input type="password" name="password" class="form-input" placeholder="Inserisci nuova password per cambiarla (lascia vuoto per non cambiare)">
+                    <small class="form-text text-muted">💡 Puoi impostare una password personalizzata per il tuo account</small>
                 </div>
                 <?php endif; ?>
                 
