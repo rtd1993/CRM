@@ -4,8 +4,6 @@
  * Supporta: Chat Globale, Chat Pratiche, Chat Private
  */
 
-console.log('🚀 Inizializzazione Complete Chat System');
-
 // Configurazione di default (solo se non già impostata dal PHP)
 if (typeof window.completeChatConfig === 'undefined') {
     window.completeChatConfig = {
@@ -42,49 +40,22 @@ class CompleteChatSystem {
         this.apiBase = this.config.apiBase || '/api/chat/';
         this.pollingInterval = this.config.pollingInterval || 3000;
         
-        // Debug iniziale
-        console.log('🔄 Inizializzazione CompleteChat');
-        console.log('🔍 Config iniziale:', this.config);
-        console.log('🔍 window.completeChatConfig:', window.completeChatConfig);
-        console.log('🔍 window.completeChatConfig.userId:', window.completeChatConfig?.userId);
-        console.log('🔍 Tipo window.completeChatConfig.userId:', typeof window.completeChatConfig?.userId);
-        
         // Verifica userId - fondamentale per il funzionamento
         if (!this.config.userId && window.completeChatConfig) {
-            console.log('📥 Copiando config da window.completeChatConfig');
-            console.log('📥 Prima della copia - this.config.userId:', this.config.userId);
-            console.log('📥 Prima della copia - window.completeChatConfig.userId:', window.completeChatConfig.userId);
-            
             this.config = { ...window.completeChatConfig };
-            
-            console.log('📥 Config dopo copia:', this.config);
-            console.log('📥 Dopo la copia - this.config.userId:', this.config.userId);
-            console.log('📥 Dopo la copia - tipo userId:', typeof this.config.userId);
         }
         
         // Controlla se l'utente è autenticato
         if (window.completeChatConfig && window.completeChatConfig.authenticated === false) {
-            console.warn('⚠️ Chat non avviata: utente non autenticato');
             return; // Non avviare la chat per utenti non autenticati
         }
         
         // Converti userId in numero se è una stringa
         if (typeof this.config.userId === 'string') {
-            console.log('🔄 Convertendo userId da stringa a numero');
             this.config.userId = parseInt(this.config.userId);
         }
         
-        console.log('🔍 userId finale:', this.config.userId, 'type:', typeof this.config.userId);
-        
         if (!this.config.userId || this.config.userId === null || isNaN(this.config.userId) || this.config.userId <= 0) {
-            console.error('❌ ERRORE CRITICO: userId non valido!');
-            console.log('🔍 Controlli falliti:');
-            console.log('   !this.config.userId:', !this.config.userId);
-            console.log('   userId === null:', this.config.userId === null);
-            console.log('   isNaN(userId):', isNaN(this.config.userId));
-            console.log('   userId <= 0:', this.config.userId <= 0);
-            console.log('🔍 Config completo:', this.config);
-            console.log('🔍 window.completeChatConfig completo:', window.completeChatConfig);
             
             // Mostra messaggio user-friendly
             if (document.getElementById('chat-footer-widget')) {
