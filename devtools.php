@@ -190,6 +190,62 @@ function getResourceUsage() {
 }
 
 function getNetworkStats() {
+        // Ping ascontabilmente.homes
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $ping_result = shell_exec('ping -n 1 ascontabilmente.homes 2>nul');
+            if ($ping_result && strpos($ping_result, 'TTL=') !== false) {
+                preg_match('/time[=<]([0-9]+)ms/', $ping_result, $matches);
+                $network['ping_ascontabilmente'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_ascontabilmente'] = 'FAIL';
+            }
+        } else {
+            $ping_result = shell_exec('ping -c 1 ascontabilmente.homes 2>/dev/null');
+            if ($ping_result && strpos($ping_result, '1 received') !== false) {
+                preg_match('/time=([0-9.]+)/', $ping_result, $matches);
+                $network['ping_ascontabilmente'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_ascontabilmente'] = 'FAIL';
+            }
+        }
+
+        // Ping porkbun.com
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $ping_result = shell_exec('ping -n 1 porkbun.com 2>nul');
+            if ($ping_result && strpos($ping_result, 'TTL=') !== false) {
+                preg_match('/time[=<]([0-9]+)ms/', $ping_result, $matches);
+                $network['ping_porkbun'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_porkbun'] = 'FAIL';
+            }
+        } else {
+            $ping_result = shell_exec('ping -c 1 porkbun.com 2>/dev/null');
+            if ($ping_result && strpos($ping_result, '1 received') !== false) {
+                preg_match('/time=([0-9.]+)/', $ping_result, $matches);
+                $network['ping_porkbun'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_porkbun'] = 'FAIL';
+            }
+        }
+
+        // Ping cloudflare.com
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $ping_result = shell_exec('ping -n 1 cloudflare.com 2>nul');
+            if ($ping_result && strpos($ping_result, 'TTL=') !== false) {
+                preg_match('/time[=<]([0-9]+)ms/', $ping_result, $matches);
+                $network['ping_cloudflare'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_cloudflare'] = 'FAIL';
+            }
+        } else {
+            $ping_result = shell_exec('ping -c 1 cloudflare.com 2>/dev/null');
+            if ($ping_result && strpos($ping_result, '1 received') !== false) {
+                preg_match('/time=([0-9.]+)/', $ping_result, $matches);
+                $network['ping_cloudflare'] = isset($matches[1]) ? $matches[1] . 'ms' : 'OK';
+            } else {
+                $network['ping_cloudflare'] = 'FAIL';
+            }
+        }
     try {
         $network = [];
         
