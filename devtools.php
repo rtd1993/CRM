@@ -1129,9 +1129,7 @@ Esempi:
                     <h3 class="text-secondary">${stats.task || 0}</h3>
                 </div>
             </div>
-            <div class="col-md-4">
-                
-            </div>
+            
             <div class="col-md-4">
                 <div class="stat-box">
                     <h6><i class="fas fa-user-tasks text-purple"></i> Task Clienti</h6>
