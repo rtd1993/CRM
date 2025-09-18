@@ -792,17 +792,15 @@ $sezioni = [
                             <?php endif; ?>
                         </div>
                         
-                        <?php if (!empty($codice_fiscale)): ?>
                         <?php if (!empty($link_cartella)): ?>
-                            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                                <strong>Percorso:</strong> <?php echo htmlspecialchars(__DIR__ . '/local_drive/' . $link_cartella); ?>
-                            </div>
-                            
-                        <?php else: ?>
-                            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
-                                <strong>Percorso:</strong> non presente
-                            </div>
-                        <?php endif; ?>
+    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
+        <strong>Percorso:</strong> <?php echo htmlspecialchars(__DIR__ . '/local_drive/' . $link_cartella); ?>
+    </div>
+<?php else: ?>
+    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em; color: #666;">
+        <strong>Percorso:</strong> non presente
+    </div>
+<?php endif; ?>
             </div>
 </div>
 
