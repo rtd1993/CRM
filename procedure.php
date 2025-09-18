@@ -290,9 +290,38 @@ if (isset($_POST['elimina_procedura'])) {
     }
 }
 
-// Recupero tutte le procedure
-$stmt = $pdo->prepare("SELECT * FROM procedure_crm ORDER BY denominazione ASC");
-$stmt->execute();
+
+// Costruzione query con filtri
+$where = [];
+$params = [];
+if (!empty($_GET['search'])) {
+    $search = '%' . trim($_GET['search']) . '%';
+    $where[] = "(denominazione LIKE ? OR procedura LIKE ?)";
+    $params[] = $search;
+    $params[] = $search;
+}
+if (!empty($_GET['valida_dal_da'])) {
+    $where[] = "valida_dal >= ?";
+    $params[] = $_GET['valida_dal_da'];
+}
+if (!empty($_GET['valida_dal_a'])) {
+    $where[] = "valida_dal <= ?";
+    $params[] = $_GET['valida_dal_a'];
+}
+if (isset($_GET['allegato']) && $_GET['allegato'] !== '') {
+    if ($_GET['allegato'] === 'presente') {
+        $where[] = "allegato IS NOT NULL AND allegato != ''";
+    } elseif ($_GET['allegato'] === 'assente') {
+        $where[] = "(allegato IS NULL OR allegato = '')";
+    }
+}
+$sql = "SELECT * FROM procedure_crm";
+if ($where) {
+    $sql .= " WHERE " . implode(' AND ', $where);
+}
+$sql .= " ORDER BY denominazione ASC";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $procedure = $stmt->fetchAll();
 ?>
 
