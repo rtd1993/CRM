@@ -1161,6 +1161,7 @@ Esempi:
                 </div>
             </div>
         `;
+        
         document.getElementById('stats-content').innerHTML = html;
     }
 
