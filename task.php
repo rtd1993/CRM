@@ -37,18 +37,7 @@ if (isset($_POST['complete_id'])) {
             if (!is_dir($log_dir)) {
                 mkdir($log_dir, 0755, true);
             }
-            
             $log_file = $log_dir . 'task_completati.txt';
-            $log_entry = sprintf(
-                "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrente: %s\n",
-                date('Y-m-d H:i:s'),
-                $task['descrizione'],
-                $user_name,
-                $task['scadenza'],
-                (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) ? "Sì (ogni {$task['ricorrenza']} giorni)" : "No"
-            );
-            
-            file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
             // Invia notifica chat
             $msg = "$user_name ha completato il task: " . $task['descrizione'];
             $pdo->prepare("INSERT INTO chat_messaggi (chat_id, user_id, message, timestamp) VALUES (?, ?, ?, NOW())")
@@ -56,7 +45,6 @@ if (isset($_POST['complete_id'])) {
 
             if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
                 // Task ricorrente: salva info su file, elimina il task attuale e lo ricrea con la scadenza successiva
-                $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
                 $log_entry = sprintf(
                     "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrente: Sì (ogni %d giorni)\n",
                     date('Y-m-d H:i:s'),
@@ -84,7 +72,6 @@ if (isset($_POST['complete_id'])) {
                 exit;
             } else {
                 // Task non ricorrente: salva info su file e elimina
-                $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
                 $log_entry = sprintf(
                     "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s\n",
                     date('Y-m-d H:i:s'),
