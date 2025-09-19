@@ -1034,19 +1034,7 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                 
                 <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
                 <!-- Solo reset password per admin/developer su altri utenti -->
-                <div class="form-group">
-                    <label class="form-label">🔒 Reset Password:</label>
-                    <div style="padding: 0.8rem; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">
-                        ⚠️ <strong>Admin e Developer possono solo resettare le password di altri utenti, non impostare password personalizzate.</strong><br>
-                        Il reset imposta automaticamente la password a "<strong>Password01!</strong>"
-                    </div>
-                    <form method="post" style="display: inline;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
-                        <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
-                        <button type="submit" name="reset_password" class="reset-password-btn">
-                            🔄 Reset Password a "Password01!"
-                        </button>
-                    </form>
-                </div>
+                <!-- Il form di reset password viene spostato fuori dal form principale -->
                 <?php else: ?>
                 <!-- Campo password per il proprio account -->
                 <div class="form-group">
@@ -1058,6 +1046,22 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                 
                 <button type="submit" class="save-btn">💾 Salva modifiche</button>
             </form>
+            <?php if ($is_admin_or_dev && $utente_selezionato['id'] !== $utente_loggato_id): ?>
+            <!-- Form di reset password SEPARATO -->
+            <form method="post" style="margin-top: 2rem;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
+                <div class="form-group">
+                    <label class="form-label">🔒 Reset Password:</label>
+                    <div style="padding: 0.8rem; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">
+                        ⚠️ <strong>Admin e Developer possono solo resettare le password di altri utenti, non impostare password personalizzate.</strong><br>
+                        Il reset imposta automaticamente la password a "<strong>Password01!</strong>"
+                    </div>
+                    <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
+                    <button type="submit" name="reset_password" class="reset-password-btn">
+                        🔄 Reset Password a "Password01!"
+                    </button>
+                </div>
+            </form>
+            <?php endif; ?>
         <?php else: ?>
             <div class="no-user-selected">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">👆</div>
