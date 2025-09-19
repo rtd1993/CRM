@@ -1088,22 +1088,8 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
 <div id="userModal" class="user-modal">
     <div class="user-modal-content">
 
-<!-- Form di creazione utente (esempio base, personalizza secondo la tua logica) -->
-<form method="post" id="createUserForm">
-    <div class="form-group">
-        <label class="form-label">Nome utente:</label>
-        <input type="text" name="username" class="form-input" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Email:</label>
-        <input type="email" name="email" class="form-input" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label">Password:</label>
-        <input type="password" name="password" class="form-input" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Crea utente</button>
-</form>
+<!-- Carica la pagina di creazione utente in un iframe -->
+<iframe id="userModalFrame" src="create_user.php" style="width:100%;height:600px;border:none;"></iframe>
 
 function closeUserModal() {
     const modal = document.getElementById('userModal');
