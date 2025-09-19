@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                         $task['descrizione'],
                         $task['scadenza'],
                         $task['ricorrenza'],
-                        $task['fatturabile']
+                        (isset($task['fatturabile']) && ($task['fatturabile'] === 1 || $task['fatturabile'] === '1')) ? 1 : 0
                     ]);
                     
                     if ($result) {
