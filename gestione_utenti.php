@@ -1089,7 +1089,7 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
 <div id="userModal" class="user-modal">
     <div class="user-modal-content">
         <!-- Carica la pagina di creazione utente in un iframe -->
-        <iframe id="userModalFrame" src="create_user.php?popup=1" style="width:100%;height:600px;border:none;"></iframe>
+    <iframe id="userModalFrame" src="create_user.php?popup=1" style="width:100%;min-height:400px;height:auto;border:none;display:block;margin:0 auto;"></iframe>
     </div>
 </div>
 
