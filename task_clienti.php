@@ -75,7 +75,190 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
 }
 
 // **NUOVO**: Gestione copia task multipli
-// (RIMOSSO BLOCCO ERRATO: catch orfano)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    
+    if (isset($json_data['action']) && $json_data['action'] === 'copy_tasks') {
+        header('Content-Type: application/json');
+        
+        try {
+            $tasks = $json_data['tasks'] ?? [];
+            $target_clients = $json_data['target_clients'] ?? [];
+            
+            if (empty($tasks)) {
+                echo json_encode(['success' => false, 'error' => 'Nessun task selezionato']);
+                exit;
+            }
+            
+            if (empty($target_clients)) {
+                echo json_encode(['success' => false, 'error' => 'Nessun cliente di destinazione selezionato']);
+                exit;
+            }
+            
+            $copied_count = 0;
+            $pdo->beginTransaction();
+            
+            foreach ($target_clients as $target_client_id) {
+                $target_client_id = intval($target_client_id);
+                
+                foreach ($tasks as $task) {
+                    // Verifica che il cliente target esista
+                    $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM clienti WHERE id = ?");
+                    $stmt_check->execute([$target_client_id]);
+                    
+                    if ($stmt_check->fetchColumn() == 0) {
+                        continue; // Salta se il cliente non esiste
+                    }
+                    
+                    // Copia il task
+                    $stmt_copy = $pdo->prepare("
+                        INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ");
+                    
+                    $result = $stmt_copy->execute([
+                        $target_client_id,
+                        $task['titolo'] ?? substr($task['descrizione'], 0, 255),
+                        $task['descrizione'],
+                        $task['scadenza'],
+                        $task['ricorrenza'],
+                        $task['fatturabile']
+                    ]);
+                    
+                    if ($result) {
+                        $copied_count++;
+                    }
+                }
+            }
+            
+            // Invia notifica nella chat se l'utente è loggato
+            if (isset($_SESSION['user_id']) && isset($_SESSION['user_name']) && $copied_count > 0) {
+                $msg_notifica = $_SESSION['user_name'] . " ha copiato $copied_count task a " . count($target_clients) . " client" . (count($target_clients) > 1 ? 'i' : 'e');
+                $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
+                $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
+            }
+            
+            $pdo->commit();
+            
+            echo json_encode([
+                'success' => true, 
+                'copied_count' => $copied_count,
+                'message' => "Copiati $copied_count task con successo"
+            ]);
+            exit;
+            
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+}
+
+include __DIR__ . '/includes/header.php';
+
+$messaggio = "";
+
+// **NUOVO**: Gestione creazione task via POST (per il modale)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
+    try {
+        $cliente_id = intval($_POST['cliente_id'] ?? 0);
+        $descrizione = trim($_POST['descrizione'] ?? '');
+        $scadenza = $_POST['scadenza'] ?? '';
+        $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
+        $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        
+        // Debug log
+        error_log("Task creation: cliente_id=$cliente_id, descrizione=$descrizione, scadenza=$scadenza, ricorrenza=$ricorrenza, fatturabile=$fatturabile");
+        
+        // Validazione
+        if ($cliente_id <= 0) {
+            throw new Exception("Seleziona un cliente");
+        }
+        
+        if (empty($descrizione)) {
+            throw new Exception("La descrizione è obbligatoria");
+        }
+        
+        if (empty($scadenza)) {
+            throw new Exception("La data di scadenza è obbligatoria");
+        }
+        
+        // Converti ricorrenza in giorni
+        $ricorrenza_giorni = 0;  // Default a 0 invece di null
+        if ($ricorrenza > 0) {
+            switch ($tipo_ricorrenza) {
+                case 'giorni':
+                    $ricorrenza_giorni = $ricorrenza;
+                    break;
+                case 'settimane':
+                    $ricorrenza_giorni = $ricorrenza * 7;
+                    break;
+                case 'mesi':
+                    $ricorrenza_giorni = $ricorrenza * 30;
+                    break;
+                case 'anni':
+                    $ricorrenza_giorni = $ricorrenza * 365;
+                    break;
+            }
+        }
+
+        // Crea il nuovo task
+        $stmt = $pdo->prepare("
+            INSERT INTO task_clienti (cliente_id, titolo, descrizione, scadenza, ricorrenza, fatturabile) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $result = $stmt->execute([$cliente_id, substr($descrizione, 0, 255), $descrizione, $scadenza, $ricorrenza_giorni, $fatturabile]);
+        
+        if (!$result) {
+            $errorInfo = $stmt->errorInfo();
+            error_log("Errore SQL INSERT task_clienti: " . print_r($errorInfo, true));
+            throw new Exception("Errore nella creazione del task: " . ($errorInfo[2] ?? 'Errore sconosciuto'));
+        }
+        
+        // Invia notifica nella chat se l'utente è loggato
+        if (isset($_SESSION['user_id']) && isset($_SESSION['user_name'])) {
+            // Recupera nome cliente per la notifica
+            $stmt_cliente = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, Nome FROM clienti WHERE id = ?");
+            $stmt_cliente->execute([$cliente_id]);
+            $cliente_data = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
+            $nome_cliente = '';
+            if ($cliente_data) {
+                $nome_cliente = trim(($cliente_data['Nome'] ?? '') . ' ' . ($cliente_data['Cognome_Ragione_sociale'] ?? ''));
+            }
+            
+            $msg_notifica = $_SESSION['user_name'] . " ha creato un nuovo task: " . $descrizione . 
+                           ($nome_cliente ? " (Cliente: $nome_cliente)" : "");
+            $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
+            $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
+        }
+        
+        $messaggio = "Task creato con successo!";
+        
+        // Verifica se è una richiesta AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo json_encode(['success' => true, 'message' => $messaggio]);
+            exit;
+        }
+        
+        // Reindirizza per evitare re-submit (solo per richieste normali)
+        header("Location: task_clienti.php?success=" . urlencode($messaggio));
+        exit;
+        
+    } catch (Exception $e) {
+        $messaggio = "Errore: " . $e->getMessage();
+        error_log("Errore creazione task cliente: " . $e->getMessage());
+        
+        // Verifica se è una richiesta AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+}
 
 // Gestione messaggi di successo dal redirect
 if (isset($_GET['success'])) {
