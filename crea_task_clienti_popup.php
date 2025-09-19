@@ -348,21 +348,11 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
             <?php if ($edit_mode): ?>
                 <input type="hidden" name="task_id" value="<?= htmlspecialchars($task_data['id']) ?>">
             <?php endif; ?>
-            
             <div class="form-group">
-                <label for="cliente_id">👤 Cliente *</label>
-                <select name="cliente_id" id="cliente_id" class="form-control" required>
-                    <option value="">Seleziona un cliente...</option>
-                    <?php foreach ($clienti as $cliente): ?>
-                        <option value="<?= $cliente['id'] ?>" 
-                                <?= ($edit_mode && $task_data && $task_data['cliente_id'] == $cliente['id']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars(trim(($cliente['Nome'] ?? '') . ' ' . ($cliente['Cognome_Ragione_sociale'] ?? ''))) ?>
-                            <?php if (!empty($cliente['Codice_fiscale'])): ?>
-                                - <?= htmlspecialchars($cliente['Codice_fiscale']) ?>
-                            <?php endif; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label for="cliente_search">👤 Cerca Cognome Cliente *</label>
+                <input type="text" id="cliente_search" class="form-control" autocomplete="off" placeholder="Inizia a scrivere il cognome...">
+                <ul id="clienti_list" style="list-style:none; padding-left:0; margin-top:8px; max-height:180px; overflow-y:auto; border:1px solid #e1e5e9; border-radius:8px; background:#fff; display:none;"></ul>
+                <input type="hidden" name="cliente_id" id="cliente_id" required>
             </div>
 
             <div class="form-group">
@@ -450,6 +440,49 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
     </div>
 
     <script>
+        // Autocomplete cognome cliente
+        const clienteSearch = document.getElementById('cliente_search');
+        const clientiList = document.getElementById('clienti_list');
+        const clienteIdInput = document.getElementById('cliente_id');
+
+        clienteSearch.addEventListener('input', function() {
+            const q = this.value.trim();
+            clientiList.innerHTML = '';
+            clienteIdInput.value = '';
+            if (q.length < 1) {
+                clientiList.style.display = 'none';
+                return;
+            }
+            fetch('ajax/clienti_search.php?q=' + encodeURIComponent(q))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        clientiList.style.display = 'none';
+                        return;
+                    }
+                    clientiList.innerHTML = '';
+                    data.forEach(cliente => {
+                        const li = document.createElement('li');
+                        li.textContent = cliente.cognome + ' ' + cliente.nome;
+                        li.style.padding = '8px 12px';
+                        li.style.cursor = 'pointer';
+                        li.addEventListener('click', function() {
+                            clienteSearch.value = cliente.cognome + ' ' + cliente.nome;
+                            clienteIdInput.value = cliente.id;
+                            clientiList.style.display = 'none';
+                        });
+                        clientiList.appendChild(li);
+                    });
+                    clientiList.style.display = 'block';
+                });
+        });
+
+        // Nascondi lista se clicco fuori
+        document.addEventListener('click', function(e) {
+            if (!clienteSearch.contains(e.target) && !clientiList.contains(e.target)) {
+                clientiList.style.display = 'none';
+            }
+        });
         // Auto-focus sul primo campo
         document.addEventListener('DOMContentLoaded', function() {
             const clienteSelect = document.getElementById('cliente_id');
