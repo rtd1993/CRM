@@ -214,22 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
             throw new Exception("Errore nella creazione del task: " . ($errorInfo[2] ?? 'Errore sconosciuto'));
         }
         
-        // Invia notifica nella chat se l'utente è loggato
-        if (isset($_SESSION['user_id']) && isset($_SESSION['user_name'])) {
-            // Recupera nome cliente per la notifica
-            $stmt_cliente = $pdo->prepare("SELECT `Cognome_Ragione_sociale`, Nome FROM clienti WHERE id = ?");
-            $stmt_cliente->execute([$cliente_id]);
-            $cliente_data = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
-            $nome_cliente = '';
-            if ($cliente_data) {
-                $nome_cliente = trim(($cliente_data['Nome'] ?? '') . ' ' . ($cliente_data['Cognome_Ragione_sociale'] ?? ''));
-            }
-            
-            $msg_notifica = $_SESSION['user_name'] . " ha creato un nuovo task: " . $descrizione . 
-                           ($nome_cliente ? " (Cliente: $nome_cliente)" : "");
-            $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
-            $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
-        }
+        
         
         $messaggio = "Task creato con successo!";
         
