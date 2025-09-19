@@ -1151,4 +1151,16 @@ document.addEventListener('DOMContentLoaded', function() {
 window.closeUserModal = closeUserModal;
 </script>
 
+<script>
+function openUserModal() {
+    var modal = document.getElementById('userModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        // Add ESC key listener
+        document.addEventListener('keydown', handleUserEscape);
+    }
+}
+</script>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
