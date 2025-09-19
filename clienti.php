@@ -595,7 +595,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                        style="display: none;">
                                 <label class="client-checkbox-label" 
                                        style="display: none; cursor: pointer;">
-                                    ☑️
+                                    
                                 </label>
                             </td>
                             <td>
