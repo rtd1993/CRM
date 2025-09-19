@@ -127,7 +127,20 @@ if (isset($_POST['fatturato_id'])) {
 }
 
 // Ricerca
+
 $search = $_GET['search'] ?? '';
+$filter_assegnato = $_GET['assegnato_a'] ?? '';
+$filter_fatturabile = $_GET['fatturabile'] ?? '';
+
+// Carica lista utenti per filtro assegnato_a
+$utenti = [];
+try {
+    $stmt_users = $pdo->prepare("SELECT id, nome FROM utenti ORDER BY nome");
+    $stmt_users->execute();
+    $utenti = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $utenti = [];
+}
 
 // Determina i permessi dell'utente
 $user_role = $_SESSION['user_role'] ?? 'employee';
@@ -149,9 +162,25 @@ if (!$can_see_all) {
 }
 
 // Filtro ricerca
+$filters = [];
 if ($search !== '') {
     $sql .= " AND t.descrizione LIKE ?";
     $params[] = "%$search%";
+}
+if ($filter_assegnato !== '') {
+    if ($filter_assegnato === 'none') {
+        $sql .= " AND t.assegnato_a IS NULL";
+    } else {
+        $sql .= " AND t.assegnato_a = ?";
+        $params[] = $filter_assegnato;
+    }
+}
+if ($filter_fatturabile !== '') {
+    if ($filter_fatturabile === '1') {
+        $sql .= " AND t.fatturabile = 1";
+    } elseif ($filter_fatturabile === '0') {
+        $sql .= " AND t.fatturabile = 0";
+    }
 }
 $sql .= " ORDER BY t.scadenza ASC";
 $stmt = $pdo->prepare($sql);
@@ -678,8 +707,20 @@ foreach ($task_list as $task) {
 
 <div class="task-controls">
     <button class="btn btn-primary" onclick="openTaskModal()">➕ Crea nuovo task</button>
-    <form method="get" class="search-form">
+    <form method="get" class="search-form" style="gap:0.5rem; flex-wrap:wrap;">
         <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
+        <select name="assegnato_a" class="search-input" style="min-width:140px;">
+            <option value="">Tutti gli utenti</option>
+            <option value="none" <?= $filter_assegnato==='none' ? 'selected' : '' ?>>Non assegnato</option>
+            <?php foreach ($utenti as $utente): ?>
+                <option value="<?= $utente['id'] ?>" <?= $filter_assegnato==$utente['id'] ? 'selected' : '' ?>><?= htmlspecialchars($utente['nome']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <select name="fatturabile" class="search-input" style="min-width:120px;">
+            <option value="">Fatturabilità</option>
+            <option value="1" <?= $filter_fatturabile==='1' ? 'selected' : '' ?>>Da fatturare</option>
+            <option value="0" <?= $filter_fatturabile==='0' ? 'selected' : '' ?>>Non da fatturare</option>
+        </select>
         <button type="submit" class="btn btn-primary">🔍 Cerca</button>
     </form>
 </div>
