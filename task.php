@@ -127,11 +127,23 @@ if (isset($_POST['fatturato_id'])) {
 }
 
 // Ricerca
+                // Se il task è associato a una richiesta, aggiorna la richiesta come completata
+                if (preg_match('/Gestire richiesta:.*\(ID: (\d+)\)/', $task['descrizione'], $matches)) {
+                    $richiesta_id = $matches[1];
+                    $update_stmt = $pdo->prepare("UPDATE richieste SET stato = 'completata', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                    $update_stmt->execute([$richiesta_id]);
+                }
 
 $search = $_GET['search'] ?? '';
 $filter_assegnato = $_GET['assegnato_a'] ?? '';
 $filter_fatturabile = $_GET['fatturabile'] ?? '';
 
+                // Se il task è associato a una richiesta, aggiorna la richiesta come completata
+                if (preg_match('/Gestire richiesta:.*\(ID: (\d+)\)/', $task['descrizione'], $matches)) {
+                    $richiesta_id = $matches[1];
+                    $update_stmt = $pdo->prepare("UPDATE richieste SET stato = 'completata', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                    $update_stmt->execute([$richiesta_id]);
+                }
 // Carica lista utenti per filtro assegnato_a
 $utenti = [];
 try {
