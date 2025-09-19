@@ -82,7 +82,6 @@ if (isset($_POST['complete_id'])) {
 
                 header("Location: task.php?completed=recurring");
                 exit;
-            }
             } else {
                 // Task non ricorrente: salva info su file e elimina
                 $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
