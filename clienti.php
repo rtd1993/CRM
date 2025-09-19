@@ -607,7 +607,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'eliminato') {
                                       title="<?= $c['completo'] ? 'Cliente completo - Tutti i dati sono stati inseriti' : 'Cliente incompleto - Mancano informazioni' ?>"></span>
                                 
                                 <a href="info_cliente.php?id=<?= urlencode($c['id']) ?>" class="cliente-link">
-                                    <?= htmlspecialchars($c['cognome']) ?>
+                                    <?= htmlspecialchars($c['cognome']) ?> <?= htmlspecialchars($c['Nome']) ?>
                                 </a>
                                 <?php if ($alert): ?>
                                     <span class="alert-icon" title="⚠️ Documenti in scadenza entro 30 giorni">⚠️</span>
