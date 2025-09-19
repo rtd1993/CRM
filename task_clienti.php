@@ -1545,12 +1545,37 @@ foreach ($tasks as $task) {
             </div>
             
             <div class="filter-actions">
+            <div class="filter-group">
+                <label for="filter_assegnato">Assegnazione</label>
+                <select name="assegnato_a" id="filter_assegnato">
+                    <option value="">Tutti</option>
+                    <option value="none" <?= (($_GET['assegnato_a'] ?? '') === 'none') ? 'selected' : '' ?>>Generali</option>
+                    <?php
+                    // Carica utenti per filtro assegnazione
+                    $utenti_filtro = $pdo->query("SELECT id, nome FROM utenti ORDER BY nome")->fetchAll();
+                    foreach ($utenti_filtro as $utente) {
+                        $selected = (($_GET['assegnato_a'] ?? '') == $utente['id']) ? 'selected' : '';
+                        echo "<option value=\"{$utente['id']}\" $selected>{$utente['nome']}</option>";
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter_fatturabile">Fatturabilità</label>
+                <select name="fatturabile" id="filter_fatturabile">
+                    <option value="">Tutti</option>
+                    <option value="1" <?= (($_GET['fatturabile'] ?? '') === '1') ? 'selected' : '' ?>>Fatturabili</option>
+                    <option value="0" <?= (($_GET['fatturabile'] ?? '') === '0') ? 'selected' : '' ?>>Non fatturabili</option>
+                </select>
+            </div>
+            <div class="filter-actions">
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="fas fa-search"></i> Filtra
                 </button>
                 <a href="task_clienti.php" class="btn btn-secondary btn-sm">
                     <i class="fas fa-times"></i> Reset
                 </a>
+            </div>
             </div>
         </div>
     </form>
