@@ -605,22 +605,22 @@ if (isset($_GET['success'])) {
             $success_message = 'Task creato con successo!';
             break;
         case '2':
-            $success_message = 'Task modificato con successo!';
+            $success_message = 'Task modificato!';
             break;
     }
 }
 
 if (isset($_GET['deleted'])) {
-    $success_message = 'Task eliminato con successo!';
+    $success_message = 'Task eliminato!';
 }
 
 if (isset($_GET['completed'])) {
     switch ($_GET['completed']) {
         case 'recurring':
-            $success_message = 'Task ricorrente completato! È stato ricreato con la prossima scadenza.';
+            $success_message = 'Scadenza Aggiornata!';
             break;
         case 'deleted':
-            $success_message = 'Task completato ed eliminato! Info salvate in task.txt';
+            $success_message = 'Task completato!';
             break;
     }
 }
