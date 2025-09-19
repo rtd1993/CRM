@@ -56,11 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Se è in modalità popup, chiudi il modal
         if (isset($_GET['popup'])) {
-            echo "<script>
+            echo '<script>
                 if (parent && parent.closeUserModal) {
-                    setTimeout(() => parent.closeUserModal(), 1000);
+                    setTimeout(function() { parent.closeUserModal(); }, 1000);
                 }
-            </script>";
+            </script>';
         }
     } else {
         $messaggio = "<div class='alert alert-danger mt-3'>❌ Compila tutti i campi obbligatori.</div>";
