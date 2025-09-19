@@ -327,14 +327,6 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                 }
             }
             
-            // Invia notifica nella chat se l'utente è loggato
-            if (isset($_SESSION['user_id']) && isset($_SESSION['user_name'])) {
-                $msg_notifica = $_SESSION['user_name'] . " ha completato il task: " . $task_data['descrizione'] . 
-                               ($nome_cliente ? " (Cliente: $nome_cliente)" : "");
-                $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
-                $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
-            }
-            
             if ($task_data['ricorrenza'] && $task_data['ricorrenza'] > 0) {
                 // Task ricorrente: calcola nuova scadenza
                 $nuova_scadenza = date('Y-m-d', strtotime($task_data['scadenza'] . ' + ' . $task_data['ricorrenza'] . ' days'));
