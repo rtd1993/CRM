@@ -288,27 +288,20 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
             
             // Salva il log del task completato nella cartella del cliente con nuovo formato
             if (!empty($task_data['cliente_id']) && isset($_SESSION['user_name'])) {
-                // Crea nome cartella con formato id_cognome.nome
+                // Crea nome cartella con formato id_Cognome.Nome (maiuscole)
                 $cliente_folder = $task_data['cliente_id'] . '_' . 
-                                strtolower(preg_replace('/[^A-Za-z0-9]/', '', $task_data['Cognome_Ragione_sociale'] ?? 'cliente'));
-                
-                // Aggiungi il nome se presente
+                                preg_replace('/[^A-Za-z0-9]/', '', $task_data['Cognome_Ragione_sociale'] ?? 'Cliente');
                 if (!empty($task_data['Nome'])) {
-                    $nome_clean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $task_data['Nome']));
+                    $nome_clean = preg_replace('/[^A-Za-z0-9]/', '', $task_data['Nome']);
                     $cliente_folder .= '.' . $nome_clean;
                 }
-                
                 $cartella_cliente = __DIR__ . '/local_drive/' . $cliente_folder;
-                
-                // Assicurati che la cartella esista (con controllo ottimizzato)
                 if (!is_dir($cartella_cliente)) {
                     mkdir($cartella_cliente, 0755, true);
                 }
-                
                 $log_file = $cartella_cliente . '/task_completati.txt';
                 $data_completamento = date('d/m/Y H:i:s');
                 $utente_completamento = $_SESSION['user_name'];
-                
                 $log_entry = sprintf(
                     "[%s] TASK CLIENTE COMPLETATO: %s | Cliente: %s | Utente: %s | Scadenza: %s | Ricorrente: %s\n",
                     $data_completamento,
@@ -318,13 +311,24 @@ if (isset($_GET['completa']) && is_numeric($_GET['completa'])) {
                     date('d/m/Y', strtotime($task_data['scadenza'])),
                     (!empty($task_data['ricorrenza']) && $task_data['ricorrenza'] > 0) ? "Sì (ogni {$task_data['ricorrenza']} giorni)" : "No"
                 );
-                
-                // Scrivi il log in modo ottimizzato (evita lock prolungati)
+                // Scrivi il log locale per il cliente
                 $handle = fopen($log_file, 'a');
                 if ($handle) {
                     fwrite($handle, $log_entry);
                     fclose($handle);
                 }
+                // Scrivi anche nel log storico globale
+                $global_log_file = '/var/www/CRM/local_drive/ASContabilmente/storico_taskclienti.txt';
+                $global_log_entry = sprintf(
+                    "[%s] TASK CLIENTE COMPLETATO: %s | Cliente: %s | Utente: %s | Scadenza: %s | Ricorrente: %s\n",
+                    $data_completamento,
+                    $task_data['descrizione'],
+                    $nome_cliente,
+                    $utente_completamento,
+                    date('d/m/Y', strtotime($task_data['scadenza'])),
+                    (!empty($task_data['ricorrenza']) && $task_data['ricorrenza'] > 0) ? "Sì (ogni {$task_data['ricorrenza']} giorni)" : "No"
+                );
+                file_put_contents($global_log_file, $global_log_entry, FILE_APPEND | LOCK_EX);
             }
             
             if ($task_data['ricorrenza'] && $task_data['ricorrenza'] > 0) {
