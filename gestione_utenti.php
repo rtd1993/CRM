@@ -1087,34 +1087,23 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
 <!-- Modal per Creazione Utente -->
 <div id="userModal" class="user-modal">
     <div class="user-modal-content">
-                                <?php if ($utente_selezionato['id'] === $utente_loggato_id): ?>
-                                <!-- Campo password solo per il proprio account -->
-                                <div class="form-group">
-                                    <label class="form-label">🔒 Cambia password:</label>
-                                    <input type="password" name="password" class="form-input" placeholder="Inserisci nuova password per cambiarla (lascia vuoto per non cambiare)">
-                                    <small class="form-text text-muted">💡 Puoi impostare una password personalizzata per il tuo account</small>
-                                </div>
-                                <?php elseif ($is_admin_or_dev): ?>
-                                <!-- Solo reset password per admin/developer su altri utenti -->
-                                <div class="form-group">
-                                    <label class="form-label">🔒 Reset Password:</label>
-                                    <div style="padding: 0.8rem; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeaa7; font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">
-                                        ⚠️ <strong>Admin e Developer possono solo resettare le password di altri utenti, non impostare password personalizzate.</strong><br>
-                                        Il reset imposta automaticamente la password a "<strong>Password01!</strong>"
-                                    </div>
-                                    <form method="post" style="display: inline;" onsubmit="return confirm('Vuoi resettare la password per questo utente?\n\nLa nuova password sarà: Password01!')">
-                                        <input type="hidden" name="target_user_id" value="<?= $utente_selezionato['id'] ?>">
-                                        <button type="submit" name="reset_password" class="reset-password-btn">
-                                            🔄 Reset Password a "Password01!"
-                                        </button>
-                                    </form>
-                                </div>
-                                <?php endif; ?>
-    document.body.style.overflow = 'hidden';
-    
-    // Event listener per chiudere con ESC
-    document.addEventListener('keydown', handleUserEscape);
-}
+
+<!-- Form di creazione utente (esempio base, personalizza secondo la tua logica) -->
+<form method="post" id="createUserForm">
+    <div class="form-group">
+        <label class="form-label">Nome utente:</label>
+        <input type="text" name="username" class="form-input" required>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Email:</label>
+        <input type="email" name="email" class="form-input" required>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Password:</label>
+        <input type="password" name="password" class="form-input" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Crea utente</button>
+</form>
 
 function closeUserModal() {
     const modal = document.getElementById('userModal');
