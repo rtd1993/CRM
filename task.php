@@ -49,42 +49,40 @@ if (isset($_POST['complete_id'])) {
             );
             
             file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
-
             // Invia notifica chat
             $msg = "$user_name ha completato il task: " . $task['descrizione'];
             $pdo->prepare("INSERT INTO chat_messaggi (chat_id, user_id, message, timestamp) VALUES (?, ?, ?, NOW())")
                 ->execute(['general', $_SESSION['user_id'], $msg]);
 
-            <?php
-if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
-    // Task ricorrente: salva info su file, elimina il task attuale e lo ricrea con la scadenza successiva
-    $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
-    $log_entry = sprintf(
-        "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrente: Sì (ogni %d giorni)\n",
-        date('Y-m-d H:i:s'),
-        $task['descrizione'],
-        $user_name,
-        $task['scadenza'],
-        $task['ricorrenza']
-    );
-    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+            if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
+                // Task ricorrente: salva info su file, elimina il task attuale e lo ricrea con la scadenza successiva
+                $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
+                $log_entry = sprintf(
+                    "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrente: Sì (ogni %d giorni)\n",
+                    date('Y-m-d H:i:s'),
+                    $task['descrizione'],
+                    $user_name,
+                    $task['scadenza'],
+                    $task['ricorrenza']
+                );
+                file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
 
-    // Calcola la nuova scadenza
-    $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
+                // Calcola la nuova scadenza
+                $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
 
-    // Elimina il task attuale
-    $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
+                // Elimina il task attuale
+                $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
 
-    // Ricrea il task con la nuova scadenza
-    $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
-    $stmt->execute([$task['descrizione'], $nuova_scadenza, $task['ricorrenza']]);
+                // Ricrea il task con la nuova scadenza
+                $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza) VALUES (?, ?, ?)");
+                $stmt->execute([$task['descrizione'], $nuova_scadenza, $task['ricorrenza']]);
 
-    // Log per debug
-    error_log("Task ricorrente ricreato: '{$task['descrizione']}' - Nuova scadenza: {$nuova_scadenza}");
+                // Log per debug
+                error_log("Task ricorrente ricreato: '{$task['descrizione']}' - Nuova scadenza: {$nuova_scadenza}");
 
-    header("Location: task.php?completed=recurring");
-    exit;
-}
+                header("Location: task.php?completed=recurring");
+                exit;
+            }
             } else {
                 // Task non ricorrente: salva info su file e elimina
                 $log_file = '/var/www/CRM/ASContabilmente/task_completati.txt';
