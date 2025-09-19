@@ -1085,24 +1085,22 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
 <?php endif; ?>
 
 <!-- Modal per Creazione Utente -->
+
 <div id="userModal" class="user-modal">
     <div class="user-modal-content">
+        <!-- Carica la pagina di creazione utente in un iframe -->
+        <iframe id="userModalFrame" src="create_user.php?popup=1" style="width:100%;height:600px;border:none;"></iframe>
+    </div>
+</div>
 
-<!-- Carica la pagina di creazione utente in un iframe -->
-<iframe id="userModalFrame" src="create_user.php?popup=1" style="width:100%;height:600px;border:none;"></iframe>
-
+<script>
 function closeUserModal() {
     const modal = document.getElementById('userModal');
     const iframe = document.getElementById('userModalFrame');
-    
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     iframe.src = '';
-    
-    // Rimuovi event listener ESC
     document.removeEventListener('keydown', handleUserEscape);
-    
-    // Ricarica la pagina per mostrare il nuovo utente
     window.location.reload();
 }
 
@@ -1112,7 +1110,6 @@ function handleUserEscape(event) {
     }
 }
 
-// Chiudi modal cliccando fuori dall'area del contenuto
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('userModal');
     modal.addEventListener('click', function(event) {
@@ -1122,17 +1119,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Funzione per chiudere il modal da iframe (chiamata dalle pagine popup)
 window.closeUserModal = closeUserModal;
-</script>
 
-<script>
 function openUserModal() {
     var modal = document.getElementById('userModal');
     if (modal) {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
-        // Add ESC key listener
         document.addEventListener('keydown', handleUserEscape);
     }
 }
