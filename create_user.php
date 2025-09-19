@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Se è in modalità popup, chiudi il modal
         if (isset($_GET['popup'])) {
-            echo '<script>
+            echo '<script type="text/javascript">
                 if (parent && parent.closeUserModal) {
                     setTimeout(function() { parent.closeUserModal(); }, 1000);
                 }
