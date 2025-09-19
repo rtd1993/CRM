@@ -712,7 +712,7 @@ foreach ($task_list as $task) {
             <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
             <select name="assegnato_a" class="search-input" style="min-width:140px;">
                 <option value="">Tutti</option>
-                <option value="none" <?= $filter_assegnato==='none' ? 'selected' : '' ?>>Non assegnati / Generali</option>
+                <option value="none" <?= $filter_assegnato==='Generale' ? 'selected' : '' ?>>Generali</option>
                 <?php foreach ($utenti as $utente): ?>
                     <option value="<?= $utente['id'] ?>" <?= $filter_assegnato==$utente['id'] ? 'selected' : '' ?>><?= htmlspecialchars($utente['nome']) ?></option>
                 <?php endforeach; ?>
