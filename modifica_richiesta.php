@@ -87,6 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             
             $pdo->commit();
+                    // Se lo stato è completata o chiusa, elimina il task associato
+                    if (in_array($stato, ['completata', 'chiusa'])) {
+                        $task_delete_stmt = $pdo->prepare("DELETE FROM task WHERE descrizione LIKE ?");
+                        $task_delete_stmt->execute(['%Gestire richiesta:%ID: ' . $richiesta_id . '%']);
+                    }
             
             // Ricarica i dati aggiornati
             $stmt = $pdo->prepare("SELECT * FROM richieste WHERE id = ?");
