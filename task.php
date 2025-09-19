@@ -32,11 +32,7 @@ if (isset($_POST['complete_id'])) {
 
     if ($task) {
         try {
-            // Invia notifica chat
-            $msg = "$user_name ha completato il task: " . $task['descrizione'];
-            $pdo->prepare("INSERT INTO chat_messaggi (chat_id, user_id, message, timestamp) VALUES (?, ?, ?, NOW())")
-                ->execute(['general', $_SESSION['user_id'], $msg]);
-
+            // ...nessuna notifica chat...
             if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
                 // Task ricorrente: elimina il task attuale e lo ricrea con la scadenza successiva
                 $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
