@@ -33,11 +33,11 @@ if (isset($_POST['complete_id'])) {
     if ($task) {
         try {
             // Log su file locale
-            $log_dir = __DIR__ . 'local_drive/ASContabilmente/';
+            $log_file = '/var/www/CRM/local_drive/ASContabilmente/storico_task.txt';
+            $log_dir = dirname($log_file);
             if (!is_dir($log_dir)) {
                 mkdir($log_dir, 0755, true);
             }
-            $log_file = $log_dir . 'storico_task.txt';
             $log_entry = sprintf(
                 "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrenza: %s | Assegnato a: %s | Fatturabile: %s\n",
                 date('Y-m-d H:i:s'),
