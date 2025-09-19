@@ -706,23 +706,25 @@ foreach ($task_list as $task) {
 
 
 <div class="task-controls">
-    <button class="btn btn-primary" onclick="openTaskModal()">➕ Crea nuovo task</button>
-    <form method="get" class="search-form" style="gap:0.5rem; flex-wrap:wrap;">
-        <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
-        <select name="assegnato_a" class="search-input" style="min-width:140px;">
-            <option value="">Tutti gli utenti</option>
-            <option value="none" <?= $filter_assegnato==='none' ? 'selected' : '' ?>>Non assegnato</option>
-            <?php foreach ($utenti as $utente): ?>
-                <option value="<?= $utente['id'] ?>" <?= $filter_assegnato==$utente['id'] ? 'selected' : '' ?>><?= htmlspecialchars($utente['nome']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <select name="fatturabile" class="search-input" style="min-width:120px;">
-            <option value="">Fatturabilità</option>
-            <option value="1" <?= $filter_fatturabile==='1' ? 'selected' : '' ?>>Da fatturare</option>
-            <option value="0" <?= $filter_fatturabile==='0' ? 'selected' : '' ?>>Non da fatturare</option>
-        </select>
-        <button type="submit" class="btn btn-primary">🔍 Cerca</button>
-    </form>
+    <div style="display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <form method="get" class="search-form" style="display: flex; gap:0.5rem; align-items: center; flex: 1; min-width: 0;">
+            <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
+            <select name="assegnato_a" class="search-input" style="min-width:140px;">
+                <option value="">Tutti</option>
+                <option value="none" <?= $filter_assegnato==='none' ? 'selected' : '' ?>>Non assegnati / Generali</option>
+                <?php foreach ($utenti as $utente): ?>
+                    <option value="<?= $utente['id'] ?>" <?= $filter_assegnato==$utente['id'] ? 'selected' : '' ?>><?= htmlspecialchars($utente['nome']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="fatturabile" class="search-input" style="min-width:120px;">
+                <option value="">Tutti</option>
+                <option value="1" <?= $filter_fatturabile==='1' ? 'selected' : '' ?>>Da fatturare</option>
+                <option value="0" <?= $filter_fatturabile==='0' ? 'selected' : '' ?>>Non da fatturare</option>
+            </select>
+            <button type="submit" class="btn btn-primary">🔍 Cerca</button>
+        </form>
+        <button class="btn btn-primary" onclick="openTaskModal()" style="margin-left: auto;">➕ Crea nuovo task</button>
+    </div>
 </div>
 
 <?php if (empty($task_list)): ?>
