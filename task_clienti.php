@@ -131,12 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
                 }
             }
             
-            // Invia notifica nella chat se l'utente è loggato
-            if (isset($_SESSION['user_id']) && isset($_SESSION['user_name']) && $copied_count > 0) {
-                $msg_notifica = $_SESSION['user_name'] . " ha copiato $copied_count task a " . count($target_clients) . " client" . (count($target_clients) > 1 ? 'i' : 'e');
-                $stmt_chat = $pdo->prepare("INSERT INTO chat_messaggi (utente_id, messaggio, timestamp) VALUES (?, ?, NOW())");
-                $stmt_chat->execute([$_SESSION['user_id'], $msg_notifica]);
-            }
+            
             
             $pdo->commit();
             
