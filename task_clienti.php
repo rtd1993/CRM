@@ -75,21 +75,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
 }
 
 // **NUOVO**: Gestione copia task multipli
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
-        header("Location: task_clienti.php?success=" . urlencode($messaggio));
-        exit;
-        
-    } catch (Exception $e) {
-        $messaggio = "Errore: " . $e->getMessage();
-        error_log("Errore creazione task cliente: " . $e->getMessage());
-        
-        // Verifica se è una richiesta AJAX
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-            exit;
-        }
-    }
-}
+// (RIMOSSO BLOCCO ERRATO: catch orfano)
 
 // Gestione messaggi di successo dal redirect
 if (isset($_GET['success'])) {
