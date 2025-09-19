@@ -32,7 +32,24 @@ if (isset($_POST['complete_id'])) {
 
     if ($task) {
         try {
-            // ...nessuna notifica chat...
+            // Log su file locale
+            $log_dir = __DIR__ . 'local_drive/ASContabilmente/';
+            if (!is_dir($log_dir)) {
+                mkdir($log_dir, 0755, true);
+            }
+            $log_file = $log_dir . 'storico_task.txt';
+            $log_entry = sprintf(
+                "[%s] TASK COMPLETATO: %s | Utente: %s | Scadenza: %s | Ricorrenza: %s | Assegnato a: %s | Fatturabile: %s\n",
+                date('Y-m-d H:i:s'),
+                $task['descrizione'],
+                $user_name,
+                $task['scadenza'],
+                (!empty($task['ricorrenza']) && $task['ricorrenza'] > 0) ? "Sì ({$task['ricorrenza']} giorni)" : "No",
+                isset($task['assegnato_a']) ? $task['assegnato_a'] : 'Nessuno',
+                isset($task['fatturabile']) ? $task['fatturabile'] : '0'
+            );
+            file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+
             if (!empty($task['ricorrenza']) && is_numeric($task['ricorrenza']) && $task['ricorrenza'] > 0) {
                 // Task ricorrente: elimina il task attuale e lo ricrea con la scadenza successiva
                 $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
