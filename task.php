@@ -42,13 +42,16 @@ if (isset($_POST['complete_id'])) {
                 $nuova_scadenza = date('Y-m-d', strtotime($task['scadenza'] . ' + ' . $task['ricorrenza'] . ' days'));
                 $pdo->prepare("DELETE FROM task WHERE id = ?")->execute([$id]);
                 // Ricrea il task con tutte le info originali
+                // Gestione valori di default
+                $assegnato_a = isset($task['assegnato_a']) ? $task['assegnato_a'] : null;
+                $fatturabile = isset($task['fatturabile']) ? (int)$task['fatturabile'] : 0;
                 $stmt = $pdo->prepare("INSERT INTO task (descrizione, scadenza, ricorrenza, assegnato_a, fatturabile) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $task['descrizione'],
                     $nuova_scadenza,
                     $task['ricorrenza'],
-                    $task['assegnato_a'],
-                    $task['fatturabile']
+                    $assegnato_a,
+                    $fatturabile
                 ]);
                 header("Location: task.php?completed=recurring");
                 exit;
