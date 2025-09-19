@@ -169,11 +169,12 @@ if ($search !== '') {
 }
 if ($filter_assegnato !== '') {
     if ($filter_assegnato === 'none') {
-        $sql .= " AND t.assegnato_a IS NULL";
-    } else {
+        $sql .= " AND (t.assegnato_a IS NULL OR t.assegnato_a = 0)";
+    } elseif (is_numeric($filter_assegnato)) {
         $sql .= " AND t.assegnato_a = ?";
         $params[] = $filter_assegnato;
     }
+    // Se 'Tutti', non aggiunge filtro
 }
 if ($filter_fatturabile !== '') {
     if ($filter_fatturabile === '1') {
@@ -722,6 +723,7 @@ foreach ($task_list as $task) {
                 <option value="0" <?= $filter_fatturabile==='0' ? 'selected' : '' ?>>Non da fatturare</option>
             </select>
             <button type="submit" class="btn btn-primary">🔍 Cerca</button>
+            <a href="task.php" class="btn btn-secondary" style="margin-left:4px;">Reset filtri</a>
         </form>
         <button class="btn btn-primary" onclick="openTaskModal()" style="margin-left: auto;">➕ Crea nuovo task</button>
     </div>
