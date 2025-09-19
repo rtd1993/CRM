@@ -1002,11 +1002,10 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                             <?php 
                             $is_used = in_array($colore, $colori_usati);
                             $is_current = $colore === $colore_attuale;
+                            $disabled = ($is_used && !$is_current) ? 'disabled' : '';
                             ?>
-                            <label class="color-option <?= $is_used && !$is_current ? 'disabled' : '' ?> <?= $is_current ? 'selected' : '' ?>">
-                                <input type="radio" name="colore" value="<?= $colore ?>" 
-                                       <?= $is_current ? 'checked' : '' ?>
-                                       <?= $is_used && !$is_current ? 'disabled' : '' ?>>
+                            <label class="color-option <?= $disabled ?> <?= $is_current ? 'selected' : '' ?>">
+                                <input type="radio" name="colore" value="<?= $colore ?>" <?= $is_current ? 'checked' : '' ?> <?= $disabled ?>>
                                 <div class="color-swatch" style="background-color: <?= $colore ?>;">
                                     <?php if ($is_current): ?>
                                         <span class="color-check">✓</span>
