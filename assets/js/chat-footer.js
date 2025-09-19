@@ -712,26 +712,36 @@ class ChatFooterSystem {
      */
     async checkNewMessages() {
         if (!this.currentChat) return;
-        
         try {
             const response = await this.apiCall('messages/get_new.php', {
                 type: this.currentChat.type,
                 id: this.currentChat.id,
                 since: this.getLastMessageTime()
             });
-            
             if (response.success && response.messages.length > 0) {
                 response.messages.forEach(msg => {
                     this.addMessageToUI(msg);
                 });
-                
+                // Suono di notifica
+                this.playNotificationSound();
                 this.scrollToBottom();
                 await this.markAsRead(this.currentChat.type, this.currentChat.id);
             }
-            
         } catch (error) {
             this.log('Errore controllo nuovi messaggi:', error);
         }
+    }
+
+    /**
+     * Riproduci suono di notifica
+     */
+    playNotificationSound() {
+        if (!this._audio) {
+            this._audio = new Audio('/assets/sounds/notification.mp3');
+            this._audio.volume = 0.7;
+        }
+        this._audio.currentTime = 0;
+        this._audio.play().catch(() => {});
     }
     
     /**
