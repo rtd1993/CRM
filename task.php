@@ -169,7 +169,7 @@ if ($search !== '') {
 }
 if ($filter_assegnato !== '') {
     if ($filter_assegnato === 'none') {
-        $sql .= " AND (t.assegnato_a IS NULL OR t.assegnato_a = 'Generale)";
+        $sql .= " AND (t.assegnato_a IS NULL OR t.assegnato_a = Generale)";
     } elseif (is_numeric($filter_assegnato)) {
         $sql .= " AND t.assegnato_a = ?";
         $params[] = $filter_assegnato;
