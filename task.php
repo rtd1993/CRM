@@ -722,14 +722,14 @@ foreach ($task_list as $task) {
     <div style="display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <form method="get" class="search-form" style="display: flex; gap:0.5rem; align-items: center; flex: 1; min-width: 0;">
             <input type="text" name="search" class="search-input" placeholder="Cerca task..." value="<?= htmlspecialchars($search) ?>">
-            <select name="assegnato_a" class="search-input" style="min-width:140px;">
+            assegnato a<select name="assegnato_a" class="search-input" style="min-width:140px;">
                 <option value="">Tutti</option>
                 <option value="none" <?= $filter_assegnato==='none' ? 'selected' : '' ?>>Generali</option>
                 <?php foreach ($utenti as $utente): ?>
                     <option value="<?= $utente['id'] ?>" <?= $filter_assegnato==$utente['id'] ? 'selected' : '' ?>><?= htmlspecialchars($utente['nome']) ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="fatturabile" class="search-input" style="min-width:120px;">
+            fatturabile<select name="fatturabile" class="search-input" style="min-width:120px;">
                 <option value="">Tutti</option>
                 <option value="1" <?= $filter_fatturabile==='1' ? 'selected' : '' ?>>Da fatturare</option>
                 <option value="0" <?= $filter_fatturabile==='0' ? 'selected' : '' ?>>Non da fatturare</option>
