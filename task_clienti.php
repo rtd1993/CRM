@@ -391,7 +391,7 @@ $filtro_fatturabile = $_GET['fatturabile'] ?? '';
 // Carica lista clienti (ottimizzata - solo se necessario)
 $clienti = [];
 // Carica sempre i clienti per i filtri
-<?php
+
 $clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale`, link_cartella FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
 // Carica lista task con clienti associati (query ottimizzata)
 $where_conditions = ["1=1"]; // Base condition per semplificare la logica
