@@ -1921,6 +1921,7 @@ function loadClientTasks() {
                                onclick="return confirm('Sei sicuro di voler eliminare questo task?')" title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
+                            ${task.link_cartella ? `<a href="${escapeHtml(task.link_cartella)}" class="btn btn-secondary btn-sm" target="_blank" title="Apri cartella cliente"><i class="fas fa-folder-open"></i></a>` : ''}
                         </div>
                     </div>
                 `).join('');
