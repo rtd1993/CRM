@@ -1504,6 +1504,9 @@ foreach ($tasks as $task) {
 <!-- **NUOVO**: Sezione Filtri a larghezza piena -->
 <div class="filters-section" style="margin-bottom: 30px;">
     <h4><i class="fas fa-filter"></i> Filtri</h4>
+    <div class="filter-types" style="margin-bottom: 10px; color: #6c757d; font-size: 0.95em;">
+        <strong>Tipi di filtro:</strong> <span style="margin-left: 8px;">Testo | Cliente | Scadenza | Tipo ricorrenza</span>
+    </div>
     <form method="GET" class="filters-form">
         <div class="filter-row">
             <div class="filter-group">

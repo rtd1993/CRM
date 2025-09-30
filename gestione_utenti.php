@@ -1004,12 +1004,10 @@ if (isset($_GET['edit_id']) && $is_admin_or_dev) {
                             $is_current = $colore === $colore_attuale;
                             $disabled = ($is_used && !$is_current) ? 'disabled' : '';
                             ?>
-                            <label class="color-option <?= $disabled ?> <?= $is_current ? 'selected' : '' ?>">
-                                <input type="radio" name="colore" value="<?= $colore ?>" <?= $is_current ? 'checked' : '' ?> <?= ($is_used && !$is_current) ? 'disabled' : '' ?>>
+                            <label class="color-option <?= $disabled ?>">
+                                <input type="radio" name="colore" value="<?= $colore ?>" <?= $is_current ? 'checked' : '' ?> <?= $disabled ?> onclick="updateColorSelection(this)">
                                 <div class="color-swatch" style="background-color: <?= $colore ?>;">
-                                    <?php if ($is_current): ?>
-                                        <span class="color-check">✓</span>
-                                    <?php endif; ?>
+                                    <span class="color-check" style="display:none;">✓</span>
                                     <?php if ($is_used && !$is_current): ?>
                                         <span class="color-unavailable">✗</span>
                                     <?php endif; ?>
@@ -1130,6 +1128,19 @@ function openUserModal() {
         document.body.style.overflow = 'hidden';
         document.addEventListener('keydown', handleUserEscape);
     }
+}
+
+// Evidenzia la selezione colore in tempo reale
+function updateColorSelection(radio) {
+    document.querySelectorAll('.color-option').forEach(function(label) {
+        label.classList.remove('selected');
+        var check = label.querySelector('.color-check');
+        if (check) check.style.display = 'none';
+    });
+    var selectedLabel = radio.closest('.color-option');
+    selectedLabel.classList.add('selected');
+    var check = selectedLabel.querySelector('.color-check');
+    if (check) check.style.display = 'inline';
 }
 </script>
 

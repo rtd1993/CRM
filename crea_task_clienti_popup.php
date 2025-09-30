@@ -350,9 +350,10 @@ if ($edit_mode && $task_data && !empty($task_data['ricorrenza'])) {
             <?php endif; ?>
             <div class="form-group">
                 <label for="cliente_search">👤 Cerca Cognome Cliente *</label>
-                <input type="text" id="cliente_search" class="form-control" autocomplete="off" placeholder="Inizia a scrivere il cognome...">
+                <input type="text" id="cliente_search" class="form-control" autocomplete="off" placeholder="Inizia a scrivere il cognome..."
+                    value="<?= $edit_mode && $task_data ? htmlspecialchars($task_data['Cognome_Ragione_sociale'] . ' ' . ($task_data['Nome'] ?? '')) : '' ?>">
                 <ul id="clienti_list" style="list-style:none; padding-left:0; margin-top:8px; max-height:180px; overflow-y:auto; border:1px solid #e1e5e9; border-radius:8px; background:#fff; display:none;"></ul>
-                <input type="hidden" name="cliente_id" id="cliente_id" required>
+                <input type="hidden" name="cliente_id" id="cliente_id" required value="<?= $edit_mode && $task_data ? htmlspecialchars($task_data['cliente_id']) : '' ?>">
             </div>
 
             <div class="form-group">
