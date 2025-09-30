@@ -1751,7 +1751,7 @@ foreach ($tasks as $task) {
                                title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
-                            <a href="drive.php?path=<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                            <a href="<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
                                 <i class="fas fa-folder-open"></i>
                             </a>
                         </div>
