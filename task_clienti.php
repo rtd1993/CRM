@@ -1753,9 +1753,21 @@ foreach ($tasks as $task) {
                                title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
-                            <a href="<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
-                                <i class="fas fa-folder-open"></i>
-                            </a>
+                            <?php 
+                                // Trova il cliente associato al task
+                                $task_cliente = null;
+                                foreach ($clienti as $c) {
+                                    if ($c['id'] == $task_item['cliente_id']) {
+                                        $task_cliente = $c;
+                                        break;
+                                    }
+                                }
+                            ?>
+                            <?php if (!empty($task_cliente['link_cartella'])): ?>
+                                <a href="drive.php?path=<?= htmlspecialchars($task_cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                                    <i class="fas fa-folder-open"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
