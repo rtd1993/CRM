@@ -391,8 +391,8 @@ $filtro_fatturabile = $_GET['fatturabile'] ?? '';
 // Carica lista clienti (ottimizzata - solo se necessario)
 $clienti = [];
 // Carica sempre i clienti per i filtri
-$clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale` FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
-
+<?php
+$clienti = $pdo->query("SELECT id, `Cognome_Ragione_sociale`, Nome, `Codice_fiscale`, link_cartella FROM clienti ORDER BY `Cognome_Ragione_sociale`, Nome")->fetchAll();
 // Carica lista task con clienti associati (query ottimizzata)
 $where_conditions = ["1=1"]; // Base condition per semplificare la logica
 $params = [];
@@ -1751,11 +1751,9 @@ foreach ($tasks as $task) {
                                title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
-                            <?php if (!empty($cliente['link_cartella'])): ?>
-                                <a href="<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
-                                    <i class="fas fa-folder-open"></i>
-                                </a>
-                            <?php endif; ?>
+                            <a href="drive.php?path=<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                                <i class="fas fa-folder-open"></i>
+                            </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -1921,7 +1919,6 @@ function loadClientTasks() {
                                onclick="return confirm('Sei sicuro di voler eliminare questo task?')" title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
-                            ${task.link_cartella ? `<a href="${escapeHtml(task.link_cartella)}" class="btn btn-secondary btn-sm" target="_blank" title="Apri cartella cliente"><i class="fas fa-folder-open"></i></a>` : ''}
                         </div>
                     </div>
                 `).join('');
