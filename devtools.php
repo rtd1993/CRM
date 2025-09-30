@@ -44,6 +44,22 @@ if (isset($_POST['ajax_action'])) {
             $type = $_POST['cleanup_type'] ?? '';
             echo json_encode(performCleanup($pdo, $type));
             break;
+        case 'git_pull':
+            // Solo admin/developer
+            if ($_SESSION['user_role'] !== 'admin' && $_SESSION['user_role'] !== 'developer') {
+                echo json_encode(['success' => false, 'error' => 'Permesso negato']);
+                exit;
+            }
+            // Esegui git pull
+            $output = null;
+            $return_var = null;
+            exec('git pull 2>&1', $output, $return_var);
+            echo json_encode([
+                'success' => $return_var === 0,
+                'output' => is_array($output) ? implode("\n", $output) : $output,
+                'error' => $return_var !== 0 ? 'Comando fallito' : ''
+            ]);
+            exit;
     }
     exit;
 }
@@ -910,6 +926,12 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="section-content">
                     <div id="services-content">
                         <div class="service-control">
+                            <div class="mb-3">
+                                <button class="btn btn-dark btn-sm" id="gitPullBtn" onclick="runGitPull()">
+                                    <i class="fab fa-git"></i> Git Pull (Admin)
+                                </button>
+                                <span id="gitPullResult" style="margin-left:10px; font-size:0.95em;"></span>
+                            </div>
                             <div>
                                 <span class="status-indicator status-unknown" id="status-apache2"></span>
                                 <strong>Apache Web Server</strong>
@@ -1092,6 +1114,31 @@ Esempi:
 </div>
 
 <script>
+function runGitPull() {
+    if (!confirm('Vuoi eseguire git pull?')) return;
+    const btn = document.getElementById('gitPullBtn');
+    const resultSpan = document.getElementById('gitPullResult');
+    btn.disabled = true;
+    resultSpan.textContent = 'Esecuzione...';
+    fetch('devtools.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'ajax_action=git_pull'
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            resultSpan.textContent = 'OK: ' + (data.output || 'Comando eseguito');
+        } else {
+            resultSpan.textContent = 'Errore: ' + (data.error || '');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        resultSpan.textContent = 'Errore AJAX';
+    });
+}
     // Carica dati al cambio tab
     document.addEventListener('DOMContentLoaded', function() {
         loadStats();
