@@ -1731,7 +1731,6 @@ foreach ($tasks as $task) {
                             <button class="btn btn-warning btn-xs" onclick="openTaskClientModal(<?= $task_item['id'] ?>)">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            
                             <?php if (!empty($task_item['fatturabile']) && $task_item['fatturabile'] == 1): ?>
                                 <a href="?fatturato=<?= $task_item['id'] ?>" 
                                    class="btn btn-info btn-xs" 
@@ -1740,20 +1739,23 @@ foreach ($tasks as $task) {
                                     <i class="fas fa-euro-sign"></i>
                                 </a>
                             <?php endif; ?>
-                            
                             <a href="?completa=<?= $task_item['id'] ?>" 
                                class="btn btn-success btn-xs" 
                                onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')"
                                title="Completa">
                                 <i class="fas fa-check"></i>
                             </a>
-                            
                             <a href="?elimina=<?= $task_item['id'] ?>" 
                                class="btn btn-danger btn-xs" 
                                onclick="return confirm('Sei sicuro di voler eliminare questo task?')"
                                title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </a>
+                            <?php if (!empty($cliente['link_cartella'])): ?>
+                                <a href="<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                                    <i class="fas fa-folder-open"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
