@@ -18,8 +18,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
         
         // Query per ottenere i task del cliente ordinati per scadenza
         $stmt = $pdo->prepare("
-            SELECT tc.*, 
-                   CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente
+         SELECT tc.*, 
+             CONCAT(c.`Cognome_Ragione_sociale`, ' ', COALESCE(c.Nome, '')) as nome_cliente,
+             c.link_cartella
             FROM task_clienti tc
             LEFT JOIN clienti c ON tc.cliente_id = c.id
             WHERE tc.cliente_id = ?
@@ -61,7 +62,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_client_tasks') {
                 'scaduto' => $is_scaduto,
                 'nome_cliente' => $task['nome_cliente'],
                 'cliente_id' => $task['cliente_id'],
-                'fatturabile' => (bool)$task['fatturabile']
+                'fatturabile' => (bool)$task['fatturabile'],
+                'link_cartella' => $task['link_cartella']
             ];
         }
         
