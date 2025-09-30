@@ -164,7 +164,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         $scadenza = $_POST['scadenza'] ?? '';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
-    $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
+        
+        // Debug log
+        error_log("Task creation: cliente_id=$cliente_id, descrizione=$descrizione, scadenza=$scadenza, ricorrenza=$ricorrenza, fatturabile=$fatturabile");
+        
+        // Validazione
+        if ($cliente_id <= 0) {
+            throw new Exception("Seleziona un cliente");
+        }
+        
+        if (empty($descrizione)) {
+            throw new Exception("La descrizione è obbligatoria");
+        }
+        
+        if (empty($scadenza)) {
+            throw new Exception("La data di scadenza è obbligatoria");
+        }
+        
+        // Converti ricorrenza in giorni
+        $ricorrenza_giorni = 0;  // Default a 0 invece di null
+        if ($ricorrenza > 0) {
+            switch ($tipo_ricorrenza) {
+                case 'giorni':
+                    $ricorrenza_giorni = $ricorrenza;
+                    break;
+                case 'settimane':
+                    $ricorrenza_giorni = $ricorrenza * 7;
+                    break;
+                case 'mesi':
+                    $ricorrenza_giorni = $ricorrenza * 30;
+                    break;
+                case 'anni':
+                    $ricorrenza_giorni = $ricorrenza * 365;
+                    break;
+            }
+        }
 
         // Crea il nuovo task
         $stmt = $pdo->prepare("
@@ -1469,9 +1504,6 @@ foreach ($tasks as $task) {
 <!-- **NUOVO**: Sezione Filtri a larghezza piena -->
 <div class="filters-section" style="margin-bottom: 30px;">
     <h4><i class="fas fa-filter"></i> Filtri</h4>
-    <div class="filter-types" style="margin-bottom: 10px; color: #6c757d; font-size: 0.95em;">
-        <strong>Tipi di filtro:</strong> <span style="margin-left: 8px;">Testo | Cliente | Scadenza | Tipo ricorrenza</span>
-    </div>
     <form method="GET" class="filters-form">
         <div class="filter-row">
             <div class="filter-group">
@@ -1669,8 +1701,31 @@ foreach ($tasks as $task) {
                             </div>
                             
                             <?php if ($is_ricorrente): ?>
-                                <!-- Ricorrenza info qui, non pulsanti -->
+                                <div class="task-ricorrenza">
+                                    <i class="fas fa-redo-alt"></i>
+                                    <span>Ogni <?= $ricorrenza_text ?></span>
+                                </div>
                             <?php endif; ?>
+                            
+                            <?php if ($task_item['fatturabile']): ?>
+                                <div class="task-fatturabile">
+                                    <i class="fas fa-euro-sign" style="color: #28a745;"></i>
+                                    <span style="color: #28a745; font-weight: bold;">Da fatturare</span>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if ($task_item['nome_assegnato']): ?>
+                                <div class="task-assegnato">
+                                    <i class="fas fa-user" style="color: #6c757d;"></i>
+                                    <span style="color: #6c757d;">Assegnato a: <?= htmlspecialchars($task_item['nome_assegnato']) ?></span>
+                                </div>
+                            <?php else: ?>
+                                <div class="task-generale">
+                                    <i class="fas fa-globe" style="color: #17a2b8;"></i>
+                                    <span style="color: #17a2b8;">Task generale</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         
                         <div class="task-actions">
                             <button class="btn btn-warning btn-xs" onclick="openTaskClientModal(<?= $task_item['id'] ?>)">
@@ -1863,9 +1918,6 @@ function loadClientTasks() {
                             <a href="?elimina=${task.id}" class="btn btn-danger btn-sm" 
                                onclick="return confirm('Sei sicuro di voler eliminare questo task?')" title="Elimina">
                                 <i class="fas fa-trash"></i>
-                            </a>
-                            <a href="${task.link_cartella}" class="btn btn-secondary btn-sm" target="_blank" title="Apri cartella cliente">
-                                <i class="fas fa-folder-open"></i>
                             </a>
                         </div>
                     </div>
