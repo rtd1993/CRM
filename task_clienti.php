@@ -1764,7 +1764,7 @@ foreach ($tasks as $task) {
                                 }
                             ?>
                             <?php if (!empty($task_cliente['link_cartella'])): ?>
-                                <a href="drive.php?path=<?= htmlspecialchars($task_cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                                <a href="<?= htmlspecialchars($task_cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
                                     <i class="fas fa-folder-open"></i>
                                 </a>
                             <?php endif; ?>
