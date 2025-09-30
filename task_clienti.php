@@ -164,9 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
         $scadenza = $_POST['scadenza'] ?? '';
         $ricorrenza = intval($_POST['ricorrenza'] ?? 0);
         $tipo_ricorrenza = $_POST['tipo_ricorrenza'] ?? '';
-        $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
-                <?php endforeach; ?>
-            <?php endif; ?>
+    $fatturabile = isset($_POST['fatturabile']) ? 1 : 0;
 
         // Crea il nuovo task
         $stmt = $pdo->prepare("
