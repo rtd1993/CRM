@@ -1704,30 +1704,35 @@ foreach ($tasks as $task) {
                             </div>
                             
                             <?php if ($is_ricorrente): ?>
-                                <div class="task-ricorrenza">
-                                    <i class="fas fa-redo-alt"></i>
-                                    <span>Ogni <?= $ricorrenza_text ?></span>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php if ($task_item['fatturabile']): ?>
-                                <div class="task-fatturabile">
-                                    <i class="fas fa-euro-sign" style="color: #28a745;"></i>
-                                    <span style="color: #28a745; font-weight: bold;">Da fatturare</span>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php if ($task_item['nome_assegnato']): ?>
-                                <div class="task-assegnato">
-                                    <i class="fas fa-user" style="color: #6c757d;"></i>
-                                    <span style="color: #6c757d;">Assegnato a: <?= htmlspecialchars($task_item['nome_assegnato']) ?></span>
-                                </div>
-                            <?php else: ?>
-                                <div class="task-generale">
-                                    <i class="fas fa-globe" style="color: #17a2b8;"></i>
-                                    <span style="color: #17a2b8;">Task generale</span>
-                                </div>
-                            <?php endif; ?>
+                                <div class="task-actions">
+                                    <button class="btn btn-warning btn-xs" onclick="openTaskClientModal(<?= $task_item['id'] ?>)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <?php if (!empty($task_item['fatturabile']) && $task_item['fatturabile'] == 1): ?>
+                                        <a href="?fatturato=<?= $task_item['id'] ?>" 
+                                           class="btn btn-info btn-xs" 
+                                           onclick="return confirm('Confermi che questo task è stato fatturato?')"
+                                           title="Segna come fatturato">
+                                            <i class="fas fa-euro-sign"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="?completa=<?= $task_item['id'] ?>" 
+                                       class="btn btn-success btn-xs" 
+                                       onclick="return confirm('Sei sicuro di voler completare questo task?<?= !empty($task_item['ricorrenza']) ? ' (Task ricorrente: verrà aggiornato con nuova scadenza)' : ' (Task one-shot: verrà eliminato definitivamente)' ?>')"
+                                       title="Completa">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    <a href="?elimina=<?= $task_item['id'] ?>" 
+                                       class="btn btn-danger btn-xs" 
+                                       onclick="return confirm('Sei sicuro di voler eliminare questo task?')"
+                                       title="Elimina">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <?php if (!empty($cliente['link_cartella'])): ?>
+                                        <a href="<?= htmlspecialchars($cliente['link_cartella']) ?>" class="btn btn-secondary btn-xs" target="_blank" title="Apri cartella cliente">
+                                            <i class="fas fa-folder-open"></i>
+                                        </a>
+                                    <?php endif; ?>
                         </div>
                         
                         <div class="task-actions">
@@ -1921,6 +1926,9 @@ function loadClientTasks() {
                             <a href="?elimina=${task.id}" class="btn btn-danger btn-sm" 
                                onclick="return confirm('Sei sicuro di voler eliminare questo task?')" title="Elimina">
                                 <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="${task.link_cartella}" class="btn btn-secondary btn-sm" target="_blank" title="Apri cartella cliente">
+                                <i class="fas fa-folder-open"></i>
                             </a>
                         </div>
                     </div>
