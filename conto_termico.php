@@ -23,7 +23,7 @@ if ($action === 'delete' && $id) {
 }
 
 // Carica lista clienti per il dropdown
-$clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALESCE(`Nome`, '')) as nome_completo FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`")->fetchAll();
+$clienti = $pdo->query("SELECT id, CONCAT(`Cognome_Ragione_sociale`, ' ', COALESCE(`Nome`, '')) as nome_completo, link_cartella FROM clienti ORDER BY `Cognome_Ragione_sociale`, `Nome`")->fetchAll();
 
 // Filtri di ricerca
 $search_cliente = $_GET['search_cliente'] ?? '';
@@ -53,11 +53,11 @@ if (!empty($search_tipo)) {
 $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Query per recuperare i record
-$sql = "SELECT ct.*, CONCAT(c.Cognome_Ragione_sociale, ' ', COALESCE(c.Nome, '')) as nome_cliente
-        FROM conto_termico ct 
-        LEFT JOIN clienti c ON ct.cliente_id = c.id 
-        $where_clause
-        ORDER BY ct.data_presentazione DESC, c.Cognome_Ragione_sociale";
+$sql = "SELECT ct.*, CONCAT(c.Cognome_Ragione_sociale, ' ', COALESCE(c.Nome, '')) as nome_cliente, c.link_cartella
+    FROM conto_termico ct 
+    LEFT JOIN clienti c ON ct.cliente_id = c.id 
+    $where_clause
+    ORDER BY ct.data_presentazione DESC, c.Cognome_Ragione_sociale";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -211,6 +211,11 @@ include 'includes/header.php';
                                                        class="btn btn-outline-primary" title="Aggiorna pratica">
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
+                                                    <?php if (!empty($record['link_cartella'])): ?>
+                                                        <a href="drive.php?path=<?= htmlspecialchars($record['link_cartella']) ?>" class="btn btn-outline-secondary" target="_blank" title="Apri cartella cliente">
+                                                            <i class="fas fa-folder-open"></i>
+                                                        </a>
+                                                    <?php endif; ?>
                                                     <button type="button" onclick="stampaContoTermicoPratica(<?= $record['id'] ?>)" 
                                                        class="btn btn-outline-success" title="Stampa pratica Conto Termico">
                                                         <i class="fas fa-print me-1"></i>Stampa
