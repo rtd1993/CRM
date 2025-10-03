@@ -213,7 +213,7 @@ include 'includes/header.php';
                                                     </button>
                                                     <?php if (!empty($record['link_cartella'])): ?>
                                                         <a href="drive.php?path=<?= htmlspecialchars($record['link_cartella']) ?>" class="btn btn-outline-secondary" target="_blank" title="Apri cartella cliente">
-                                                            <i class="fas fa-folder-open"></i>
+                                                            <i class="fas fa-folder-open">Apri cartella</i>
                                                         </a>
                                                     <?php endif; ?>
                                                     <button type="button" onclick="stampaContoTermicoPratica(<?= $record['id'] ?>)" 
