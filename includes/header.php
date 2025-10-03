@@ -204,7 +204,7 @@ if (isset($_SESSION['user_id'])) {
     </style>
 </head>
 <body>
-        <audio id="chatNotificationAudio" src="../assets/sounds/notification.mp3" preload="auto"></audio>
+        <audio id="chatNotificationAudio" src="/assets/sounds/notification.mp3" preload="auto"></audio>
 
 <header class="crm-header mb-4">
     <div class="container-fluid py-3 d-flex justify-content-between align-items-center">
