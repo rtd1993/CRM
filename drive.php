@@ -927,6 +927,12 @@ foreach ($contents as $c) {
         <button type="button" class="btn btn-outline-primary" onclick="toggleAdvancedFilters()">
             🔧 Filtri Avanzati
         </button>
+        <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path) ?>')" class="btn btn-outline-success">
+            📁 Crea Cartella
+        </button>
+        <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path) ?>')" class="btn btn-outline-success">
+            ⬆️ Upload File
+        </button>
         <div class="btn-group">
             <div class="view-toggle">
                 <button type="button" id="table-view-btn" class="active" onclick="setViewMode('table')">
@@ -1092,16 +1098,6 @@ foreach ($contents as $c) {
                                         📂
                                         <span class="tooltip">Apri cartella</span>
                                     </a>
-                                    <button onclick="openModal('Crea Cartella', 'crea_cartella.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
-                                            class="action-btn success">
-                                        ➕
-                                        <span class="tooltip">Crea cartella</span>
-                                    </button>
-                                    <button onclick="openModal('Upload File', 'upload.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
-                                            class="action-btn success">
-                                        ⬆️
-                                        <span class="tooltip">Upload file</span>
-                                    </button>
                                     <button onclick="openModal('Rinomina', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
                                             class="action-btn warning">
                                         ✏️
