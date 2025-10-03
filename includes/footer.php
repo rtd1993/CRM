@@ -1,5 +1,4 @@
     </main>
-    <audio id="chatNotificationAudio" src="assets/sounds/notification.mp3" preload="auto"></audio>
     <?php
     // Debug: verifichiamo le condizioni per includere il widget
     echo "<!-- Debug Footer: user_id = " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NON_SETTATO') . " -->";
