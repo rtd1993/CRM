@@ -1,16 +1,3 @@
-class CompleteChatSystem {
-    constructor() {
-        this.isInitialized = false;
-        this.currentChat = null;
-        this.isVisible = false;
-        this.pollingTimer = null;
-        this.lastMessageIds = {}; // Tiene traccia dell'ultimo message_id per ogni chat
-        this.unreadCounts = {};
-        this.privateChats = new Map();
-        this.onlineUsers = new Map();
-        this.currentConversationId = null; // ID della conversazione attualmente aperta
-    }
-
     // Pulsante di test audio per developer
     addDevAudioTestButton() {
         if (!window.DEV_MODE) return;
