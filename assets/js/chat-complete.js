@@ -29,6 +29,15 @@ class CompleteChatSystem {
  * Sistema chat completo secondo README_CHAT_SYSTEM.md
  * Supporta: Chat Globale, Chat Pratiche, Chat Private
  */
+
+
+class CompleteChatSystem {
+    constructor() {
+        this.isInitialized = false;
+        this.currentChat = null;
+        this.isVisible = false;
+        this.pollingTimer = null;
+        this.lastMessageIds = {}; // Tiene traccia dell'ultimo message_id per ogni chat
         this.unreadCounts = {};
         this.privateChats = new Map();
         this.onlineUsers = new Map();
