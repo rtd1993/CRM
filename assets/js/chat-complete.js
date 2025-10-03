@@ -1809,7 +1809,7 @@ class CompleteChatSystem {
         // Play notification sound
         if (!this._audio) {
             this._audio = new Audio('/assets/sounds/notification.mp3');
-            this._audio.volume = 0.7;
+            this._audio.volume = 1.0;
         }
         this._audio.currentTime = 0;
         this._audio.play().catch(() => {});
