@@ -1,16 +1,20 @@
-    // Pulsante di test audio per developer
-    addDevAudioTestButton() {
-        if (!window.DEV_MODE) return;
-        if (document.getElementById('devAudioTestBtn')) return;
-        const btn = document.createElement('button');
-        btn.id = 'devAudioTestBtn';
-        btn.textContent = 'Test Notifica Audio';
-        btn.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;background:#007bff;color:#fff;border:none;border-radius:8px;box-shadow:0 2px 8px #0002;font-size:16px;cursor:pointer;';
-        btn.onclick = () => {
-            this.playNotificationSound();
-        };
-        document.body.appendChild(btn);
-    }
+/**
+ * FOOTER CHAT SYSTEM - WHATSAPP LIKE
+ * Sistema chat completo secondo README_CHAT_SYSTEM.md
+ * Supporta: Chat Globale, Chat Pratiche, Chat Private
+ */
+
+// Configurazione di default (solo se non già impostata dal PHP)
+if (typeof window.completeChatConfig === 'undefined') {
+    window.completeChatConfig = {
+        userId: null, // Sarà impostato dal PHP
+        userName: null, // Sarà impostato dal PHP
+        apiBase: '/api/chat/',
+        pollingInterval: 3000,
+        maxMessageLength: 1000,
+        debug: true
+    };
+}
 /**
  * FOOTER CHAT SYSTEM - WHATSAPP LIKE
  * Sistema chat completo secondo README_CHAT_SYSTEM.md
