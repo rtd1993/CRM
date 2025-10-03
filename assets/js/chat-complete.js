@@ -1807,13 +1807,19 @@ class CompleteChatSystem {
                 badge: '/assets/images/badge-icon.png'
             });
         }
-        // Play notification sound
+        // Play notification sound con log errori
         if (!this._audio) {
             this._audio = new Audio('/assets/sounds/notification.mp3');
             this._audio.volume = 1.0;
         }
         this._audio.currentTime = 0;
-        this._audio.play().catch(() => {});
+        this._audio.play()
+            .then(() => {
+                console.log('🔔 Suono notifica riprodotto');
+            })
+            .catch((err) => {
+                console.error('❌ Errore riproduzione suono notifica:', err);
+            });
     }
     
     /**
