@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Notifica Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 40px; }
+        #testBtn { padding: 16px 32px; font-size: 18px; background: #007bff; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+        #status { margin-top: 24px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>Debug Notifica Chat</h2>
+    <button id="testBtn">Simula Ricezione Messaggio</button>
+    <div id="status"></div>
+    <audio id="notificationAudio" src="assets/audio/notification.mp3" preload="auto"></audio>
+    <script>
+        const testBtn = document.getElementById('testBtn');
+        const status = document.getElementById('status');
+        const audio = document.getElementById('notificationAudio');
+
+        testBtn.onclick = async function() {
+            status.textContent = 'Simulazione ricezione messaggio...';
+            try {
+                await audio.play();
+                status.textContent = 'Audio notifica riprodotto!';
+            } catch (err) {
+                status.textContent = 'Errore riproduzione audio: ' + err.message;
+            }
+        };
+    </script>
+</body>
+</html>
