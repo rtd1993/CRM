@@ -1811,12 +1811,24 @@ class CompleteChatSystem {
     }
 
     playNotificationSound() {
-        if (!this._audio) {
-            this._audio = new Audio('/assets/sounds/notification.mp3');
-            this._audio.volume = 1.0;
+        // Usa elemento <audio> nel DOM se presente
+        let audioElem = document.getElementById('chatNotificationAudio');
+        if (audioElem) {
+            audioElem.volume = 1.0;
+            audioElem.currentTime = 0;
+            audioElem.play().catch((err) => {
+                console.error('Errore riproduzione audio DOM:', err);
+            });
+        } else {
+            if (!this._audio) {
+                this._audio = new Audio('/assets/sounds/notification.mp3');
+                this._audio.volume = 1.0;
+            }
+            this._audio.currentTime = 0;
+            this._audio.play().catch((err) => {
+                console.error('Errore riproduzione audio JS:', err);
+            });
         }
-        this._audio.currentTime = 0;
-        this._audio.play().catch(() => {});
     }
     /**
      * Incrementa contatore messaggi non letti
