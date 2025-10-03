@@ -269,7 +269,7 @@ if ($_POST && isset($_POST['invia_email'])) {
                             </label>
                             <div id="corpoQuillEditor" style="height: 250px;"></div>
                             <textarea name="corpo_custom" id="corpoTextarea" 
-                                      style="display: none;" required></textarea>
+                                      style="display: none;"></textarea>
                             <div class="form-text">
                                 <i class="fas fa-magic me-1"></i>
                                 <strong>Variabili disponibili:</strong> 
