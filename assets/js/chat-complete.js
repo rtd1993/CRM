@@ -30,6 +30,17 @@ class CompleteChatSystem {
  * Supporta: Chat Globale, Chat Pratiche, Chat Private
  */
 
+// Configurazione di default (solo se non già impostata dal PHP)
+if (typeof window.completeChatConfig === 'undefined') {
+    window.completeChatConfig = {
+        userId: null, // Sarà impostato dal PHP
+        userName: null, // Sarà impostato dal PHP
+        apiBase: '/api/chat/',
+        pollingInterval: 3000,
+        maxMessageLength: 1000,
+        debug: true
+    };
+}
 
 class CompleteChatSystem {
     constructor() {
