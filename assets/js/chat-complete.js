@@ -1,17 +1,3 @@
-// ...existing code...
-
-class CompleteChatSystem {
-    constructor() {
-        this.isInitialized = false;
-        this.currentChat = null;
-        this.isVisible = false;
-        this.pollingTimer = null;
-        this.lastMessageIds = {}; // Tiene traccia dell'ultimo message_id per ogni chat
-        this.unreadCounts = {};
-        this.privateChats = new Map();
-    }
-
-// ...existing code...
 /**
  * FOOTER CHAT SYSTEM - WHATSAPP LIKE
  * Sistema chat completo secondo README_CHAT_SYSTEM.md
@@ -103,17 +89,24 @@ class CompleteChatSystem {
      */
     async init() {
         try {
+            
             this.bindElements();
+            
             this.bindEvents();
+            
             await this.initSocketIO();
+            
             await this.loadInitialData();
+            
             this.requestNotificationPermission();
+            
             this.startPolling();
+            
             // Carica badge immediatamente
             this.updateChatBadges();
+            
             this.isInitialized = true;
-            // Pulsante di test audio per developer
-            this.addDevAudioTestButton();
+
         } catch (error) {
             console.error('Stack trace:', error.stack);
         }
@@ -1819,7 +1812,7 @@ class CompleteChatSystem {
 
     playNotificationSound() {
         // Usa elemento <audio> nel DOM se presente
-        console.log('nella funzione playNotificationSound');
+        console.log('nella funzion');
         let audioElem = document.getElementById('chatNotificationAudio');
         if (audioElem) {
             audioElem.volume = 1.0;
