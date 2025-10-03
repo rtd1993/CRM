@@ -1093,11 +1093,7 @@ foreach ($contents as $c) {
                         <td>
                             <div class="action-buttons-group">
                                 <?php if ($c['is_dir']): ?>
-                                    <a href="drive.php?path=<?= urlencode(trim($relative_path . '/' . $c['name'], '/')) ?>" 
-                                       class="action-btn primary">
-                                        📂
-                                        <span class="tooltip">Apri cartella</span>
-                                    </a>
+                                    
                                     <button onclick="openModal('Rinomina', 'rinomina.php?path=<?= urlencode($relative_path . '/' . $c['name']) ?>')" 
                                             class="action-btn warning">
                                         ✏️
