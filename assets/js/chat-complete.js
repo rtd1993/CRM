@@ -1806,7 +1806,7 @@ class CompleteChatSystem {
                 icon: '/assets/images/chat-icon.png',
                 badge: '/assets/images/badge-icon.png'
             });
-            this.playNotificationSound();
+            
         } 
     }
 
@@ -1826,6 +1826,7 @@ class CompleteChatSystem {
             this.unreadCounts[chatId] = 0;
         }
         this.unreadCounts[chatId]++;
+        this.playNotificationSound();
         
         // Aggiorna badge specifico della chat
         this.updateChatBadge(chatId);
