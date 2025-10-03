@@ -1,3 +1,16 @@
+class CompleteChatSystem {
+    constructor() {
+        this.isInitialized = false;
+        this.currentChat = null;
+        this.isVisible = false;
+        this.pollingTimer = null;
+        this.lastMessageIds = {}; // Tiene traccia dell'ultimo message_id per ogni chat
+        this.unreadCounts = {};
+        this.privateChats = new Map();
+        this.onlineUsers = new Map();
+        this.currentConversationId = null; // ID della conversazione attualmente aperta
+    }
+
     // Pulsante di test audio per developer
     addDevAudioTestButton() {
         if (!window.DEV_MODE) return;
@@ -11,23 +24,6 @@
         };
         document.body.appendChild(btn);
     }
-/**
- * FOOTER CHAT SYSTEM - WHATSAPP LIKE
- * Sistema chat completo secondo README_CHAT_SYSTEM.md
- * Supporta: Chat Globale, Chat Pratiche, Chat Private
- */
-
-// Configurazione di default (solo se non già impostata dal PHP)
-if (typeof window.completeChatConfig === 'undefined') {
-    window.completeChatConfig = {
-        userId: null, // Sarà impostato dal PHP
-        userName: null, // Sarà impostato dal PHP
-        apiBase: '/api/chat/',
-        pollingInterval: 3000,
-        maxMessageLength: 1000,
-        debug: true
-    };
-}
 /**
  * FOOTER CHAT SYSTEM - WHATSAPP LIKE
  * Sistema chat completo secondo README_CHAT_SYSTEM.md
