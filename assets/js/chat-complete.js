@@ -1709,7 +1709,8 @@ class CompleteChatSystem {
 
                 // Marca come letto se stiamo visualizzando la chat
                 if (data.user_id !== this.config.userId) {
-                    this.markAsRead(data.conversation_id);
+                    // Usa la versione corretta: type e id
+                    this.markAsRead(this.currentChat.type, this.currentChat.id);
                 }
             } else {
                 // Aggiorna badge per messaggi in altre chat
@@ -1952,28 +1953,6 @@ class CompleteChatSystem {
             });
     }
     
-    // Marca messaggi come letti per una conversazione
-    markAsRead(conversationId) {
-        fetch('./api/chat_notifications.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                conversation_id: conversationId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Aggiorna badge dopo aver marcato come letto
-                this.updateChatBadges();
-            }
-        })
-        .catch(error => {
-            console.error('Errore marca come letto:', error);
-        });
-    }
     
     // Processa i dati dei badge dal polling
     processBadgeData(data) {
