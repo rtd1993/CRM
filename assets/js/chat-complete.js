@@ -1812,6 +1812,7 @@ class CompleteChatSystem {
 
     playNotificationSound() {
         // Usa elemento <audio> nel DOM se presente
+        console.log('nella funzione playNotificationSound');
         let audioElem = document.getElementById('chatNotificationAudio');
         if (audioElem) {
             audioElem.volume = 1.0;
@@ -1837,7 +1838,8 @@ class CompleteChatSystem {
         if (!this.unreadCounts[chatId]) {
             this.unreadCounts[chatId] = 0;
         }
-        this.unreadCounts[chatId]++;
+        this.unreadCounts[chatId]++;    
+        console.log('Chiamata playNotificationSound');
         this.playNotificationSound();
         
         // Aggiorna badge specifico della chat
