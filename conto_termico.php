@@ -212,7 +212,7 @@ include 'includes/header.php';
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
                                                     <?php if (!empty($record['link_cartella'])): ?>
-                                                        <a href="drive.php?path=<?= htmlspecialchars($record['link_cartella']) ?>" class="btn btn-outline-secondary" target="_blank" title="Apri cartella cliente">
+                                                        <a href="<?= htmlspecialchars($record['link_cartella']) ?>" class="btn btn-outline-secondary" target="_blank" title="Apri cartella cliente">
                                                             <i class="fas fa-folder-open"></i>Apri cartella
                                                         </a>
                                                     <?php endif; ?>

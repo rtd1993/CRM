@@ -187,19 +187,48 @@ if (!$is_popup) {
                         <div class="row">
                             <!-- Cliente -->
                             <div class="col-md-6 mb-3">
-                                <label for="cliente_id" class="form-label">
+                                <label for="cliente_autocomplete" class="form-label">
                                     Cliente <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="cliente_id" name="cliente_id" required>
-                                    <option value="">Seleziona cliente...</option>
-                                    <?php foreach ($clienti as $cliente): ?>
-                                        <option value="<?= $cliente['id'] ?>" 
-                                                <?= ($record['cliente_id'] ?? '') == $cliente['id'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($cliente['nome_completo']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div class="mb-1 text-muted" id="cliente_attuale_label">
+                                    Cliente attuale: <strong><?= htmlspecialchars($record['cliente_id'] ? ($clienti[array_search($record['cliente_id'], array_column($clienti, 'id'))]['nome_completo'] ?? '') : '') ?></strong>
+                                </div>
+                                <input type="text" class="form-control" id="cliente_autocomplete" placeholder="Cognome o nome cliente..." autocomplete="off" value="<?= htmlspecialchars($record['cliente_id'] ? ($clienti[array_search($record['cliente_id'], array_column($clienti, 'id'))]['nome_completo'] ?? '') : '') ?>">
+                                <input type="hidden" name="cliente_id" id="cliente_id" value="<?= htmlspecialchars($record['cliente_id']) ?>">
+                                <div id="autocomplete_suggestions" class="list-group position-absolute w-100" style="z-index:1000;"></div>
                             </div>
+<script>
+// Autocomplete clienti
+const clienti = <?php echo json_encode($clienti); ?>;
+const input = document.getElementById('cliente_autocomplete');
+const hiddenId = document.getElementById('cliente_id');
+const suggestions = document.getElementById('autocomplete_suggestions');
+
+input.addEventListener('input', function() {
+    const val = this.value.trim().toLowerCase();
+    suggestions.innerHTML = '';
+    if (val.length < 2) return;
+    const matches = clienti.filter(c => c.nome_completo.toLowerCase().includes(val));
+    matches.forEach(c => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action';
+        item.textContent = c.nome_completo;
+        item.onclick = function() {
+            input.value = c.nome_completo;
+            hiddenId.value = c.id;
+            suggestions.innerHTML = '';
+        };
+        suggestions.appendChild(item);
+    });
+});
+
+document.addEventListener('click', function(e) {
+    if (!suggestions.contains(e.target) && e.target !== input) {
+        suggestions.innerHTML = '';
+    }
+});
+</script>
 
                             <!-- Anno -->
                             <div class="col-md-6 mb-3">

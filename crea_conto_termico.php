@@ -380,19 +380,51 @@ if (!$is_popup) {
 
                         <!-- Note -->
                         <div class="row">
-                            <div class="col-12 mb-3">
-                                <label for="note" class="form-label">Note</label>
-                                <textarea class="form-control" id="note" name="note" rows="4"
-                                          placeholder="Note aggiuntive..."><?= htmlspecialchars($_POST['note'] ?? '') ?></textarea>
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_autocomplete" class="form-label">
+                                    Cliente <span class="text-danger">*</span>
+                                </label>
+                                <div class="mb-1 text-muted" id="cliente_attuale_label">
+                                    Cliente selezionato: <strong><span id="cliente_nome_selezionato"></span></strong>
+                                </div>
+                                <input type="text" class="form-control" id="cliente_autocomplete" placeholder="Cognome o nome cliente..." autocomplete="off">
+                                <input type="hidden" name="cliente_id" id="cliente_id">
+                                <div id="autocomplete_suggestions" class="list-group position-absolute w-100" style="z-index:1000;"></div>
                             </div>
-                        </div>
+<script>
+// Autocomplete clienti
+const clienti = <?php echo json_encode($clienti); ?>;
+const input = document.getElementById('cliente_autocomplete');
+const hiddenId = document.getElementById('cliente_id');
+const suggestions = document.getElementById('autocomplete_suggestions');
+const nomeSelezionato = document.getElementById('cliente_nome_selezionato');
 
-                        <div class="d-flex justify-content-between">
-                            <a href="conto_termico.php" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>Annulla
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save me-1"></i>Salva Record
+input.addEventListener('input', function() {
+    const val = this.value.trim().toLowerCase();
+    suggestions.innerHTML = '';
+    if (val.length < 2) return;
+    const matches = clienti.filter(c => c.nome_completo.toLowerCase().includes(val));
+    matches.forEach(c => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action';
+        item.textContent = c.nome_completo;
+        item.onclick = function() {
+            input.value = c.nome_completo;
+            hiddenId.value = c.id;
+            nomeSelezionato.textContent = c.nome_completo;
+            suggestions.innerHTML = '';
+        };
+        suggestions.appendChild(item);
+    });
+});
+
+document.addEventListener('click', function(e) {
+    if (!suggestions.contains(e.target) && e.target !== input) {
+        suggestions.innerHTML = '';
+    }
+});
+</script>
                             </button>
                         </div>
                     </form>
