@@ -1813,6 +1813,7 @@ class CompleteChatSystem {
     playNotificationSound() {
         // Usa elemento <audio> nel DOM se presente
         console.log('nella funzion');
+       
         let audioElem = document.getElementById('chatNotificationAudio');
         if (audioElem) {
             audioElem.volume = 1.0;
