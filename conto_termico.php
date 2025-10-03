@@ -211,15 +211,18 @@ include 'includes/header.php';
                                                        class="btn btn-outline-primary" title="Aggiorna pratica">
                                                         <i class="fas fa-edit me-1"></i>Aggiorna pratica
                                                     </button>
+
                                                     <?php if (!empty($record['link_cartella'])): ?>
                                                         <a href="<?= htmlspecialchars($record['link_cartella']) ?>" class="btn btn-outline-secondary" target="_blank" title="Apri cartella cliente">
                                                             <i class="fas fa-folder-open"></i>Apri cartella
                                                         </a>
                                                     <?php endif; ?>
+
                                                     <button type="button" onclick="stampaContoTermicoPratica(<?= $record['id'] ?>)" 
                                                        class="btn btn-outline-success" title="Stampa pratica Conto Termico">
                                                         <i class="fas fa-print me-1"></i>Stampa
                                                     </button>
+                                                    
                                                     <a href="?action=delete&id=<?= $record['id'] ?>" 
                                                        class="btn btn-outline-danger" title="Elimina pratica"
                                                        onclick="return confirm('Sei sicuro di voler eliminare questo record?')">
