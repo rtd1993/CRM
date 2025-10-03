@@ -9,7 +9,7 @@ class CompleteChatSystem {
         this.privateChats = new Map();
         this.onlineUsers = new Map();
         this.currentConversationId = null; // ID della conversazione attualmente aperta
-    // ...continua la classe...
+    }
 
     // Pulsante di test audio per developer
     addDevAudioTestButton() {
@@ -24,6 +24,70 @@ class CompleteChatSystem {
         };
         document.body.appendChild(btn);
     }
+/**
+ * FOOTER CHAT SYSTEM - WHATSAPP LIKE
+ * Sistema chat completo secondo README_CHAT_SYSTEM.md
+ * Supporta: Chat Globale, Chat Pratiche, Chat Private
+ */
+        this.unreadCounts = {};
+        this.privateChats = new Map();
+        this.onlineUsers = new Map();
+        this.currentConversationId = null; // ID della conversazione attualmente aperta
+        
+        // Socket.IO connection
+        this.socket = null;
+        this.socketConnected = false;
+        
+        // Timer per aggiornamento conteggio utenti online
+        this.onlineCountTimer = null;
+        
+        // Elementi DOM
+        this.elements = {};
+        
+        // Configurazione
+        this.config = window.completeChatConfig || {};
+        this.apiBase = this.config.apiBase || '/api/chat/';
+        this.pollingInterval = this.config.pollingInterval || 3000;
+        
+        // Verifica userId - fondamentale per il funzionamento
+        if (!this.config.userId && window.completeChatConfig) {
+            this.config = { ...window.completeChatConfig };
+        }
+        
+        // Controlla se l'utente è autenticato
+        if (window.completeChatConfig && window.completeChatConfig.authenticated === false) {
+            return; // Non avviare la chat per utenti non autenticati
+        }
+        
+        // Converti userId in numero se è una stringa
+        if (typeof this.config.userId === 'string') {
+            this.config.userId = parseInt(this.config.userId);
+        }
+        
+        if (!this.config.userId || this.config.userId === null || isNaN(this.config.userId) || this.config.userId <= 0) {
+            
+            // Mostra messaggio user-friendly
+            if (document.getElementById('chat-footer-widget')) {
+                document.getElementById('chat-footer-widget').innerHTML = `
+                    <div style="position: fixed; bottom: 20px; right: 20px; 
+                                background: #dc3545; color: white; padding: 15px; 
+                                border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                                font-family: Arial, sans-serif; z-index: 1000;">
+                        <strong>Errore Sessione</strong><br>
+                        <small>Rifare login per accedere alla chat</small>
+                        <button onclick="window.location.href='logout.php'" 
+                                style="margin-left: 10px; padding: 5px 10px; 
+                                       background: white; color: #dc3545; border: none; 
+                                       border-radius: 5px; cursor: pointer;">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            }
+            return; // Non avviare la chat se non c'è un userId valido
+        }
+        
+        this.init();
     }
     
     /**
