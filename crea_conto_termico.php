@@ -163,18 +163,15 @@ if (!$is_popup) {
                         <div class="row">
                             <!-- Cliente -->
                             <div class="col-md-6 mb-3">
-                                <label for="cliente_id" class="form-label">
+                                <label for="cliente_autocomplete" class="form-label">
                                     Cliente <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="cliente_id" name="cliente_id" required>
-                                    <option value="">Seleziona cliente...</option>
-                                    <?php foreach ($clienti as $cliente): ?>
-                                        <option value="<?= $cliente['id'] ?>" 
-                                                <?= ($_POST['cliente_id'] ?? '') == $cliente['id'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($cliente['nome_completo']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div class="mb-1 text-muted" id="cliente_attuale_label">
+                                    Cliente selezionato: <strong><span id="cliente_nome_selezionato"></span></strong>
+                                </div>
+                                <input type="text" class="form-control" id="cliente_autocomplete" placeholder="Cognome o nome cliente..." autocomplete="off">
+                                <input type="hidden" name="cliente_id" id="cliente_id">
+                                <div id="autocomplete_suggestions" class="list-group position-absolute w-100" style="z-index:1000;"></div>
                             </div>
 
                             <!-- Anno -->
