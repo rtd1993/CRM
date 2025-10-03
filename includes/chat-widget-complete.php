@@ -27,7 +27,6 @@ try {
 ?>
 
 <?php if ($user_authenticated): ?>
-    <audio id="chatNotificationAudio" src="assets/sounds/notification.mp3" preload="auto"></audio>
 <script>
 // Configurazione Chat System completo - Debug migliorato
 window.completeChatConfig = {
